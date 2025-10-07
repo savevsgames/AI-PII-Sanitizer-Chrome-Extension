@@ -2,15 +2,23 @@
 
 A Chrome extension that protects your privacy by replacing real personally identifiable information (PII) with aliases when using AI chat services like ChatGPT, Claude, and Gemini.
 
-## 🎉 Current Status: **WORKING MVP!**
+## 🎉 Current Status: **WORKING DEV MODE PROTOTYPE**
 
-✅ **End-to-end substitution confirmed working on ChatGPT**
+✅ **End-to-end substitution confirmed working on ChatGPT (in dev mode)**
 - Real names automatically replaced with aliases in requests
 - AI responses decoded back to show real names
 - Streaming responses (SSE) fully supported
 - All tests passing (9/9)
+- Loaded as unpacked extension for development
 
-**Try it now:** Load the extension, add an alias, and mention your real name in ChatGPT!
+⚠️ **NOT Production Ready:**
+- Only tested in dev mode (unpacked extension)
+- Only ChatGPT verified (Claude/Gemini untested)
+- Debug logs still active
+- No error handling UI
+- Stats tracking incomplete
+
+**Try it now (dev mode):** Load unpacked in chrome://extensions, add an alias, mention your real name in ChatGPT!
 
 ## Features
 
@@ -104,27 +112,36 @@ AI_Interceptor/
 
 ## Roadmap
 
-### ✅ MVP (COMPLETE!)
+### ✅ Phase 1: Dev Mode Prototype (COMPLETE!)
 - [x] Basic project structure
 - [x] Core substitution engine
 - [x] Request/response interception (fetch override with message relay)
 - [x] Simple popup UI
-- [x] **ChatGPT support (working!)** 🎉
+- [x] **ChatGPT support (working in dev mode!)** 🎉
 - [x] End-to-end testing
 - [x] Streaming response support (SSE)
 - [x] Bidirectional substitution (real ↔ alias)
 - [x] All tests passing (9/9)
-- [ ] Claude support (architecture ready)
-- [ ] Gemini support (architecture ready)
-- [ ] Stats tracking
 
-### Phase 2
+### Phase 2: Production Readiness
+- [ ] Remove debug console logs (or add production flag)
+- [ ] Test as packed extension (.crx)
+- [ ] Claude.ai support + testing
+- [ ] Gemini support + testing
+- [ ] Stats tracking (increment counters)
+- [ ] Error handling UI (toasts/notifications)
+- [ ] Response text decoding (currently only request encoding works)
+- [ ] Edge case testing (empty aliases, special characters, etc.)
+- [ ] Performance optimization
+- [ ] Build for distribution
+
+### Phase 3: Enhanced UX
 - [ ] Input field highlighting
 - [ ] Visual feedback notifications
 - [ ] Improved onboarding flow
 - [ ] Export/import aliases
 
-### Phase 3
+### Phase 4: Advanced Features
 - [ ] Additional PII types (email, phone, addresses)
 - [ ] Team shared dictionaries
 - [ ] Audit logs
