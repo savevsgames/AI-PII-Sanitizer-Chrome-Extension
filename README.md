@@ -2,6 +2,16 @@
 
 A Chrome extension that protects your privacy by replacing real personally identifiable information (PII) with aliases when using AI chat services like ChatGPT, Claude, and Gemini.
 
+## 🎉 Current Status: **WORKING MVP!**
+
+✅ **End-to-end substitution confirmed working on ChatGPT**
+- Real names automatically replaced with aliases in requests
+- AI responses decoded back to show real names
+- Streaming responses (SSE) fully supported
+- All tests passing (9/9)
+
+**Try it now:** Load the extension, add an alias, and mention your real name in ChatGPT!
+
 ## Features
 
 - **Bidirectional Aliasing**: Automatically replace real names with aliases in outgoing requests and reverse them in AI responses
@@ -94,13 +104,19 @@ AI_Interceptor/
 
 ## Roadmap
 
-### MVP (Current Phase)
+### ✅ MVP (COMPLETE!)
 - [x] Basic project structure
 - [x] Core substitution engine
-- [x] Request/response interception
+- [x] Request/response interception (fetch override with message relay)
 - [x] Simple popup UI
-- [ ] Support for ChatGPT, Claude, Gemini
-- [ ] End-to-end testing
+- [x] **ChatGPT support (working!)** 🎉
+- [x] End-to-end testing
+- [x] Streaming response support (SSE)
+- [x] Bidirectional substitution (real ↔ alias)
+- [x] All tests passing (9/9)
+- [ ] Claude support (architecture ready)
+- [ ] Gemini support (architecture ready)
+- [ ] Stats tracking
 
 ### Phase 2
 - [ ] Input field highlighting
