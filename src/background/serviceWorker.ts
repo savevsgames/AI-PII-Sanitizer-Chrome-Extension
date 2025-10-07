@@ -20,7 +20,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 // Handle messages from content script
 chrome.runtime.onMessage.addListener(
-  (message: Message, sender, sendResponse) => {
+  (message: Message, _sender, sendResponse) => {
     handleMessage(message)
       .then(sendResponse)
       .catch((error) => {

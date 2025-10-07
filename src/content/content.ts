@@ -172,8 +172,8 @@ class PIIHighlighter {
   }
 
   async handleInput(event: Event) {
-    const element = event.target as HTMLInputElement | HTMLTextAreaElement;
-    const text = 'value' in element ? element.value : element.textContent || '';
+    const element = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLElement;
+    const text = 'value' in element ? element.value : (element.textContent || '');
 
     // TODO: Implement PII detection and highlighting
     // This will be added in Phase 2 (Week 5)
@@ -185,7 +185,7 @@ class PIIHighlighter {
 }
 
 // Initialize highlighter
-const highlighter = new PIIHighlighter();
+void new PIIHighlighter();
 
 // Show extension is active
 console.log('AI PII Sanitizer: Active');
