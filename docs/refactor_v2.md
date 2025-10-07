@@ -170,6 +170,16 @@ interface AliasProfile {
 interface UserConfig {
   version: number;
 
+  // Account info (optional - for email updates & future Pro tier)
+  account?: {                                    // NEW
+    email?: string;              // Optional email for community updates
+    emailOptIn: boolean;         // User consented to emails
+    licenseKey?: string;         // For future Pro tier (v3.0)
+    tier: 'free' | 'pro' | 'enterprise';
+    syncEnabled: boolean;        // Cloud sync (Pro feature, v3.0)
+    discordId?: string;          // Optional Discord link for community
+  };
+
   // Global settings
   settings: {
     enabled: boolean;
@@ -179,6 +189,7 @@ interface UserConfig {
     excludedDomains: string[];
     strictMode: boolean;
     debugMode: boolean;                          // NEW
+    cloudSync: boolean;                          // NEW: v3.0 Pro feature
   };
 
   // Profiles instead of flat aliases
@@ -346,6 +357,20 @@ interface ActivityLogEntry {
 │ Advanced                                       │
 │   [Clear all stats]  [Export profiles]         │
 │                                                │
+│ Community & Updates                            │
+│ ┌────────────────────────────────────────┐    │
+│ │ [✓] Get notified about new features    │    │
+│ │     (Optional - no account required)   │    │
+│ │                                        │    │
+│ │  Email: _____________________          │    │
+│ │         [Subscribe]                    │    │
+│ │                                        │    │
+│ │ ℹ️ Used only for product updates.     │    │
+│ │    ~1 email/month. Unsubscribe anytime.│    │
+│ │                                        │    │
+│ │ [Discord] Join our Discord community   │    │
+│ └────────────────────────────────────────┘    │
+│                                                │
 └────────────────────────────────────────────────┘
 ```
 
@@ -355,6 +380,8 @@ interface ActivityLogEntry {
 - Per-service toggles
 - Debug mode toggle
 - Data management (export, clear)
+- **Optional email opt-in** for community updates (NEW)
+- **Discord community link** (NEW)
 
 #### Tab 4: Debug Console
 
@@ -547,6 +574,190 @@ When `settings.defaultMode === 'warn-first'`:
 
 ---
 
+## Monetization & Account Strategy
+
+### Overview
+
+**Philosophy**: Privacy-first with optional monetization. All core features remain free and local.
+
+### V2.0: Foundation (Free Tier)
+
+**No Required Accounts**:
+- All features work 100% locally
+- No sign-up, no login, no paywalls
+- Open source codebase
+
+**Optional Email Collection**:
+- In Settings → "Community & Updates" section
+- User can opt-in to receive product updates
+- One-time submission to Mailchimp/ConvertKit
+- Stored locally in `UserConfig.account.email`
+- Used only for occasional newsletters (~1/month)
+
+**Discord Community**:
+- Link in Settings tab
+- Free support, feature requests, discussions
+- No account linking required
+
+### V3.0: Freemium Model (Future)
+
+#### Free Tier (v2.0 Feature Set)
+✅ Unlimited local profiles
+✅ All PII protection (name, email, phone, address)
+✅ Bidirectional substitution
+✅ Stats dashboard (7-day history)
+✅ Debug console
+✅ ChatGPT + Claude + Gemini support
+✅ No account required
+✅ Open source
+
+#### Pro Tier ($4.99/month or $49/year)
+🔐 **Requires license key activation**
+
+**Additional Features**:
+- ☁️ **Cloud Sync**: Sync profiles across devices
+- 📊 **Extended Analytics**: 30-day history (vs 7-day)
+- 👥 **Team Shared Profiles**: Collaborate with team members
+- 🎨 **Custom Themes**: Dark mode, color customization
+- 🔔 **Priority Support**: Email support within 24h
+- 🚀 **Early Access**: Beta features before public release
+
+#### Enterprise Tier (Custom Pricing)
+📧 **Contact for quote**
+
+**Everything in Pro, plus**:
+- 🏢 Team management dashboard
+- 📋 Compliance reports (GDPR, HIPAA)
+- 🔐 SSO integration
+- 📞 Dedicated support
+- 🎓 Training sessions
+
+### Technical Implementation
+
+#### License Key System
+
+**Purchase Flow** (v3.0):
+1. User visits website → purchases Pro license
+2. Payment via Gumroad/Stripe
+3. User receives license key via email
+4. Enters key in Settings → validates via API
+5. Extension stores key locally, unlocks Pro features
+
+**License Validation**:
+```typescript
+// Lightweight validation API (serverless function)
+POST https://api.ai-pii-sanitizer.com/v1/validate
+{
+  "licenseKey": "PRO-XXXX-XXXX-XXXX",
+  "extensionId": "chrome-extension-id"
+}
+
+Response:
+{
+  "valid": true,
+  "tier": "pro",
+  "expiresAt": 1735689600000,
+  "features": ["cloud-sync", "extended-analytics", "team-profiles"]
+}
+```
+
+**Validation Frequency**:
+- Check on startup (cached for 24h)
+- Soft validation: grace period if offline
+- No features disabled mid-session
+
+**Open Source Handling**:
+- License code is visible (honor system)
+- Forking loses cloud sync (our backend)
+- Most users will support development
+
+#### Cloud Sync Architecture (Pro Feature)
+
+**How It Works**:
+```
+Extension (Pro)
+    ↕️ (encrypted profiles)
+Backend API (Node.js/Deno)
+    ↕️
+Database (PostgreSQL)
+```
+
+**Encryption**:
+- Profiles encrypted client-side before upload
+- Server stores encrypted blobs (zero-knowledge)
+- Decryption key derived from user password (never sent)
+
+**Sync Strategy**:
+- Conflict resolution: last-write-wins + manual merge UI
+- Background sync every 5 minutes (if changes detected)
+- Manual sync button
+
+### Email Collection (V2.0)
+
+**UI Flow**:
+1. User opens Settings tab
+2. Sees "Community & Updates" section
+3. Checks "Get notified about new features"
+4. Enters email → clicks "Subscribe"
+5. Extension sends email to Mailchimp via serverless function
+6. Saves `emailOptIn: true` locally (don't ask again)
+
+**Technical**:
+```typescript
+// Serverless function (Netlify/Vercel)
+POST https://api.ai-pii-sanitizer.com/v1/subscribe
+{
+  "email": "user@example.com",
+  "source": "chrome-extension"
+}
+
+// Adds to Mailchimp list via API
+// Returns success/error
+```
+
+**Privacy**:
+- Email never leaves browser except to subscription service
+- No tracking, no analytics
+- Unsubscribe link in every email
+
+### Discord Server
+
+**Purpose**:
+- Community support (free tier users)
+- Feature requests & discussions
+- Beta testing coordination
+- Announcements (new releases)
+
+**Channels**:
+- `#general` - General chat
+- `#support` - Help with issues
+- `#feature-requests` - Vote on features
+- `#beta` - Early access testing
+- `#dev` - For contributors
+
+**No Integration** (for now):
+- Just a link in Settings
+- No Discord auth in extension
+- Keep it simple
+
+### Future Considerations
+
+**Team Profiles** (Enterprise):
+- Admin creates team workspace
+- Shares profile library with team
+- Central management console
+
+**API Access** (Enterprise):
+- RESTful API for integration
+- Webhook support
+- Rate-limited by tier
+
+**White-Label** (Enterprise):
+- Custom branding
+- Self-hosted backend option
+
+---
+
 ## Migration Strategy
 
 ### Data Migration
@@ -710,9 +921,15 @@ async function migrateV1ToV2(v1Config: UserConfigV1): Promise<UserConfig> {
 - [ ] Add debug mode toggle
 - [ ] Implement clear stats action
 - [ ] Implement export profiles action
+- [ ] **Add "Community & Updates" section** (NEW)
+  - [ ] Email opt-in checkbox
+  - [ ] Email input field
+  - [ ] Subscribe button → Mailchimp/ConvertKit integration
+  - [ ] Discord community link
+  - [ ] Save email opt-in status to UserConfig.account
 - [ ] Style settings page
 
-**Deliverable**: Functional settings with all controls
+**Deliverable**: Functional settings with all controls + email collection
 
 ### Phase 7: Debug Console Tab (Week 4)
 
