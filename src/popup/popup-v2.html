@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI PII Sanitizer</title>
+  <link rel="stylesheet" href="popup-v2.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <h1>🛡️ AI PII Sanitizer</h1>
+        <div class="status-indicator" id="statusIndicator">
+          <span class="status-dot active"></span>
+          <span class="status-text">Active</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav">
+      <button class="tab-button active" data-tab="aliases">
+        <span class="tab-icon">👤</span>
+        <span class="tab-label">Aliases</span>
+      </button>
+      <button class="tab-button" data-tab="stats">
+        <span class="tab-icon">📊</span>
+        <span class="tab-label">Stats</span>
+      </button>
+      <button class="tab-button" data-tab="settings">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">Settings</span>
+      </button>
+      <button class="tab-button" data-tab="debug">
+        <span class="tab-icon">🐛</span>
+        <span class="tab-label">Debug</span>
+      </button>
+    </nav>
+
+    <!-- Tab Content Container -->
+    <main class="tab-content-container">
+
+      <!-- ALIASES TAB -->
+      <section class="tab-content active" id="aliases-tab">
+        <div class="tab-header">
+          <h2>Identity Profiles</h2>
+          <button class="btn btn-primary" id="addProfileBtn">+ New Profile</button>
+        </div>
+
+        <div class="profile-list" id="profileList">
+          <!-- Profiles will be rendered here -->
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="profilesEmptyState">
+          <div class="empty-state-icon">🎭</div>
+          <p class="empty-state-title">No profiles yet</p>
+          <p class="empty-state-hint">Create your first identity profile to start protecting your privacy</p>
+          <button class="btn btn-primary" id="addProfileBtnEmpty">Create Profile</button>
+        </div>
+      </section>
+
+      <!-- STATS TAB -->
+      <section class="tab-content" id="stats-tab">
+        <div class="tab-header">
+          <h2>Statistics</h2>
+          <select class="time-filter" id="timeFilter">
+            <option value="24h">Last 24 Hours</option>
+            <option value="7d" selected>Last 7 Days</option>
+            <option value="30d">Last 30 Days</option>
+            <option value="all">All Time</option>
+          </select>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Protected</div>
+            <div class="stat-value" id="statProtected">0</div>
+            <div class="stat-subtitle">substitutions</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Intercepted</div>
+            <div class="stat-value" id="statIntercepted">0</div>
+            <div class="stat-subtitle">requests</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Success Rate</div>
+            <div class="stat-value" id="statSuccessRate">100%</div>
+            <div class="stat-subtitle">accuracy</div>
+          </div>
+        </div>
+
+        <div class="stats-section">
+          <h3>By Service</h3>
+          <div class="chart-container" id="serviceChart">
+            <!-- Service breakdown will go here -->
+          </div>
+        </div>
+
+        <div class="stats-section">
+          <h3>By PII Type</h3>
+          <div class="chart-container" id="piiTypeChart">
+            <!-- PII type breakdown will go here -->
+          </div>
+        </div>
+
+        <div class="stats-section">
+          <h3>Most Active Profile</h3>
+          <div class="profile-highlight" id="mostActiveProfile">
+            <span>No data yet</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS TAB -->
+      <section class="tab-content" id="settings-tab">
+        <div class="tab-header">
+          <h2>Settings</h2>
+        </div>
+
+        <div class="settings-section">
+          <h3>General</h3>
+          <div class="setting-item">
+            <label class="toggle-label">
+              <input type="checkbox" id="enabledToggle" checked>
+              <span class="toggle-slider"></span>
+              <span class="setting-label-text">Enable PII Protection</span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <label class="toggle-label">
+              <input type="checkbox" id="notificationsToggle" checked>
+              <span class="toggle-slider"></span>
+              <span class="setting-label-text">Show Notifications</span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <label class="toggle-label">
+              <input type="checkbox" id="debugModeToggle">
+              <span class="toggle-slider"></span>
+              <span class="setting-label-text">Debug Mode</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Substitution Mode</h3>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="mode" value="auto-replace" checked>
+              <span class="radio-text">
+                <strong>Auto-Replace</strong> (Default)
+                <br>
+                <small>Automatically replace PII with aliases</small>
+              </span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="mode" value="warn-first">
+              <span class="radio-text">
+                <strong>Warn First</strong>
+                <br>
+                <small>Show popup before replacing</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Protected Services</h3>
+          <div class="setting-item">
+            <label class="toggle-label">
+              <input type="checkbox" id="chatgptToggle" checked>
+              <span class="toggle-slider"></span>
+              <span class="setting-label-text">ChatGPT</span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <label class="toggle-label">
+              <input type="checkbox" id="claudeToggle" checked>
+              <span class="toggle-slider"></span>
+              <span class="setting-label-text">Claude</span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <label class="toggle-label">
+              <input type="checkbox" id="geminiToggle" checked>
+              <span class="toggle-slider"></span>
+              <span class="setting-label-text">Gemini</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Community & Updates</h3>
+          <div class="community-section">
+            <div class="setting-item">
+              <label class="toggle-label">
+                <input type="checkbox" id="emailOptInToggle">
+                <span class="toggle-slider"></span>
+                <span class="setting-label-text">Get notified about new features</span>
+              </label>
+              <p class="setting-hint">Optional - no account required</p>
+            </div>
+            <div class="email-input-group" id="emailInputGroup" style="display: none;">
+              <input type="email" id="emailInput" placeholder="your@email.com">
+              <button class="btn btn-secondary" id="subscribeBtn">Subscribe</button>
+            </div>
+            <p class="setting-hint">
+              ℹ️ Used only for product updates (~1/month). Unsubscribe anytime.
+            </p>
+            <a href="https://discord.gg/placeholder" target="_blank" class="discord-link">
+              <span class="discord-icon">💬</span>
+              Join our Discord community
+            </a>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Advanced</h3>
+          <div class="button-group">
+            <button class="btn btn-secondary" id="clearStatsBtn">Clear All Stats</button>
+            <button class="btn btn-secondary" id="exportProfilesBtn">Export Profiles</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- DEBUG CONSOLE TAB -->
+      <section class="tab-content" id="debug-tab">
+        <div class="tab-header">
+          <h2>Debug Console</h2>
+          <button class="btn btn-secondary btn-sm" id="clearLogBtn">Clear Log</button>
+        </div>
+
+        <div class="debug-console" id="debugConsole">
+          <!-- Activity log entries will be rendered here -->
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="debugEmptyState">
+          <div class="empty-state-icon">📝</div>
+          <p class="empty-state-title">No activity yet</p>
+          <p class="empty-state-hint">Activity will appear here as you use the extension</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="popup-v2.js"></script>
+</body>
+</html>
