@@ -74,8 +74,9 @@ export class AliasEngine {
         matches.push({ match: match[0], index: match.index });
       }
 
-      // Replace all matches with case preservation
-      for (const m of matches) {
+      // Replace all matches with case preservation (reverse order to preserve indices)
+      for (let i = matches.length - 1; i >= 0; i--) {
+        const m = matches[i];
         const preserved = this.preserveCase(m.match, replacement);
         result = result.substring(0, m.index) + preserved + result.substring(m.index + m.match.length);
 

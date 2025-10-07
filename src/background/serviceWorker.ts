@@ -5,11 +5,7 @@
 
 import { AliasEngine } from '../lib/aliasEngine';
 import { StorageManager } from '../lib/storage';
-import {
-  Message,
-  InterceptRequestPayload,
-  InterceptResponse,
-} from '../lib/types';
+import { Message } from '../lib/types';
 
 // Initialize storage on install
 chrome.runtime.onInstalled.addListener(async () => {
@@ -38,8 +34,11 @@ chrome.runtime.onMessage.addListener(
  */
 async function handleMessage(message: Message): Promise<any> {
   switch (message.type) {
-    case 'INTERCEPT_REQUEST':
-      return handleRequestIntercept(message.payload);
+    case 'SUBSTITUTE_REQUEST':
+      return handleSubstituteRequest(message.payload);
+
+    case 'SUBSTITUTE_RESPONSE':
+      return handleSubstituteResponse(message.payload);
 
     case 'GET_ALIASES':
       return handleGetAliases();
@@ -62,75 +61,60 @@ async function handleMessage(message: Message): Promise<any> {
 }
 
 /**
- * Intercept and process AI API requests
+ * Handle request substitution (real → alias)
+ * NO FETCHING HERE - just text substitution!
  */
-async function handleRequestIntercept(
-  payload: InterceptRequestPayload
-): Promise<InterceptResponse> {
+async function handleSubstituteRequest(payload: { body: string }): Promise<any> {
   try {
-    const { url, method, body, headers } = payload;
+    const { body } = payload;
 
-    console.log('🔍 Intercepting request to:', url);
-    console.log('🔍 Body type:', typeof body);
+    console.log('🔄 Substituting request body');
 
     // Parse request body
     let requestData;
     try {
       requestData = JSON.parse(body);
-      console.log('✅ Parsed request data');
     } catch (e) {
       console.error('❌ Cannot parse request body:', e);
       return { success: false, error: 'Cannot parse request body' };
     }
 
-    // Extract text content based on AI service
-    const textContent = extractTextFromRequest(requestData, url);
-    console.log('🔍 Extracted text:', textContent.substring(0, 100));
+    // Extract all text content from messages/prompt
+    const textContent = extractAllText(requestData);
+
+    console.log('📝 Extracted text:', textContent.substring(0, 300));
+
+    if (!textContent) {
+      console.log('⚠️ No text extracted from request');
+      return {
+        success: true,
+        modifiedBody: body,
+        substitutions: 0,
+      };
+    }
 
     // Apply substitution (real → alias)
     const aliasEngine = await AliasEngine.getInstance();
+    const aliases = aliasEngine.getAliases();
+    console.log('📋 Active aliases:', aliases.length, '-', aliases.map(a => `"${a.realValue}" → "${a.aliasValue}"`).join(', '));
+
     const substituted = aliasEngine.substitute(textContent, 'encode');
 
-    console.log('Substituted:', substituted.substitutions.length, 'items');
+    console.log('✅ Request substituted:', substituted.substitutions.length, 'replacements');
+    if (substituted.substitutions.length > 0) {
+      console.log('🔀 Changes:', substituted.substitutions);
+    }
 
     // Reconstruct request body with substituted text
-    const modifiedRequestData = injectTextIntoRequest(
-      requestData,
-      substituted.text,
-      url
-    );
-
-    // Forward modified request to AI service
-    const response = await fetch(url, {
-      method,
-      headers: headers as HeadersInit,
-      body: JSON.stringify(modifiedRequestData),
-    });
-
-    // Parse response
-    const responseData = await response.json();
-
-    // Extract response text
-    const responseText = extractTextFromResponse(responseData, url);
-
-    // Apply reverse substitution (alias → real)
-    const decoded = aliasEngine.substitute(responseText, 'decode');
-
-    console.log('Decoded:', decoded.substitutions.length, 'items');
-
-    // Inject decoded text back into response
-    const modifiedResponse = injectTextIntoResponse(
-      responseData,
-      decoded.text,
-      url
-    );
+    const modifiedRequestData = replaceAllText(requestData, substituted.text);
 
     return {
       success: true,
-      modifiedResponse,
+      modifiedBody: JSON.stringify(modifiedRequestData),
+      substitutions: substituted.substitutions.length,
     };
   } catch (error: any) {
-    console.error('Request intercept error:', error);
+    console.error('❌ Request substitution error:', error);
     return {
       success: false,
       error: error.message,
@@ -139,111 +123,162 @@ async function handleRequestIntercept(
 }
 
 /**
- * Extract text from request based on AI service
+ * Handle response substitution (alias → real)
  */
-function extractTextFromRequest(data: any, url: string): string {
-  if (url.includes('backend-api') || url.includes('api.openai.com')) {
-    // ChatGPT: messages array
-    return data.messages?.map((m: any) => m.content).join('\n') || '';
-  } else if (url.includes('claude.ai')) {
-    // Claude: prompt field or messages
-    return data.prompt || data.messages?.map((m: any) => m.content).join('\n') || '';
-  } else if (url.includes('gemini.google.com')) {
-    // Gemini: contents array
-    return (
-      data.contents
-        ?.map((c: any) => c.parts?.map((p: any) => p.text).join(''))
-        .join('\n') || ''
-    );
+async function handleSubstituteResponse(payload: { text: string }): Promise<any> {
+  try {
+    const { text } = payload;
+
+    if (!text) {
+      return {
+        success: true,
+        modifiedText: text,
+        substitutions: 0,
+      };
+    }
+
+    // Apply reverse substitution (alias → real)
+    const aliasEngine = await AliasEngine.getInstance();
+    const decoded = aliasEngine.substitute(text, 'decode');
+
+    console.log('✅ Response decoded:', decoded.substitutions.length, 'replacements');
+
+    return {
+      success: true,
+      modifiedText: decoded.text,
+      substitutions: decoded.substitutions.length,
+    };
+  } catch (error: any) {
+    console.error('❌ Response substitution error:', error);
+    return {
+      success: false,
+      error: error.message,
+    };
   }
+}
+
+/**
+ * Extract all text content from request data
+ * Handles ChatGPT, Claude, and Gemini message formats
+ */
+function extractAllText(data: any): string {
+  // ChatGPT format: { messages: [{ role, content }] }
+  // content can be:
+  //   - string: "hello world"
+  //   - object: { content_type: "text", parts: ["hello world"] }
+  if (data.messages && Array.isArray(data.messages)) {
+    return data.messages
+      .map((m: any) => {
+        if (typeof m.content === 'string') {
+          return m.content;
+        }
+        // Handle nested ChatGPT format
+        if (m.content?.parts && Array.isArray(m.content.parts)) {
+          return m.content.parts.join('\n');
+        }
+        // Handle array of content blocks
+        if (Array.isArray(m.content)) {
+          return m.content
+            .map((c: any) => (typeof c === 'string' ? c : c.text || ''))
+            .join('\n');
+        }
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+  }
+
+  // Claude format: { prompt: "..." } or { messages: [...] }
+  if (data.prompt && typeof data.prompt === 'string') {
+    return data.prompt;
+  }
+
+  // Gemini format: { contents: [{ parts: [{ text }] }] }
+  if (data.contents && Array.isArray(data.contents)) {
+    return data.contents
+      .flatMap((c: any) => c.parts?.map((p: any) => p.text) || [])
+      .filter(Boolean)
+      .join('\n\n');
+  }
+
   return '';
 }
 
 /**
- * Inject substituted text back into request
+ * Replace all text content in request data with substituted text
  */
-function injectTextIntoRequest(data: any, text: string, url: string): any {
-  const modified = { ...data };
+function replaceAllText(data: any, substitutedText: string): any {
+  const modified = JSON.parse(JSON.stringify(data)); // Deep clone
 
-  if (url.includes('backend-api') || url.includes('api.openai.com')) {
-    // ChatGPT: replace message content
-    if (modified.messages && modified.messages.length > 0) {
-      const lines = text.split('\n');
-      modified.messages = modified.messages.map((m: any, i: number) => ({
-        ...m,
-        content: lines[i] || m.content,
-      }));
-    }
-  } else if (url.includes('claude.ai')) {
-    // Claude: replace prompt or messages
-    if (modified.prompt) {
-      modified.prompt = text;
-    } else if (modified.messages && modified.messages.length > 0) {
-      const lines = text.split('\n');
-      modified.messages = modified.messages.map((m: any, i: number) => ({
-        ...m,
-        content: lines[i] || m.content,
-      }));
-    }
-  } else if (url.includes('gemini.google.com')) {
-    // Gemini: replace contents
-    if (modified.contents && modified.contents.length > 0) {
-      const lines = text.split('\n');
-      modified.contents = modified.contents.map((c: any, i: number) => ({
-        ...c,
-        parts: c.parts?.map((p: any) => ({
-          ...p,
-          text: lines[i] || p.text,
-        })),
-      }));
-    }
+  // Split substituted text back into messages
+  const textParts = substitutedText.split('\n\n').filter(Boolean);
+  let partIndex = 0;
+
+  // ChatGPT format
+  if (modified.messages && Array.isArray(modified.messages)) {
+    modified.messages = modified.messages.map((m: any) => {
+      if (!m.content) return m;
+
+      // String content
+      if (typeof m.content === 'string' && m.content) {
+        return { ...m, content: textParts[partIndex++] || m.content };
+      }
+
+      // Nested object: { content_type: "text", parts: [...] }
+      if (m.content.parts && Array.isArray(m.content.parts)) {
+        const substituted = textParts[partIndex++];
+        if (substituted) {
+          return {
+            ...m,
+            content: {
+              ...m.content,
+              parts: [substituted]
+            }
+          };
+        }
+      }
+
+      // Array of content blocks
+      if (Array.isArray(m.content)) {
+        return {
+          ...m,
+          content: m.content.map((c: any) => {
+            if (typeof c === 'string') {
+              return textParts[partIndex++] || c;
+            }
+            if (c.text) {
+              return { ...c, text: textParts[partIndex++] || c.text };
+            }
+            return c;
+          })
+        };
+      }
+
+      return m;
+    });
   }
 
-  return modified;
-}
-
-/**
- * Extract text from response
- */
-function extractTextFromResponse(data: any, url: string): string {
-  if (url.includes('backend-api') || url.includes('api.openai.com')) {
-    return (
-      data.choices?.[0]?.message?.content ||
-      data.choices?.[0]?.text ||
-      ''
-    );
-  } else if (url.includes('claude.ai')) {
-    return data.completion || data.content?.[0]?.text || '';
-  } else if (url.includes('gemini.google.com')) {
-    return (
-      data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-    );
+  // Claude prompt format
+  if (modified.prompt && typeof modified.prompt === 'string') {
+    modified.prompt = substitutedText;
   }
-  return '';
-}
 
-/**
- * Inject decoded text back into response
- */
-function injectTextIntoResponse(data: any, text: string, url: string): any {
-  const modified = { ...data };
-
-  if (url.includes('backend-api') || url.includes('api.openai.com')) {
-    if (modified.choices?.[0]?.message) {
-      modified.choices[0].message.content = text;
-    } else if (modified.choices?.[0]?.text) {
-      modified.choices[0].text = text;
-    }
-  } else if (url.includes('claude.ai')) {
-    if (modified.completion) {
-      modified.completion = text;
-    } else if (modified.content?.[0]) {
-      modified.content[0].text = text;
-    }
-  } else if (url.includes('gemini.google.com')) {
-    if (modified.candidates?.[0]?.content?.parts?.[0]) {
-      modified.candidates[0].content.parts[0].text = text;
-    }
+  // Gemini format
+  if (modified.contents && Array.isArray(modified.contents)) {
+    modified.contents = modified.contents.map((c: any) => {
+      if (c.parts && Array.isArray(c.parts)) {
+        return {
+          ...c,
+          parts: c.parts.map((p: any) => {
+            if (p.text) {
+              return { ...p, text: textParts[partIndex++] || p.text };
+            }
+            return p;
+          }),
+        };
+      }
+      return c;
+    });
   }
 
   return modified;

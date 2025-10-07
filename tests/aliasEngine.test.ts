@@ -31,6 +31,10 @@ describe('AliasEngine', () => {
 
     // Get instance (will be initialized with empty aliases)
     engine = await AliasEngine.getInstance();
+
+    // Clear maps between tests (singleton instance persists)
+    (engine as any).realToAliasMap.clear();
+    (engine as any).aliasToRealMap.clear();
   });
 
   describe('substitute', () => {

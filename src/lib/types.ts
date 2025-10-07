@@ -61,7 +61,8 @@ export interface ConversationContext {
 }
 
 export type MessageType =
-  | 'INTERCEPT_REQUEST'
+  | 'SUBSTITUTE_REQUEST'
+  | 'SUBSTITUTE_RESPONSE'
   | 'GET_ALIASES'
   | 'ADD_ALIAS'
   | 'REMOVE_ALIAS'
