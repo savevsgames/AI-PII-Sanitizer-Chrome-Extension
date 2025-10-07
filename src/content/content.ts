@@ -43,13 +43,19 @@ window.addEventListener('message', async (event) => {
   } catch (error) {
     console.error('❌ Content script relay error:', error);
 
+    // Check if extension was invalidated (common during development)
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    if (errorMsg.includes('Extension context invalidated')) {
+      console.warn('⚠️ Extension reloaded - please refresh this page (Ctrl+Shift+R)');
+    }
+
     // Send error response back
     window.postMessage({
       source: 'ai-pii-content',
       messageId,
       response: {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: errorMsg
       }
     }, '*');
   }
