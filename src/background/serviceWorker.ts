@@ -70,16 +70,22 @@ async function handleRequestIntercept(
   try {
     const { url, method, body, headers } = payload;
 
+    console.log('🔍 Intercepting request to:', url);
+    console.log('🔍 Body type:', typeof body);
+
     // Parse request body
     let requestData;
     try {
       requestData = JSON.parse(body);
+      console.log('✅ Parsed request data');
     } catch (e) {
+      console.error('❌ Cannot parse request body:', e);
       return { success: false, error: 'Cannot parse request body' };
     }
 
     // Extract text content based on AI service
     const textContent = extractTextFromRequest(requestData, url);
+    console.log('🔍 Extracted text:', textContent.substring(0, 100));
 
     // Apply substitution (real → alias)
     const aliasEngine = await AliasEngine.getInstance();
@@ -136,7 +142,7 @@ async function handleRequestIntercept(
  * Extract text from request based on AI service
  */
 function extractTextFromRequest(data: any, url: string): string {
-  if (url.includes('api.openai.com')) {
+  if (url.includes('backend-api') || url.includes('api.openai.com')) {
     // ChatGPT: messages array
     return data.messages?.map((m: any) => m.content).join('\n') || '';
   } else if (url.includes('claude.ai')) {
@@ -159,7 +165,7 @@ function extractTextFromRequest(data: any, url: string): string {
 function injectTextIntoRequest(data: any, text: string, url: string): any {
   const modified = { ...data };
 
-  if (url.includes('api.openai.com')) {
+  if (url.includes('backend-api') || url.includes('api.openai.com')) {
     // ChatGPT: replace message content
     if (modified.messages && modified.messages.length > 0) {
       const lines = text.split('\n');
@@ -200,7 +206,7 @@ function injectTextIntoRequest(data: any, text: string, url: string): any {
  * Extract text from response
  */
 function extractTextFromResponse(data: any, url: string): string {
-  if (url.includes('api.openai.com')) {
+  if (url.includes('backend-api') || url.includes('api.openai.com')) {
     return (
       data.choices?.[0]?.message?.content ||
       data.choices?.[0]?.text ||
@@ -222,7 +228,7 @@ function extractTextFromResponse(data: any, url: string): string {
 function injectTextIntoResponse(data: any, text: string, url: string): any {
   const modified = { ...data };
 
-  if (url.includes('api.openai.com')) {
+  if (url.includes('backend-api') || url.includes('api.openai.com')) {
     if (modified.choices?.[0]?.message) {
       modified.choices[0].message.content = text;
     } else if (modified.choices?.[0]?.text) {

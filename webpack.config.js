@@ -30,8 +30,10 @@ module.exports = {
         { from: 'src/manifest.json', to: 'manifest.json' },
         { from: 'src/popup/popup.html', to: 'popup.html' },
         { from: 'src/popup/popup.css', to: 'popup.css' },
+        { from: 'src/assets/icons', to: 'icons' },
+        { from: 'src/content/inject.js', to: 'inject.js' },
       ],
     }),
   ],
-  devtool: 'source-map',
+  devtool: false, // Disable source maps to avoid CSP issues
 };
