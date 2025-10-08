@@ -1,0 +1,60 @@
+/**
+ * Base Styles - Reset and core layout
+ */
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  width: var(--popup-width);
+  height: var(--popup-height);
+  overflow: hidden;
+}
+
+/* Minimal mode body sizing */
+body.minimal-mode {
+  width: var(--popup-width-minimal);
+  height: auto;
+  min-height: var(--popup-height-minimal);
+}
+
+.container {
+  background: var(--color-bg-white);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-dark);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-base);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}

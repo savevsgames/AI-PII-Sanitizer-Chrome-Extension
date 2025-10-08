@@ -1,0 +1,110 @@
+/**
+ * Button Styles
+ */
+
+.btn {
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-family);
+}
+
+/* Primary Button */
+.btn-primary {
+  background: var(--color-gradient);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-button-hover);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.btn-secondary:hover {
+  background: var(--color-border-dark);
+}
+
+/* Danger Button */
+.btn-danger {
+  background: var(--color-danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: var(--color-danger-dark);
+  box-shadow: var(--shadow-button-danger);
+}
+
+/* Button Sizes */
+.btn-sm {
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+}
+
+.btn-lg {
+  padding: var(--space-md) var(--space-2xl);
+  font-size: var(--font-size-md);
+}
+
+/* Icon Buttons */
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-xs);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-base);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-base);
+}
+
+.icon-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-primary);
+}
+
+/* Button Groups */
+.button-group {
+  display: flex;
+  gap: var(--space-md);
+}
+
+/* Expand Button (for minimal mode) */
+.expand-btn {
+  background: var(--color-gradient);
+  border: none;
+  color: white;
+  font-size: var(--font-size-lg);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-base);
+}
+
+.expand-btn:hover {
+  transform: scale(1.1);
+}

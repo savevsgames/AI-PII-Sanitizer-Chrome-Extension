@@ -33,6 +33,7 @@ module.exports = {
         { from: 'src/popup/popup.css', to: 'popup.css' },
         { from: 'src/popup/popup-v2.html', to: 'popup-v2.html' },
         { from: 'src/popup/popup-v2.css', to: 'popup-v2.css' },
+        { from: 'src/popup/styles', to: 'styles' }, // Copy modular CSS
         { from: 'src/assets/icons', to: 'icons' },
         { from: 'src/content/inject.js', to: 'inject.js' },
       ],
