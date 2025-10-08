@@ -66,7 +66,7 @@ async function handleMessage(message: Message): Promise<any> {
 /**
  * Detect AI service from URL
  */
-function detectService(url: string): 'chatgpt' | 'claude' | 'gemini' | 'unknown' {
+function detectService(url: string): import('../lib/types').AIService {
   if (url.includes('openai.com') || url.includes('chatgpt.com')) {
     return 'chatgpt';
   }
@@ -75,6 +75,18 @@ function detectService(url: string): 'chatgpt' | 'claude' | 'gemini' | 'unknown'
   }
   if (url.includes('gemini.google.com')) {
     return 'gemini';
+  }
+  if (url.includes('perplexity.ai')) {
+    return 'perplexity';
+  }
+  if (url.includes('poe.com')) {
+    return 'poe';
+  }
+  if (url.includes('copilot.microsoft.com') || url.includes('bing.com/sydney')) {
+    return 'copilot';
+  }
+  if (url.includes('you.com')) {
+    return 'you';
   }
   return 'unknown';
 }
@@ -127,7 +139,11 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
       // Log activity for debug console
       const serviceName = service === 'chatgpt' ? 'ChatGPT' :
                          service === 'claude' ? 'Claude' :
-                         service === 'gemini' ? 'Gemini' : 'Unknown';
+                         service === 'gemini' ? 'Gemini' :
+                         service === 'perplexity' ? 'Perplexity' :
+                         service === 'poe' ? 'Poe' :
+                         service === 'copilot' ? 'Copilot' :
+                         service === 'you' ? 'You.com' : 'Unknown';
 
       logActivity({
         type: 'substitution',
@@ -394,7 +410,7 @@ async function handleReloadProfiles() {
  */
 async function logActivity(entry: {
   type: 'interception' | 'substitution' | 'warning' | 'error';
-  service: 'chatgpt' | 'claude' | 'gemini' | 'unknown';
+  service: import('../lib/types').AIService;
   details: {
     url: string;
     profilesUsed?: string[];

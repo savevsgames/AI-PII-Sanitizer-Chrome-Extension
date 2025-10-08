@@ -17,11 +17,30 @@
   window.__nativeFetch = nativeFetch;
 
   const aiDomains = [
+    // ChatGPT
     'api.openai.com',
     'backend-api/conversation',
     'backend-api/f/conversation',
-    'claude.ai/api/organizations',  // Claude's actual endpoint pattern
-    'gemini.google.com/api'
+
+    // Claude
+    'claude.ai/api/organizations',
+
+    // Gemini
+    'gemini.google.com/api',
+
+    // Perplexity
+    'perplexity.ai/socket.io',
+    'perplexity.ai/api',
+
+    // Poe
+    'poe.com/api',
+
+    // Copilot
+    'copilot.microsoft.com/api',
+    'sydney.bing.com/sydney',
+
+    // You.com
+    'you.com/api'
   ];
 
   function isAIRequest(url) {

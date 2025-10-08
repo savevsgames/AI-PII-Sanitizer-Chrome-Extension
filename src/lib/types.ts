@@ -44,6 +44,10 @@ export interface AliasProfile {
         chatgpt: number;
         claude: number;
         gemini: number;
+        perplexity: number;
+        poe: number;
+        copilot: number;
+        you: number;
       };
       byPIIType: {
         name: number;
@@ -69,11 +73,24 @@ export interface AliasProfile {
 /**
  * Activity log entry for debug console
  */
+/**
+ * Supported AI services
+ */
+export type AIService =
+  | 'chatgpt'
+  | 'claude'
+  | 'gemini'
+  | 'perplexity'
+  | 'poe'
+  | 'copilot'
+  | 'you'
+  | 'unknown';
+
 export interface ActivityLogEntry {
   id: string;
   timestamp: number;
   type: 'interception' | 'substitution' | 'warning' | 'error';
-  service: 'chatgpt' | 'claude' | 'gemini' | 'unknown';
+  service: AIService;
   details: {
     url: string;
     profilesUsed: string[];      // Profile IDs
@@ -126,6 +143,10 @@ export interface UserConfig {
       chatgpt: { requests: number; substitutions: number };
       claude: { requests: number; substitutions: number };
       gemini: { requests: number; substitutions: number };
+      perplexity: { requests: number; substitutions: number };
+      poe: { requests: number; substitutions: number };
+      copilot: { requests: number; substitutions: number };
+      you: { requests: number; substitutions: number };
     };
     activityLog: ActivityLogEntry[];
   };
@@ -307,11 +328,6 @@ export interface InterceptResponse {
  * PII field type
  */
 export type PIIType = 'name' | 'email' | 'phone' | 'cellPhone' | 'address' | 'company' | 'custom';
-
-/**
- * AI service type
- */
-export type AIService = 'chatgpt' | 'claude' | 'gemini';
 
 /**
  * Account tier
