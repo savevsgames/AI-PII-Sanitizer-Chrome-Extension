@@ -20,7 +20,7 @@
     'api.openai.com',
     'backend-api/conversation',
     'backend-api/f/conversation',
-    'claude.ai/api',
+    'claude.ai/api/organizations',  // Claude's actual endpoint pattern
     'gemini.google.com/api'
   ];
 
@@ -62,7 +62,10 @@
           source: 'ai-pii-inject',
           messageId: messageId,
           type: 'SUBSTITUTE_REQUEST',
-          payload: { body: requestBody }
+          payload: {
+            body: requestBody,
+            url: urlStr  // Include URL for service detection
+          }
         }, '*');
       });
 

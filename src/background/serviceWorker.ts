@@ -64,12 +64,29 @@ async function handleMessage(message: Message): Promise<any> {
 }
 
 /**
+ * Detect AI service from URL
+ */
+function detectService(url: string): 'chatgpt' | 'claude' | 'gemini' | 'unknown' {
+  if (url.includes('openai.com') || url.includes('chatgpt.com')) {
+    return 'chatgpt';
+  }
+  if (url.includes('claude.ai')) {
+    return 'claude';
+  }
+  if (url.includes('gemini.google.com')) {
+    return 'gemini';
+  }
+  return 'unknown';
+}
+
+/**
  * Handle request substitution (real → alias)
  * NO FETCHING HERE - just text substitution!
  */
-async function handleSubstituteRequest(payload: { body: string }): Promise<any> {
+async function handleSubstituteRequest(payload: { body: string; url?: string }): Promise<any> {
   try {
-    const { body } = payload;
+    const { body, url } = payload;
+    const service = url ? detectService(url) : 'unknown';
 
     console.log('🔄 Substituting request body');
 
@@ -108,16 +125,20 @@ async function handleSubstituteRequest(payload: { body: string }): Promise<any> 
       console.log('🔀 Changes:', substituted.substitutions);
 
       // Log activity for debug console
+      const serviceName = service === 'chatgpt' ? 'ChatGPT' :
+                         service === 'claude' ? 'Claude' :
+                         service === 'gemini' ? 'Gemini' : 'Unknown';
+
       logActivity({
         type: 'substitution',
-        service: 'chatgpt', // TODO: detect service from URL
+        service: service,
         details: {
-          url: 'ChatGPT',
+          url: serviceName,
           profilesUsed: substituted.profilesMatched?.map(p => p.profileName) || [],
           piiTypesFound: substituted.profilesMatched?.flatMap(p => p.piiTypes) || [],
           substitutionCount: substituted.substitutions.length,
         },
-        message: `Request: ${substituted.substitutions.length} items replaced`,
+        message: `${serviceName}: ${substituted.substitutions.length} items replaced`,
       });
     }
 
