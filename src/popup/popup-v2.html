@@ -7,14 +7,36 @@
   <link rel="stylesheet" href="popup-v2.css">
 </head>
 <body>
-  <div class="container">
+  <!-- Minimal Mode -->
+  <div class="minimal-container hidden" id="minimalView">
+    <div class="minimal-header">
+      <div class="minimal-title">
+        <span class="minimal-icon">🛡️</span>
+        <span class="minimal-status" id="minimalStatus">
+          <span class="pulse-dot"></span>
+          <span class="status-count" id="minimalCount">0</span> protected
+        </span>
+      </div>
+      <button class="expand-btn" id="expandBtn" title="Expand">⚙️</button>
+    </div>
+    <div class="minimal-activity">
+      <span class="activity-icon">⚡</span>
+      <span class="activity-text" id="minimalActivity">No activity yet</span>
+    </div>
+  </div>
+
+  <!-- Full Mode -->
+  <div class="container" id="fullView">
     <!-- Header -->
     <header class="header">
       <div class="header-content">
         <h1>🛡️ AI PII Sanitizer</h1>
-        <div class="status-indicator" id="statusIndicator">
-          <span class="status-dot active"></span>
-          <span class="status-text">Active</span>
+        <div class="header-actions">
+          <div class="status-indicator" id="statusIndicator">
+            <span class="status-dot active"></span>
+            <span class="status-text">Active</span>
+          </div>
+          <button class="minimize-btn" id="minimizeBtn" title="Minimize">▼</button>
         </div>
       </div>
     </header>

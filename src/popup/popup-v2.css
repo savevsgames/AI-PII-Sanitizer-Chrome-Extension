@@ -16,6 +16,13 @@ body {
   overflow: hidden;
 }
 
+/* Minimal mode body sizing */
+body.minimal-mode {
+  width: 400px;
+  height: auto;
+  min-height: 80px;
+}
+
 .container {
   background: white;
   display: flex;
@@ -629,6 +636,171 @@ body {
 .tab-content-container::-webkit-scrollbar-thumb:hover,
 .debug-console::-webkit-scrollbar-thumb:hover {
   background: #999;
+}
+
+/* ========== MINIMAL MODE ========== */
+.minimal-container {
+  width: 400px;
+  min-height: 80px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.minimal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.minimal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.minimal-icon {
+  font-size: 20px;
+}
+
+.minimal-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #4ade80;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.pulse-dot.active {
+  animation: pulse-fast 0.5s ease-in-out 3;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes pulse-fast {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.2);
+  }
+}
+
+.status-count {
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.expand-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.minimal-activity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+.activity-icon {
+  font-size: 14px;
+  animation: flash 3s ease-in-out infinite;
+}
+
+.activity-icon.active {
+  animation: flash-fast 0.5s ease-in-out 3;
+}
+
+@keyframes flash {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes flash-fast {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.activity-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Minimize button in full mode */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.minimize-btn {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  color: #667eea;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.minimize-btn:hover {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: #667eea;
 }
 
 /* ========== UTILITY ========== */

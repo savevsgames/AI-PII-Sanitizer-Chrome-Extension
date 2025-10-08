@@ -24,6 +24,10 @@ npm-debug.log*
 
 # Testing
 coverage/
+test-*.js
+
+# Temp files
+temp/
 
 # Environment
 .env

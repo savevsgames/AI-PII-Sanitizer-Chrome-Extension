@@ -46,6 +46,13 @@ function initTabNavigation() {
  * Initialize UI event listeners
  */
 function initUI() {
+  // Mode toggle buttons
+  const minimizeBtn = document.getElementById('minimizeBtn');
+  const expandBtn = document.getElementById('expandBtn');
+
+  minimizeBtn?.addEventListener('click', switchToMinimalMode);
+  expandBtn?.addEventListener('click', switchToFullMode);
+
   // Aliases tab
   const addProfileBtn = document.getElementById('addProfileBtn');
   const addProfileBtnEmpty = document.getElementById('addProfileBtnEmpty');
@@ -88,6 +95,7 @@ async function loadInitialData() {
       renderProfiles(state.profiles);
       renderStats(state.config);
       renderActivityLog(state.activityLog);
+      updateMinimalView(state.config);
     });
 
     // Initial render
@@ -96,6 +104,10 @@ async function loadInitialData() {
     renderStats(state.config);
     renderActivityLog(state.activityLog);
     updateSettingsUI(state.config);
+    updateMinimalView(state.config);
+
+    // Load saved mode preference
+    loadModePreference();
 
     // Poll for activity log updates every 2 seconds
     setInterval(async () => {
@@ -472,6 +484,99 @@ function formatRelativeTime(timestamp: number): string {
   if (seconds < 2592000) return `${Math.floor(seconds / 86400)} days ago`;
 
   return new Date(timestamp).toLocaleDateString();
+}
+
+// ========== MINIMAL MODE ==========
+
+/**
+ * Switch to minimal mode
+ */
+function switchToMinimalMode() {
+  const minimalView = document.getElementById('minimalView');
+  const fullView = document.getElementById('fullView');
+
+  if (minimalView && fullView) {
+    minimalView.classList.remove('hidden');
+    fullView.classList.add('hidden');
+    document.body.classList.add('minimal-mode');
+
+    // Save preference
+    localStorage.setItem('popupMode', 'minimal');
+    console.log('[Popup V2] Switched to minimal mode');
+  }
+}
+
+/**
+ * Switch to full mode
+ */
+function switchToFullMode() {
+  const minimalView = document.getElementById('minimalView');
+  const fullView = document.getElementById('fullView');
+
+  if (minimalView && fullView) {
+    minimalView.classList.add('hidden');
+    fullView.classList.remove('hidden');
+    document.body.classList.remove('minimal-mode');
+
+    // Save preference
+    localStorage.setItem('popupMode', 'full');
+    console.log('[Popup V2] Switched to full mode');
+  }
+}
+
+/**
+ * Load saved mode preference
+ */
+function loadModePreference() {
+  const savedMode = localStorage.getItem('popupMode') || 'full';
+
+  if (savedMode === 'minimal') {
+    switchToMinimalMode();
+  } else {
+    switchToFullMode();
+  }
+}
+
+/**
+ * Update minimal view with latest stats and activity
+ */
+function updateMinimalView(config: any) {
+  if (!config) return;
+
+  const minimalCount = document.getElementById('minimalCount');
+  const minimalActivity = document.getElementById('minimalActivity');
+  const pulseDot = document.querySelector('.pulse-dot');
+  const activityIcon = document.querySelector('.activity-icon');
+
+  if (minimalCount) {
+    const todayCount = config.stats.totalSubstitutions || 0;
+    minimalCount.textContent = todayCount.toString();
+  }
+
+  if (minimalActivity) {
+    const latestLog = config.stats.activityLog?.[0];
+
+    if (latestLog) {
+      const timeAgo = formatRelativeTime(latestLog.timestamp);
+      const count = latestLog.details.substitutionCount || 0;
+
+      minimalActivity.textContent = `${count} items replaced (${timeAgo})`;
+
+      // Trigger pulse animation if recent (< 5 seconds)
+      const secondsAgo = Math.floor((Date.now() - latestLog.timestamp) / 1000);
+      if (secondsAgo < 5) {
+        pulseDot?.classList.add('active');
+        activityIcon?.classList.add('active');
+
+        setTimeout(() => {
+          pulseDot?.classList.remove('active');
+          activityIcon?.classList.remove('active');
+        }, 1500);
+      }
+    } else {
+      minimalActivity.textContent = 'No activity yet';
+    }
+  }
 }
 
 // ========== EXPORTS ==========
