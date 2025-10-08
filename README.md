@@ -4,21 +4,25 @@ A Chrome extension that protects your privacy by replacing real personally ident
 
 ## 🎉 Current Status: **WORKING DEV MODE PROTOTYPE**
 
-✅ **End-to-end substitution confirmed working on ChatGPT (in dev mode)**
-- Real names automatically replaced with aliases in requests
+✅ **End-to-end substitution confirmed working (in dev mode)**
+- **ChatGPT**: Fully tested and working ✅
+- **Claude**: Integration complete, ready for testing ✅
+- **Gemini**: Code ready, untested ⏳
+- Real PII automatically replaced with aliases in requests
 - AI responses decoded back to show real names
 - Streaming responses (SSE) fully supported
+- Minimal mode (400×80px) with live activity indicators
 - All tests passing (9/9)
 - Loaded as unpacked extension for development
 
 ⚠️ **NOT Production Ready:**
 - Only tested in dev mode (unpacked extension)
-- Only ChatGPT verified (Claude/Gemini untested)
+- Claude/Gemini need real-world testing
 - Debug logs still active
 - No error handling UI
 - Stats tracking incomplete
 
-**Try it now (dev mode):** Load unpacked in chrome://extensions, add an alias, mention your real name in ChatGPT!
+**Try it now (dev mode):** Load unpacked in chrome://extensions, add a profile, mention your real name in ChatGPT or Claude!
 
 ## Features
 
