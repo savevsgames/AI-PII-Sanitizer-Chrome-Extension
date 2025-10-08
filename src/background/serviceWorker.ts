@@ -95,8 +95,8 @@ async function handleSubstituteRequest(payload: { body: string }): Promise<any> 
 
     // Apply substitution (real → alias)
     const aliasEngine = await AliasEngine.getInstance();
-    const aliases = aliasEngine.getAliases();
-    console.log('📋 Active aliases:', aliases.length, '-', aliases.map(a => `"${a.realValue}" → "${a.aliasValue}"`).join(', '));
+    const profiles = aliasEngine.getProfiles();
+    console.log('📋 Active profiles:', profiles.length, '-', profiles.map((p: any) => p.profileName).join(', '));
 
     const substituted = aliasEngine.substitute(textContent, 'encode');
 

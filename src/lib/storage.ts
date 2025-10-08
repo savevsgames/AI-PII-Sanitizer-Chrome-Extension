@@ -1,16 +1,25 @@
 /**
  * Storage Manager for persisting aliases and configuration
  * Uses Chrome Storage API with encryption for sensitive data
+ * Version 2.0 - Profile-based architecture with backward compatibility
  */
 
-import { AliasEntry, UserConfig } from './types';
+import {
+  AliasEntry,
+  AliasProfile,
+  UserConfig,
+  UserConfigV1,
+  IdentityData
+} from './types';
 
 export class StorageManager {
   private static instance: StorageManager;
   private static readonly KEYS = {
-    ALIASES: 'aliases',
+    ALIASES: 'aliases',        // v1 legacy
+    PROFILES: 'profiles',       // v2 new
     CONFIG: 'config',
     STATS: 'stats',
+    VERSION: 'dataVersion',     // Track migration state
   };
 
   private constructor() {}
@@ -24,16 +33,21 @@ export class StorageManager {
 
   /**
    * Initialize storage with default values
+   * Handles v1 to v2 migration if needed
    */
   async initialize(): Promise<void> {
+    // Check for v1 data and migrate if needed
+    await this.migrateV1ToV2IfNeeded();
+
     const config = await this.loadConfig();
     if (!config) {
       await this.saveConfig(this.getDefaultConfig());
     }
 
-    const aliases = await this.loadAliases();
-    if (!aliases) {
-      await this.saveAliases([]);
+    const profiles = await this.loadProfiles();
+    if (!profiles || profiles.length === 0) {
+      // Initialize with empty profiles array
+      await this.saveProfiles([]);
     }
   }
 
@@ -109,6 +123,168 @@ export class StorageManager {
     }
   }
 
+  // ========== V2 PROFILE METHODS ==========
+
+  /**
+   * Save profiles array
+   */
+  async saveProfiles(profiles: AliasProfile[]): Promise<void> {
+    const encrypted = await this.encrypt(JSON.stringify(profiles));
+    await chrome.storage.local.set({
+      [StorageManager.KEYS.PROFILES]: encrypted,
+    });
+  }
+
+  /**
+   * Load and decrypt profiles
+   */
+  async loadProfiles(): Promise<AliasProfile[]> {
+    const data = await chrome.storage.local.get(StorageManager.KEYS.PROFILES);
+    if (!data[StorageManager.KEYS.PROFILES]) {
+      return [];
+    }
+
+    try {
+      const decrypted = await this.decrypt(data[StorageManager.KEYS.PROFILES]);
+      return JSON.parse(decrypted);
+    } catch (error) {
+      console.error('[StorageManager] Failed to decrypt profiles:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Create a new profile
+   */
+  async createProfile(profileData: {
+    profileName: string;
+    description?: string;
+    real: IdentityData;
+    alias: IdentityData;
+    enabled?: boolean;
+  }): Promise<AliasProfile> {
+    const profiles = await this.loadProfiles();
+
+    const newProfile: AliasProfile = {
+      id: this.generateId(),
+      profileName: profileData.profileName,
+      description: profileData.description,
+      enabled: profileData.enabled ?? true,
+      real: profileData.real,
+      alias: profileData.alias,
+      metadata: {
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        usageStats: {
+          totalSubstitutions: 0,
+          lastUsed: 0,
+          byService: {
+            chatgpt: 0,
+            claude: 0,
+            gemini: 0,
+          },
+          byPIIType: {
+            name: 0,
+            email: 0,
+            phone: 0,
+            cellPhone: 0,
+            address: 0,
+            company: 0,
+            custom: 0,
+          },
+        },
+        confidence: 1,
+      },
+      settings: {
+        autoReplace: true,
+        highlightInUI: true,
+        activeServices: ['chatgpt', 'claude', 'gemini'],
+      },
+    };
+
+    profiles.push(newProfile);
+    await this.saveProfiles(profiles);
+    console.log('[StorageManager] Created profile:', newProfile.profileName);
+    return newProfile;
+  }
+
+  /**
+   * Update an existing profile
+   */
+  async updateProfile(id: string, updates: Partial<AliasProfile>): Promise<void> {
+    const profiles = await this.loadProfiles();
+    const index = profiles.findIndex(p => p.id === id);
+
+    if (index !== -1) {
+      profiles[index] = {
+        ...profiles[index],
+        ...updates,
+        metadata: {
+          ...profiles[index].metadata,
+          updatedAt: Date.now(),
+        },
+      };
+      await this.saveProfiles(profiles);
+      console.log('[StorageManager] Updated profile:', profiles[index].profileName);
+    }
+  }
+
+  /**
+   * Delete a profile by ID
+   */
+  async deleteProfile(id: string): Promise<void> {
+    const profiles = await this.loadProfiles();
+    const filtered = profiles.filter(p => p.id !== id);
+    await this.saveProfiles(filtered);
+    console.log('[StorageManager] Deleted profile:', id);
+  }
+
+  /**
+   * Toggle profile enabled state
+   */
+  async toggleProfile(id: string): Promise<void> {
+    const profiles = await this.loadProfiles();
+    const index = profiles.findIndex(p => p.id === id);
+
+    if (index !== -1) {
+      profiles[index].enabled = !profiles[index].enabled;
+      profiles[index].metadata.updatedAt = Date.now();
+      await this.saveProfiles(profiles);
+      console.log('[StorageManager] Toggled profile:', profiles[index].profileName, 'to', profiles[index].enabled);
+    }
+  }
+
+  /**
+   * Get a single profile by ID
+   */
+  async getProfile(id: string): Promise<AliasProfile | null> {
+    const profiles = await this.loadProfiles();
+    return profiles.find(p => p.id === id) || null;
+  }
+
+  /**
+   * Increment usage stats for a profile
+   */
+  async incrementProfileUsage(
+    profileId: string,
+    service: 'chatgpt' | 'claude' | 'gemini',
+    piiType: keyof AliasProfile['metadata']['usageStats']['byPIIType']
+  ): Promise<void> {
+    const profiles = await this.loadProfiles();
+    const index = profiles.findIndex(p => p.id === profileId);
+
+    if (index !== -1) {
+      const profile = profiles[index];
+      profile.metadata.usageStats.totalSubstitutions++;
+      profile.metadata.usageStats.lastUsed = Date.now();
+      profile.metadata.usageStats.byService[service]++;
+      profile.metadata.usageStats.byPIIType[piiType]++;
+      profile.metadata.updatedAt = Date.now();
+
+      await this.saveProfiles(profiles);
+    }
+  }
+
   /**
    * Save configuration
    */
@@ -127,31 +303,197 @@ export class StorageManager {
   }
 
   /**
-   * Get default configuration
+   * Get default configuration (v2)
    */
   private getDefaultConfig(): UserConfig {
     return {
-      version: 1,
+      version: 2,
+      account: {
+        emailOptIn: false,
+        tier: 'free',
+        syncEnabled: false,
+      },
       settings: {
         enabled: true,
-        autoHighlight: true,
+        defaultMode: 'auto-replace',
         showNotifications: true,
         protectedDomains: [
           'chat.openai.com',
+          'chatgpt.com',
           'claude.ai',
           'gemini.google.com',
         ],
         excludedDomains: [],
         strictMode: false,
+        debugMode: false,
+        cloudSync: false,
       },
-      aliases: [],
+      profiles: [],
       stats: {
         totalSubstitutions: 0,
+        totalInterceptions: 0,
+        totalWarnings: 0,
         successRate: 1.0,
         lastSyncTimestamp: Date.now(),
+        byService: {
+          chatgpt: { requests: 0, substitutions: 0 },
+          claude: { requests: 0, substitutions: 0 },
+          gemini: { requests: 0, substitutions: 0 },
+        },
+        activityLog: [],
       },
     };
   }
+
+  // ========== MIGRATION ==========
+
+  /**
+   * Check if v1 data exists and migrate to v2 if needed
+   */
+  async migrateV1ToV2IfNeeded(): Promise<void> {
+    const dataVersion = await chrome.storage.local.get(StorageManager.KEYS.VERSION);
+
+    // Already on v2 or higher
+    if (dataVersion[StorageManager.KEYS.VERSION] >= 2) {
+      console.log('[StorageManager] Already on v2');
+      return;
+    }
+
+    // Check if v1 aliases exist
+    const v1Aliases = await this.loadAliases();
+    if (!v1Aliases || v1Aliases.length === 0) {
+      console.log('[StorageManager] No v1 data to migrate');
+      await chrome.storage.local.set({ [StorageManager.KEYS.VERSION]: 2 });
+      return;
+    }
+
+    console.log('[StorageManager] Migrating v1 aliases to v2 profiles...');
+
+    // Group aliases by category/person to create profiles
+    const profileMap = new Map<string, AliasEntry[]>();
+
+    // Group aliases by category or create individual profiles
+    v1Aliases.forEach(alias => {
+      const key = alias.category || `profile-${alias.id}`;
+      if (!profileMap.has(key)) {
+        profileMap.set(key, []);
+      }
+      profileMap.get(key)!.push(alias);
+    });
+
+    // Convert groups to profiles
+    const newProfiles: AliasProfile[] = [];
+
+    profileMap.forEach((aliases, categoryName) => {
+      const real: IdentityData = {};
+      const aliasData: IdentityData = {};
+
+      // Build real and alias identity from grouped aliases
+      aliases.forEach(alias => {
+        switch (alias.type) {
+          case 'name':
+            real.name = alias.realValue;
+            aliasData.name = alias.aliasValue;
+            break;
+          case 'email':
+            real.email = alias.realValue;
+            aliasData.email = alias.aliasValue;
+            break;
+          case 'phone':
+            real.phone = alias.realValue;
+            aliasData.phone = alias.aliasValue;
+            break;
+          case 'address':
+            real.address = alias.realValue;
+            aliasData.address = alias.aliasValue;
+            break;
+        }
+      });
+
+      // Get highest usage stats from aliases
+      const totalUsage = aliases.reduce((sum, a) => sum + a.metadata.usageCount, 0);
+      const lastUsed = Math.max(...aliases.map(a => a.metadata.lastUsed));
+      const createdAt = Math.min(...aliases.map(a => a.metadata.createdAt));
+
+      const profile: AliasProfile = {
+        id: this.generateId(),
+        profileName: categoryName === `profile-${aliases[0].id}`
+          ? `Profile - ${real.name || real.email || 'Unknown'}`
+          : categoryName,
+        description: 'Migrated from v1',
+        enabled: aliases[0].enabled,
+        real,
+        alias: aliasData,
+        metadata: {
+          createdAt,
+          updatedAt: Date.now(),
+          usageStats: {
+            totalSubstitutions: totalUsage,
+            lastUsed,
+            byService: { chatgpt: 0, claude: 0, gemini: 0 },
+            byPIIType: { name: 0, email: 0, phone: 0, cellPhone: 0, address: 0, company: 0, custom: 0 },
+          },
+          confidence: aliases[0].metadata.confidence,
+        },
+        settings: {
+          autoReplace: true,
+          highlightInUI: true,
+          activeServices: ['chatgpt', 'claude', 'gemini'],
+        },
+      };
+
+      newProfiles.push(profile);
+    });
+
+    // Save migrated profiles
+    await this.saveProfiles(newProfiles);
+
+    // Update config to v2
+    const oldConfig = await this.loadConfig() as UserConfigV1 | null;
+    if (oldConfig) {
+      const newConfig: UserConfig = {
+        version: 2,
+        account: {
+          emailOptIn: false,
+          tier: 'free',
+          syncEnabled: false,
+        },
+        settings: {
+          enabled: oldConfig.settings.enabled,
+          defaultMode: 'auto-replace',
+          showNotifications: oldConfig.settings.showNotifications,
+          protectedDomains: oldConfig.settings.protectedDomains,
+          excludedDomains: oldConfig.settings.excludedDomains,
+          strictMode: oldConfig.settings.strictMode,
+          debugMode: false,
+          cloudSync: false,
+        },
+        profiles: newProfiles,
+        stats: {
+          totalSubstitutions: oldConfig.stats.totalSubstitutions,
+          totalInterceptions: 0,
+          totalWarnings: 0,
+          successRate: oldConfig.stats.successRate,
+          lastSyncTimestamp: oldConfig.stats.lastSyncTimestamp,
+          byService: {
+            chatgpt: { requests: 0, substitutions: 0 },
+            claude: { requests: 0, substitutions: 0 },
+            gemini: { requests: 0, substitutions: 0 },
+          },
+          activityLog: [],
+        },
+      };
+
+      await this.saveConfig(newConfig);
+    }
+
+    // Mark as v2
+    await chrome.storage.local.set({ [StorageManager.KEYS.VERSION]: 2 });
+
+    console.log(`[StorageManager] Migration complete! Created ${newProfiles.length} profiles from ${v1Aliases.length} aliases`);
+  }
+
+  // ========== ENCRYPTION ==========
 
   /**
    * Simple encryption using Web Crypto API

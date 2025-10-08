@@ -1,59 +1,127 @@
 /**
  * Alias Engine - Core substitution logic
  * Handles bidirectional text substitution with case preservation
+ * Version 2.0 - Profile-based multi-PII matching
  */
 
-import { AliasEntry, SubstitutionResult } from './types';
+import { AliasProfile, SubstitutionResult, SubstitutionOptions, PIIType } from './types';
 import { StorageManager } from './storage';
+
+interface PIIMapping {
+  real: string;
+  alias: string;
+  profileId: string;
+  profileName: string;
+  piiType: PIIType;
+}
 
 export class AliasEngine {
   private static instance: AliasEngine;
-  private aliases: AliasEntry[] = [];
-  private realToAliasMap: Map<string, string> = new Map();
-  private aliasToRealMap: Map<string, string> = new Map();
+  private profiles: AliasProfile[] = [];
+  private realToAliasMap: Map<string, PIIMapping> = new Map();
+  private aliasToRealMap: Map<string, PIIMapping> = new Map();
 
   private constructor() {}
 
   public static async getInstance(): Promise<AliasEngine> {
     if (!AliasEngine.instance) {
       AliasEngine.instance = new AliasEngine();
-      await AliasEngine.instance.loadAliases();
+      await AliasEngine.instance.loadProfiles();
     }
     return AliasEngine.instance;
   }
 
   /**
-   * Load aliases from storage and build lookup maps
+   * Load profiles from storage and build lookup maps
    */
-  async loadAliases(): Promise<void> {
+  async loadProfiles(): Promise<void> {
     const storage = StorageManager.getInstance();
-    this.aliases = await storage.loadAliases();
+    this.profiles = await storage.loadProfiles();
     this.buildLookupMaps();
+    console.log('[AliasEngine] Loaded', this.profiles.length, 'profiles');
   }
 
   /**
-   * Build efficient lookup maps from aliases
+   * Build efficient lookup maps from all PII fields in profiles
    */
   private buildLookupMaps(): void {
     this.realToAliasMap.clear();
     this.aliasToRealMap.clear();
 
-    for (const alias of this.aliases) {
-      if (alias.enabled) {
-        this.realToAliasMap.set(alias.realValue.toLowerCase(), alias.aliasValue);
-        this.aliasToRealMap.set(alias.aliasValue.toLowerCase(), alias.realValue);
+    const piiFields: PIIType[] = ['name', 'email', 'phone', 'cellPhone', 'address', 'company'];
+
+    for (const profile of this.profiles) {
+      if (!profile.enabled) continue;
+
+      // Build mappings for each PII field
+      for (const piiType of piiFields) {
+        const realValue = profile.real[piiType] as string | undefined;
+        const aliasValue = profile.alias[piiType] as string | undefined;
+
+        if (realValue && aliasValue && typeof realValue === 'string' && typeof aliasValue === 'string') {
+          const mapping: PIIMapping = {
+            real: realValue,
+            alias: aliasValue,
+            profileId: profile.id,
+            profileName: profile.profileName,
+            piiType,
+          };
+
+          this.realToAliasMap.set(realValue.toLowerCase(), mapping);
+          this.aliasToRealMap.set(aliasValue.toLowerCase(), mapping);
+        }
+      }
+
+      // Handle custom fields
+      if (profile.real.custom && profile.alias.custom) {
+        for (const [key, realValue] of Object.entries(profile.real.custom)) {
+          const aliasValue = profile.alias.custom[key];
+          if (realValue && aliasValue) {
+            const mapping: PIIMapping = {
+              real: realValue,
+              alias: aliasValue,
+              profileId: profile.id,
+              profileName: profile.profileName,
+              piiType: 'custom',
+            };
+
+            this.realToAliasMap.set(realValue.toLowerCase(), mapping);
+            this.aliasToRealMap.set(aliasValue.toLowerCase(), mapping);
+          }
+        }
       }
     }
+
+    console.log('[AliasEngine] Built maps:', this.realToAliasMap.size, 'real→alias mappings');
   }
 
   /**
    * Main substitution function
    * @param text - Text to process
    * @param direction - 'encode' (real→alias) or 'decode' (alias→real)
+   * @param options - Optional substitution options
    */
-  substitute(text: string, direction: 'encode' | 'decode'): SubstitutionResult {
+  substitute(
+    text: string,
+    direction: 'encode' | 'decode',
+    options?: SubstitutionOptions
+  ): SubstitutionResult {
     const map = direction === 'encode' ? this.realToAliasMap : this.aliasToRealMap;
-    const substitutions: Array<{ from: string; to: string; position: number }> = [];
+    const substitutions: Array<{
+      from: string;
+      to: string;
+      position: number;
+      profileId?: string;
+      piiType?: string;
+    }> = [];
+
+    // Track which profiles were matched
+    const profileMatches = new Map<string, {
+      profileId: string;
+      profileName: string;
+      piiTypes: Set<string>;
+      matches: Array<{ type: string; value: string; position: number }>;
+    }>();
 
     let result = text;
 
@@ -61,8 +129,15 @@ export class AliasEngine {
     const sortedKeys = Array.from(map.keys()).sort((a, b) => b.length - a.length);
 
     for (const key of sortedKeys) {
-      const replacement = map.get(key);
-      if (!replacement) continue;
+      const mapping = map.get(key);
+      if (!mapping) continue;
+
+      // Filter by profile IDs if specified
+      if (options?.profileIds && !options.profileIds.includes(mapping.profileId)) {
+        continue;
+      }
+
+      const replacement = direction === 'encode' ? mapping.alias : mapping.real;
 
       // Create regex with word boundaries
       const regex = new RegExp(`\\b${this.escapeRegex(key)}\\b`, 'gi');
@@ -78,23 +153,55 @@ export class AliasEngine {
       for (let i = matches.length - 1; i >= 0; i--) {
         const m = matches[i];
         const preserved = this.preserveCase(m.match, replacement);
-        result = result.substring(0, m.index) + preserved + result.substring(m.index + m.match.length);
+
+        // Only replace if mode is 'auto', otherwise just detect
+        if (options?.mode !== 'detect-only') {
+          result = result.substring(0, m.index) + preserved + result.substring(m.index + m.match.length);
+        }
 
         substitutions.push({
           from: m.match,
           to: preserved,
+          position: m.index,
+          profileId: mapping.profileId,
+          piiType: mapping.piiType,
+        });
+
+        // Track profile usage
+        if (!profileMatches.has(mapping.profileId)) {
+          profileMatches.set(mapping.profileId, {
+            profileId: mapping.profileId,
+            profileName: mapping.profileName,
+            piiTypes: new Set(),
+            matches: [],
+          });
+        }
+
+        const profileMatch = profileMatches.get(mapping.profileId)!;
+        profileMatch.piiTypes.add(mapping.piiType);
+        profileMatch.matches.push({
+          type: mapping.piiType,
+          value: m.match,
           position: m.index,
         });
       }
     }
 
     // Handle possessives (e.g., "Joe's" → "John's")
-    result = this.handlePossessives(result, map);
+    if (options?.mode !== 'detect-only') {
+      result = this.handlePossessives(result, map, direction);
+    }
 
     return {
       text: result,
       substitutions,
       confidence: this.calculateConfidence(substitutions.length),
+      profilesMatched: Array.from(profileMatches.values()).map(pm => ({
+        profileId: pm.profileId,
+        profileName: pm.profileName,
+        piiTypes: Array.from(pm.piiTypes),
+        matches: pm.matches,
+      })),
     };
   }
 
@@ -102,10 +209,26 @@ export class AliasEngine {
    * Find PII in text without substituting
    * Used for highlighting in content script
    */
-  findPII(text: string): Array<{ text: string; start: number; end: number; alias: string }> {
-    const matches: Array<{ text: string; start: number; end: number; alias: string }> = [];
+  findPII(text: string): Array<{
+    text: string;
+    start: number;
+    end: number;
+    alias: string;
+    profileId: string;
+    profileName: string;
+    piiType: string;
+  }> {
+    const matches: Array<{
+      text: string;
+      start: number;
+      end: number;
+      alias: string;
+      profileId: string;
+      profileName: string;
+      piiType: string;
+    }> = [];
 
-    for (const [realValue, aliasValue] of this.realToAliasMap) {
+    for (const [realValue, mapping] of this.realToAliasMap) {
       const regex = new RegExp(`\\b${this.escapeRegex(realValue)}\\b`, 'gi');
       let match;
 
@@ -114,7 +237,10 @@ export class AliasEngine {
           text: match[0],
           start: match.index,
           end: match.index + match[0].length,
-          alias: aliasValue,
+          alias: mapping.alias,
+          profileId: mapping.profileId,
+          profileName: mapping.profileName,
+          piiType: mapping.piiType,
         });
       }
     }
@@ -169,10 +295,15 @@ export class AliasEngine {
   /**
    * Handle possessive forms: "Joe's car" → "John's car"
    */
-  private handlePossessives(text: string, map: Map<string, string>): string {
+  private handlePossessives(
+    text: string,
+    map: Map<string, PIIMapping>,
+    direction: 'encode' | 'decode'
+  ): string {
     let result = text;
 
-    for (const [key, value] of map) {
+    for (const [key, mapping] of map) {
+      const value = direction === 'encode' ? mapping.alias : mapping.real;
       const possessivePattern = new RegExp(`\\b${this.escapeRegex(key)}'s\\b`, 'gi');
       result = result.replace(possessivePattern, (match) => {
         const preserved = this.preserveCase(match.replace(/'s$/i, ''), value);
@@ -193,30 +324,43 @@ export class AliasEngine {
   }
 
   /**
-   * Update alias usage statistics
+   * Update profile usage statistics
    */
-  async updateAliasUsage(aliasId: string): Promise<void> {
+  async updateProfileUsage(
+    profileId: string,
+    service: 'chatgpt' | 'claude' | 'gemini',
+    piiType: PIIType
+  ): Promise<void> {
     const storage = StorageManager.getInstance();
-    const alias = this.aliases.find(a => a.id === aliasId);
-
-    if (alias) {
-      alias.metadata.usageCount++;
-      alias.metadata.lastUsed = Date.now();
-      await storage.updateAlias(aliasId, alias);
-    }
+    await storage.incrementProfileUsage(profileId, service, piiType);
+    console.log('[AliasEngine] Updated usage for profile:', profileId, 'service:', service, 'type:', piiType);
   }
 
   /**
-   * Get all enabled aliases
+   * Get all enabled profiles
    */
-  getAliases(): AliasEntry[] {
-    return this.aliases.filter(a => a.enabled);
+  getProfiles(): AliasProfile[] {
+    return this.profiles.filter(p => p.enabled);
   }
 
   /**
-   * Reload aliases from storage
+   * Get a single profile by ID
+   */
+  getProfile(id: string): AliasProfile | undefined {
+    return this.profiles.find(p => p.id === id);
+  }
+
+  /**
+   * Reload profiles from storage
    */
   async reload(): Promise<void> {
-    await this.loadAliases();
+    await this.loadProfiles();
+  }
+
+  /**
+   * Check if engine has any profiles loaded
+   */
+  hasProfiles(): boolean {
+    return this.profiles.filter(p => p.enabled).length > 0;
   }
 }
