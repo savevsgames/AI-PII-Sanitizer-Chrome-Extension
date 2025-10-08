@@ -8,17 +8,17 @@ Don't build features no one uses. Get free tier perfect, share with devs, build 
 
 ---
 
-## Phase 1: Profile Editor UI (Week 1)
+## Phase 1: Profile Editor UI ✅ COMPLETED
 **Goal:** Fix the UX gap - no more alert() dialogs
 
 ### Tasks
-- [ ] Create modal component for Add/Edit profile
-- [ ] Form with all PII fields (name, email, phone, address, etc.)
-- [ ] Real-time validation (email format, phone format)
-- [ ] Save/Cancel buttons
-- [ ] Delete confirmation dialog
-- [ ] Edit profile (click on existing profile)
-- [ ] Empty states with helpful hints
+- [x] Create modal component for Add/Edit profile
+- [x] Form with all PII fields (name, email, phone, address, etc.)
+- [x] Real-time validation (email format, phone format)
+- [x] Save/Cancel buttons
+- [x] Delete confirmation dialog
+- [x] Edit profile (click on existing profile)
+- [x] Empty states with helpful hints
 
 ### Success Criteria
 - ✅ No more alert() boxes
@@ -26,7 +26,7 @@ Don't build features no one uses. Get free tier perfect, share with devs, build 
 - ✅ Easy to add/edit profiles
 - ✅ Obvious how to use it
 
-**Time: 3-4 days**
+**Time: Completed January 2025**
 
 ---
 
@@ -53,13 +53,14 @@ Don't build features no one uses. Get free tier perfect, share with devs, build 
   - Tagline: "Protect Your Privacy in AI Chats"
 
 ### 2B. Legal Documents
-- [ ] **Privacy Policy** (REQUIRED)
+- [x] **Privacy Policy** (REQUIRED) ✅ COMPLETED
   - What data we collect (profiles, stats)
   - How we use it (local substitution only)
   - Where it's stored (chrome.storage.local, encrypted)
   - User rights (access, export, delete)
-  - Contact: privacy@yourextension.com
-  - Host on GitHub Pages or yourextension.com/privacy
+  - Contact: GitHub Issues
+  - Created: `PRIVACY_POLICY.md` and `privacy-policy.html`
+  - **TODO:** Host on GitHub Pages and update manifest.json
 
 - [ ] **Terms of Service** (recommended)
   - Acceptance of terms
@@ -99,25 +100,35 @@ Don't build features no one uses. Get free tier perfect, share with devs, build 
 
 ---
 
-## Phase 3: API Key Vault (Week 3-4)
+## Phase 3: API Key Vault (Week 3-4) 🚧 IN PROGRESS
 **Goal:** Build PRO tier revenue engine (even if free for now)
 
 ### Tasks (from feature_api_key_vault.md)
-- [ ] Build APIKeyDetector class
-- [ ] Integrate with serviceWorker
+- [x] Build APIKeyDetector class ✅ Created
+- [x] Add types to types.ts ✅ Completed
+- [ ] Integrate with serviceWorker (auto-redact mode)
 - [ ] Auto-detect common key formats (OpenAI, GitHub, AWS, Stripe)
 - [ ] Vault UI in Settings tab
 - [ ] Add/delete keys
 - [ ] Stats tracking ("47 keys protected this month")
 - [ ] Warn-first mode (dialog before sending)
 
-### Success Criteria
-- ✅ Detects OpenAI keys in error logs
-- ✅ Shows warning before sending
-- ✅ User can proceed or cancel
-- ✅ Stats show protection count
+### Completed
+- Created `src/lib/apiKeyDetector.ts` with:
+  - Pattern matching for OpenAI, Anthropic, Google, AWS, GitHub, Stripe
+  - Generic hex/base64 detection (opt-in)
+  - Custom pattern support
+  - Redaction modes: full, partial, placeholder
+- Added types: `APIKey`, `APIKeyFormat`, `APIKeyVaultConfig`
+- Updated `UserConfig` to include optional `apiKeyVault` field
 
-**Time: 1 week**
+### Success Criteria
+- ⏳ Detects OpenAI keys in error logs
+- ⏳ Shows warning before sending
+- ⏳ User can proceed or cancel
+- ⏳ Stats show protection count
+
+**Time: 1 week (foundation complete, integration pending)**
 
 **Note:** Launch as FREE initially, use as proof-of-concept for PRO tier later
 

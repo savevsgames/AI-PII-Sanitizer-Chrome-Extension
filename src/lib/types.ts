@@ -150,6 +150,9 @@ export interface UserConfig {
     };
     activityLog: ActivityLogEntry[];
   };
+
+  // API Key Vault (PRO feature)
+  apiKeyVault?: APIKeyVaultConfig;
 }
 
 // ========== V1 LEGACY TYPES (for migration) ==========
@@ -338,3 +341,43 @@ export type AccountTier = 'free' | 'pro' | 'enterprise';
  * Substitution mode
  */
 export type SubstitutionMode = 'auto-replace' | 'warn-first';
+
+// ========== API KEY VAULT TYPES (PRO) ==========
+
+/**
+ * API key formats that can be detected
+ */
+export type APIKeyFormat =
+  | 'openai'
+  | 'anthropic'
+  | 'google'
+  | 'aws'
+  | 'github'
+  | 'stripe'
+  | 'generic'
+  | 'custom'; // User-defined regex
+
+/**
+ * Stored API key with metadata
+ */
+export interface APIKey {
+  id: string;
+  name?: string; // User-provided label
+  keyValue: string; // The actual key (encrypted in storage)
+  format: APIKeyFormat; // Detected format
+  createdAt: number;
+  lastUsed: number;
+  protectionCount: number; // How many times redacted
+  enabled: boolean;
+}
+
+/**
+ * API Key Vault configuration (PRO feature)
+ */
+export interface APIKeyVaultConfig {
+  enabled: boolean;
+  mode: 'auto-redact' | 'warn-first' | 'log-only';
+  autoDetectPatterns: boolean; // Scan for known formats
+  keys: APIKey[]; // User's stored keys
+  customPatterns: string[]; // User-defined detection rules (stored as strings)
+}
