@@ -97,6 +97,11 @@ async function loadInitialData() {
     renderActivityLog(state.activityLog);
     updateSettingsUI(state.config);
 
+    // Poll for activity log updates every 2 seconds
+    setInterval(async () => {
+      await store.loadConfig();
+    }, 2000);
+
     console.log('[Popup V2] Data loaded successfully');
   } catch (error) {
     console.error('[Popup V2] Error loading data:', error);

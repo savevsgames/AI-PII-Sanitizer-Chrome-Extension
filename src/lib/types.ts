@@ -245,6 +245,7 @@ export type MessageType =
   | 'UPDATE_PROFILE'
   | 'REMOVE_PROFILE'
   | 'TOGGLE_PROFILE'
+  | 'RELOAD_PROFILES'
 
   // Legacy alias management (v1 - deprecated)
   | 'GET_ALIASES'

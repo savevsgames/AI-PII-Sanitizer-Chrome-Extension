@@ -38,5 +38,5 @@ module.exports = {
       ],
     }),
   ],
-  devtool: false, // Disable source maps to avoid CSP issues
+  devtool: 'inline-source-map', // Enable for debugging
 };

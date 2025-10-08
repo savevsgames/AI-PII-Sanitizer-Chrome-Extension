@@ -68,6 +68,9 @@ export const useAppStore = createStore<AppState>((set, get) => ({
     set((state) => ({
       profiles: [...state.profiles, newProfile],
     }));
+
+    // Notify background script to reload profiles
+    chrome.runtime.sendMessage({ type: 'RELOAD_PROFILES', payload: {} });
   },
 
   updateProfile: async (id, updates) => {
@@ -80,6 +83,9 @@ export const useAppStore = createStore<AppState>((set, get) => ({
           : p
       ),
     }));
+
+    // Notify background script to reload profiles
+    chrome.runtime.sendMessage({ type: 'RELOAD_PROFILES', payload: {} });
   },
 
   deleteProfile: async (id) => {
@@ -88,6 +94,9 @@ export const useAppStore = createStore<AppState>((set, get) => ({
     set((state) => ({
       profiles: state.profiles.filter((p) => p.id !== id),
     }));
+
+    // Notify background script to reload profiles
+    chrome.runtime.sendMessage({ type: 'RELOAD_PROFILES', payload: {} });
   },
 
   toggleProfile: async (id) => {
@@ -98,13 +107,19 @@ export const useAppStore = createStore<AppState>((set, get) => ({
         p.id === id ? { ...p, enabled: !p.enabled } : p
       ),
     }));
+
+    // Notify background script to reload profiles
+    chrome.runtime.sendMessage({ type: 'RELOAD_PROFILES', payload: {} });
   },
 
   // Config actions
   loadConfig: async () => {
     const storage = StorageManager.getInstance();
     const config = await storage.loadConfig();
-    set({ config });
+    set({
+      config,
+      activityLog: config?.stats.activityLog || [],
+    });
   },
 
   updateConfig: async (updates) => {

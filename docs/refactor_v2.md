@@ -1149,13 +1149,11 @@ By implementing this refactor methodically over 6 weeks, we'll deliver a product
 
 ---
 
-## 🎉 Progress Update (2025-10-07)
+## 🎉 Progress Update (2025-10-08)
 
-### ✅ Completed Phases
+### ✅ MAJOR MILESTONE: Core Engine Verified Working!
 
-**Phases 1-7 Complete (Basic MVP)**
-
-We've successfully implemented the core v2 architecture:
+**End-to-End Testing Complete** - All core functionality proven working in production:
 
 1. **✅ Data Layer** - Full profile-based architecture with AES-256-GCM encryption
 2. **✅ State Management** - Zustand vanilla store managing all state
@@ -1163,7 +1161,10 @@ We've successfully implemented the core v2 architecture:
 4. **✅ Aliases Tab** - Profile display, toggle, delete (editor pending)
 5. **✅ Stats Tab** - Real-time stats from store
 6. **✅ Settings Tab** - Email opt-in, export profiles, clear stats
-7. **✅ Debug Console** - Activity log UI ready
+7. **✅ Debug Console** - Real-time activity log with live updates
+8. **✅ REQUEST SUBSTITUTION** - Real → Alias encoding verified ✨
+9. **✅ RESPONSE DECODING** - Alias → Real decoding verified ✨
+10. **✅ PROFILE RELOAD** - Background script syncs with popup changes ✨
 
 ### 📦 Build Status
 
@@ -1172,31 +1173,57 @@ We've successfully implemented the core v2 architecture:
 ✅ All TypeScript types properly defined
 ✅ Zustand vanilla store (no React dependency)
 ✅ Webpack compiling successfully
+✅ END-TO-END TESTED ON CHATGPT - WORKING! 🎉
 ```
 
-### 🚀 What's Working
+### 🚀 What's Working (VERIFIED)
 
-- **Multi-PII Profiles**: Single profile with name, email, phone, cellPhone, address, company, custom fields
-- **Profile Management**: Create, update, delete, toggle profiles
-- **Automatic Migration**: v1 → v2 data conversion on first load
-- **Stats Tracking**: Per-service and per-PII-type metrics
-- **Activity Logging**: Debug console infrastructure
-- **Export/Import**: JSON export of all profiles
-- **Email Opt-in**: Community updates subscription
+- **✅ Bidirectional Substitution**: Request encoding + response decoding fully functional
+- **✅ Multi-PII Profiles**: Single profile with name, email, phone, cellPhone, address, company, custom fields
+- **✅ Profile Management**: Create, update, delete, toggle profiles
+- **✅ Profile Reload Messaging**: Popup → Background sync via chrome.runtime.sendMessage
+- **✅ Automatic Migration**: v1 → v2 data conversion on first load
+- **✅ Real-time Activity Logging**: Background script logs to storage, popup polls every 2s
+- **✅ Stats Tracking**: Per-service and per-PII-type metrics auto-updating
+- **✅ Streaming Response Handling**: ChatGPT SSE streams decoded correctly
+- **✅ Export/Import**: JSON export of all profiles
+- **✅ Email Opt-in**: Community updates subscription
+
+### 🎯 Testing Results
+
+**Test Case**: Sent "My name is Greg Barker and email is greg@test.com" to ChatGPT
+
+**Results**:
+- ✅ Request intercepted: `🔒 AI PII Sanitizer: Intercepting`
+- ✅ Substitution: 2 items replaced (Greg Barker → John Smith, greg@test.com → john@example.com)
+- ✅ ChatGPT received: "John Smith" and "john@example.com"
+- ✅ Response decoded: ChatGPT's response converted back to real PII
+- ✅ User saw: "Greg Barker" and "greg@test.com" in the response
+- ✅ Activity log updated in Debug Console
+- ✅ Stats incremented correctly
 
 ### 🔧 Next Steps
 
-**Immediate (Testing Phase)**:
-1. ✅ Load extension in Chrome
-2. ✅ Create test profile manually
-3. ✅ Test interception with ChatGPT
-4. ✅ Verify substitution working
+**Immediate Priority**:
+1. ✅ ~~Load extension in Chrome~~
+2. ✅ ~~Create test profile manually~~
+3. ✅ ~~Test interception with ChatGPT~~
+4. ✅ ~~Verify substitution working~~
+5. 🔨 **Build minimal popup mode** (~400×80px with toggle) - IN PROGRESS
+6. ⏭️ Profile Editor modal (to replace console-based creation)
+
+**UX Enhancement (Critical)**:
+- 🔨 **Minimal Popup Mode**: Toggle between full (500×600) and minimal (~400×80) views
+  - Minimal shows: Live activity indicator, last replacement, daily counter
+  - Button to expand to full config mode
+  - Prevents blocking ChatGPT conversation
+  - Pulsing indicator when substitution happens
 
 **Phase 8-10 (Future Enhancements)**:
-- ⏭️ Profile Editor modal (currently shows alert)
+- ⏭️ Profile Editor modal UI
 - ⏭️ Warning modal for warn-first mode
-- ⏭️ Real-time activity log from background script
-- ⏭️ Enhanced stats tracking per profile
+- ⏭️ Enhanced stats visualization (charts, graphs)
+- ⏭️ Service auto-detection (Claude, Gemini support)
 - ⏭️ Progress bars & charts in Stats tab
 - ⏭️ E2E testing & polish
 

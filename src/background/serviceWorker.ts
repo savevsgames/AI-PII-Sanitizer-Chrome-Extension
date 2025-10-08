@@ -40,6 +40,9 @@ async function handleMessage(message: Message): Promise<any> {
     case 'SUBSTITUTE_RESPONSE':
       return handleSubstituteResponse(message.payload);
 
+    case 'RELOAD_PROFILES':
+      return handleReloadProfiles();
+
     case 'GET_ALIASES':
       return handleGetAliases();
 
@@ -103,6 +106,19 @@ async function handleSubstituteRequest(payload: { body: string }): Promise<any> 
     console.log('✅ Request substituted:', substituted.substitutions.length, 'replacements');
     if (substituted.substitutions.length > 0) {
       console.log('🔀 Changes:', substituted.substitutions);
+
+      // Log activity for debug console
+      logActivity({
+        type: 'substitution',
+        service: 'chatgpt', // TODO: detect service from URL
+        details: {
+          url: 'ChatGPT',
+          profilesUsed: substituted.profilesMatched?.map(p => p.profileName) || [],
+          piiTypesFound: substituted.profilesMatched?.flatMap(p => p.piiTypes) || [],
+          substitutionCount: substituted.substitutions.length,
+        },
+        message: `Request: ${substituted.substitutions.length} items replaced`,
+      });
     }
 
     // Reconstruct request body with substituted text
@@ -337,4 +353,66 @@ async function handleGetConfig() {
   const storage = StorageManager.getInstance();
   const config = await storage.loadConfig();
   return { success: true, data: config };
+}
+
+/**
+ * Reload profiles in AliasEngine
+ * Called when profiles are added/updated/deleted from popup
+ */
+async function handleReloadProfiles() {
+  console.log('[Background] Reloading profiles...');
+  const aliasEngine = await AliasEngine.getInstance();
+  await aliasEngine.reload();
+  const profiles = aliasEngine.getProfiles();
+  console.log('[Background] ✅ Profiles reloaded:', profiles.length, 'active profiles');
+  return { success: true, profileCount: profiles.length };
+}
+
+/**
+ * Log activity to storage for debug console
+ */
+async function logActivity(entry: {
+  type: 'interception' | 'substitution' | 'warning' | 'error';
+  service: 'chatgpt' | 'claude' | 'gemini' | 'unknown';
+  details: {
+    url: string;
+    profilesUsed?: string[];
+    piiTypesFound?: string[];
+    substitutionCount: number;
+    error?: string;
+  };
+  message: string;
+}) {
+  try {
+    const storage = StorageManager.getInstance();
+    const config = await storage.loadConfig();
+
+    if (!config) return;
+
+    const activityEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      ...entry,
+      details: {
+        ...entry.details,
+        profilesUsed: entry.details.profilesUsed || [],
+        piiTypesFound: entry.details.piiTypesFound || [],
+      },
+    };
+
+    // Add to activity log (keep last 100)
+    config.stats.activityLog = [activityEntry, ...config.stats.activityLog].slice(0, 100);
+
+    // Update stats
+    config.stats.totalInterceptions++;
+    if (entry.type === 'substitution' && entry.service !== 'unknown') {
+      config.stats.totalSubstitutions += entry.details.substitutionCount;
+      config.stats.byService[entry.service].requests++;
+      config.stats.byService[entry.service].substitutions += entry.details.substitutionCount;
+    }
+
+    await storage.saveConfig(config);
+  } catch (error) {
+    console.error('[Background] Failed to log activity:', error);
+  }
 }
