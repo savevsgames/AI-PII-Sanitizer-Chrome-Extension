@@ -15,6 +15,24 @@ script.onload = () => {
 };
 (document.head || document.documentElement).appendChild(script);
 
+// Listen for PING messages from popup (for status check)
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  if (request.type === 'PING') {
+    // Verify we can actually communicate with background script
+    // If extension was reloaded, this will fail
+    chrome.runtime.sendMessage({ type: 'HEALTH_CHECK' })
+      .then(() => {
+        sendResponse('PONG');
+      })
+      .catch(() => {
+        // Extension context invalidated - don't respond
+        sendResponse(null);
+      });
+    return true; // Will respond asynchronously
+  }
+  return false; // Not handling this message
+});
+
 // Listen for messages from inject.js (page context)
 window.addEventListener('message', async (event) => {
   // Only accept messages from our own page

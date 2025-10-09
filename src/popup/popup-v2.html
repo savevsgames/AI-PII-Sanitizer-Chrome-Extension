@@ -41,6 +41,18 @@
       </div>
     </header>
 
+    <!-- Status Banner (shown when page needs reload) -->
+    <div class="status-banner hidden" id="statusBanner">
+      <div class="status-banner-content">
+        <span class="status-banner-icon">⚠️</span>
+        <div class="status-banner-text">
+          <strong>Extension Not Active</strong>
+          <p>Please reload this page to activate protection</p>
+        </div>
+        <button class="btn btn-warning" id="reloadPageBtn">🔄 Reload Page</button>
+      </div>
+    </div>
+
     <!-- Tab Navigation -->
     <nav class="tab-nav">
       <button class="tab-button active" data-tab="aliases">

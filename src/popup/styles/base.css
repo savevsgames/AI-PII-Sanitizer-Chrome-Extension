@@ -58,3 +58,69 @@ body.minimal-mode {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-secondary);
 }
+
+/* Status Banner */
+.status-banner {
+  background: linear-gradient(135deg, #ff9800 0%, #ff6b00 100%);
+  padding: 12px 16px;
+  border-bottom: 2px solid #e65100;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.status-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-banner-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.status-banner-text {
+  flex: 1;
+  color: white;
+}
+
+.status-banner-text strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.status-banner-text p {
+  font-size: 12px;
+  opacity: 0.95;
+  margin: 0;
+}
+
+.btn-warning {
+  background: white;
+  color: #ff6b00;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.btn-warning:hover {
+  background: #fff3e0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
