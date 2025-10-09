@@ -223,4 +223,50 @@ find . -type f \( -name "*.ts" -o -name "*.js" -o -name "*.json" -o -name "*.htm
 
 ---
 
+## 🐛 SERVICE WORKER INJECTION ISSUE
+
+**Problem:** Content script injection fails on regular page refresh. Users need to hit Ctrl+Shift+R for injection to work properly. The reload button in popup only refreshes the page which doesn't trigger content script injection.
+
+**Root Cause:**
+
+- Content scripts only inject on extension load/reload or hard refresh
+- Regular page refresh doesn't re-inject content scripts
+- Current reload button just refreshes the page
+- Therefore: Extension must load before page is hard-refreshed
+
+**Solution Implemented:**
+
+1. **Auto-inject on startup:** Modified service worker to inject content scripts into all existing AI service tabs on `chrome.runtime.onStartup` and `chrome.runtime.onInstalled`
+2. **Smart injection:** Added `injectIntoExistingTabs()` function that:
+   - Queries all tabs for AI service URLs
+   - Checks if content script already injected (ping/pong test)
+   - Injects only where needed to avoid double-injection
+3. **Proper reload handler:** Added `REINJECT_CONTENT_SCRIPTS` message type that reinjects content scripts when popup reload button is clicked
+4. **User feedback:** Added notification system to show reload success/failure
+
+**Code Changes Required:**
+
+- **serviceWorker.ts:** Add `injectIntoExistingTabs()`, `handleReinjectContentScripts()`, startup listeners
+- **types.ts:** Add `REINJECT_CONTENT_SCRIPTS` and `PING` message types  
+- **content.ts:** Add ping message handler
+- **popup.ts:** Update reload button to use new reinject functionality with user feedback
+
+**Files Modified:**
+
+- `src/background/serviceWorker.ts` (major changes)
+- `src/lib/types.ts` (add message types)
+- `src/content/content.ts` (add ping handler)
+- `src/popup/popup-v2.ts` (update reload button)
+
+**Testing:**
+
+1. Load extension in dev mode
+2. Open ChatGPT/Claude in multiple tabs
+3. Click reload button in popup
+4. Verify content scripts work without hard refresh
+
+**Priority:** HIGH - This affects core functionality and user experience
+
+---
+
 **Next Action:** Continue TypeScript refactoring with `profileModal.ts`
