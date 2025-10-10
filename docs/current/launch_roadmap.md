@@ -101,17 +101,22 @@ Don't build features no one uses. Get free tier perfect, share with devs, build 
 ---
 
 ## Phase 3: API Key Vault (Week 3-4) 🚧 IN PROGRESS
-**Goal:** Build PRO tier revenue engine (even if free for now)
+**Goal:** Build FREE + PRO tier feature (10 keys FREE, unlimited PRO)
+
+### Tiers
+- **FREE:** 10 stored keys max, OpenAI detection only
+- **PRO:** Unlimited keys, all detection patterns (GitHub, AWS, Stripe, etc.)
 
 ### Tasks (from feature_api_key_vault.md)
 - [x] Build APIKeyDetector class ✅ Created
 - [x] Add types to types.ts ✅ Completed
 - [ ] Integrate with serviceWorker (auto-redact mode)
 - [ ] Auto-detect common key formats (OpenAI, GitHub, AWS, Stripe)
-- [ ] Vault UI in Settings tab
+- [ ] Vault UI in Settings tab with FREE tier counter (e.g., "3/10 FREE")
 - [ ] Add/delete keys
 - [ ] Stats tracking ("47 keys protected this month")
 - [ ] Warn-first mode (dialog before sending)
+- [ ] Upgrade prompt when FREE limit reached
 
 ### Completed
 - Created `src/lib/apiKeyDetector.ts` with:
@@ -127,10 +132,10 @@ Don't build features no one uses. Get free tier perfect, share with devs, build 
 - ⏳ Shows warning before sending
 - ⏳ User can proceed or cancel
 - ⏳ Stats show protection count
+- ⏳ FREE tier shows "X/10" counter
+- ⏳ Upgrade prompt appears at limit
 
 **Time: 1 week (foundation complete, integration pending)**
-
-**Note:** Launch as FREE initially, use as proof-of-concept for PRO tier later
 
 ---
 
@@ -172,7 +177,85 @@ Don't build features no one uses. Get free tier perfect, share with devs, build 
 
 ---
 
-## Phase 5: Image Scanning (Week 6+)
+## Phase 5: Alias Variations (Week 6)
+**Goal:** Automatically detect and replace name/email/phone format variations
+
+### Tasks (from feature_alias_variations.md)
+- [ ] Build AliasVariationGenerator class
+- [ ] Auto-generate variations for names (GregBarker, gregbarker, gbarker, G.Barker)
+- [ ] Auto-generate email variations (greg@test.com, greg.barker@test.com)
+- [ ] Auto-generate phone format variations ((555) 123-4567, 555-123-4567, 5551234567)
+- [ ] UI for showing generated variations
+- [ ] Allow users to add custom variations
+- [ ] Integrate with aliasEngine.ts buildLookupMaps()
+- [ ] FREE tier: Auto-generated + 10 custom variations total
+- [ ] PRO tier: Auto-generated + 100+ custom variations
+
+### Success Criteria
+- ✅ Detects "Greg Barker" and "GregBarker" and "gbarker"
+- ✅ Detects email variations automatically
+- ✅ Users can add custom variations (nicknames, abbreviations)
+- ✅ FREE tier shows "5/10 custom variations" counter
+- ✅ PRO tier offers AI-powered variation suggestions
+
+**Time: 3-4 days**
+
+---
+
+## Phase 6: Dev Terms Spell Check (Week 7)
+**Goal:** Catch typos in company names and tech terms before sending
+
+### Tasks (from feature_dev_terms_spellcheck.md)
+- [ ] Build DevTermsSpellChecker class
+- [ ] Create curated dictionary (OpenAI, ChatGPT, Anthropic, Claude, Google, etc.)
+- [ ] FREE tier: 50 curated terms + 10 custom terms
+- [ ] PRO tier: 500+ curated terms + 100 custom terms, editable lists
+- [ ] Build modal UI for showing suggestions (diff-style)
+- [ ] Integrate with inject.js (intercept before fetch)
+- [ ] Accept/Ignore buttons
+- [ ] Performance: in-memory Map, <200ms check time
+- [ ] Option to disable per-chat or globally
+
+### Success Criteria
+- ✅ Detects "openIA" and suggests "OpenAI"
+- ✅ Shows diff modal before sending
+- ✅ User can accept or ignore suggestions
+- ✅ Performance: <200ms for typical message
+- ✅ FREE tier shows "using 50 curated terms" message
+- ✅ PRO tier allows editing the dictionary
+
+**Time: 4-5 days**
+
+---
+
+## Phase 7: AI Profile Fill (Week 8-9)
+**Goal:** Let users generate fake profiles using the current AI chat (ChatGPT/Claude/Gemini)
+
+### Tasks (from feature_ai_profile_fill.md)
+- [ ] Build AIProfileGenerator class
+- [ ] Create service-specific prompts (ChatGPT, Claude, Gemini)
+- [ ] Build consent modal UI ("We'll send a message to generate a profile - OK?")
+- [ ] Implement ChatGPTInjector, ClaudeInjector, GeminiInjector
+- [ ] Parse JSON response with fallback extraction
+- [ ] Pre-fill alias form fields with generated data
+- [ ] Optional: Delete the generation message after
+- [ ] Add "AI Generate" button to Add/Edit Profile modal
+- [ ] 100% transparent approach (user sees the message in chat)
+
+### Success Criteria
+- ✅ User clicks "AI Generate Alias" in ChatGPT
+- ✅ Extension shows consent modal
+- ✅ Message appears in chat: "Generate a fake identity..."
+- ✅ Response parsed and fields pre-filled
+- ✅ User can edit before saving
+- ✅ Works on ChatGPT, Claude, and Gemini
+- ✅ Optional message deletion works
+
+**Time: 1-2 weeks (most complex feature)**
+
+---
+
+## Phase 8: Image Scanning (Future/PRO)
 **Goal:** Add PRO killer feature (but only after users validate core product)
 
 **SKIP FOR INITIAL LAUNCH**
@@ -181,6 +264,66 @@ Build this only if:
 - We have 100+ users requesting it
 - We have revenue to justify 1-week dev time
 - Core product is stable and trusted
+
+---
+
+## Browser Compatibility
+
+### Overview
+AI PII Sanitizer is built for Chrome using Manifest V3. Expansion to other browsers follows this priority:
+
+### Tier 1: Chromium Browsers (95-100% Compatible)
+| Browser | Compatibility | Effort | Notes |
+|---------|---------------|--------|-------|
+| **Chrome** | 100% ✅ | 0 days | Primary development platform |
+| **Edge** | 99% ✅ | 0.5 days | Microsoft's Chromium fork, nearly identical API |
+| **Opera** | 98% ✅ | 0.5 days | Built on Chromium, minor UI differences |
+| **Brave** | 98% ✅ | 0.5 days | Privacy-focused Chromium, perfect audience fit |
+
+**Strategy:** Minimal testing, submit to each store with same codebase.
+
+### Tier 2: Firefox (70-80% Compatible)
+| Browser | Compatibility | Effort | Notes |
+|---------|---------------|--------|-------|
+| **Firefox** | 75% ⚠️ | 1-2 weeks | Uses WebExtensions API (similar but different) |
+
+**Key Differences:**
+- `chrome.*` → `browser.*` namespace
+- Manifest V3 support (added in Firefox 109+)
+- Content script injection timing differences
+- Storage API mostly compatible but quota limits differ
+
+**Strategy:** Create Firefox-specific build with polyfills, test on 3-4 sites initially.
+
+### Tier 3: Safari (60-70% Compatible)
+| Browser | Compatibility | Effort | Notes |
+|---------|---------------|--------|-------|
+| **Safari** | 60% ⚠️ | 3-4 weeks | Requires Xcode conversion + Apple Developer account ($99/year) |
+
+**Key Challenges:**
+- Must convert to Safari Web Extension format using Xcode
+- Requires macOS for development and testing
+- App Store submission process (1-2 weeks review)
+- Some APIs limited or unavailable (e.g., declarativeNetRequest)
+- Different security model (more restrictive CSP)
+
+**Strategy:** Build only after 10,000+ Chrome installs and proven revenue.
+
+### Tier 4: Mobile Browsers (20-30% Compatible)
+| Platform | Compatibility | Effort | Notes |
+|----------|---------------|--------|-------|
+| **Chrome Android** | 30% ⚠️ | 2-3 months | Very limited extension support, would need separate app |
+| **Firefox Android** | 40% ⚠️ | 2-3 months | Better extension support than Chrome, but still limited |
+| **Safari iOS** | 20% ⚠️ | 3-4 months | Requires native iOS app wrapper, different architecture |
+
+**Strategy:** Skip mobile until product-market fit proven on desktop. Consider native apps (React Native) if there's strong demand.
+
+### Launch Priority
+1. **Phase 1 (Months 1-3):** Chrome only
+2. **Phase 2 (Month 4):** Edge, Opera, Brave (easy wins, same codebase)
+3. **Phase 3 (Month 6+):** Firefox (if 5,000+ Chrome installs)
+4. **Phase 4 (Month 12+):** Safari (if 10,000+ installs + $99/year justified)
+5. **Phase 5 (Year 2+):** Mobile (if 50,000+ desktop installs)
 
 ---
 
@@ -336,13 +479,18 @@ Build this only if:
 
 | Phase | Duration | Deliverable |
 |-------|----------|-------------|
-| **1. Profile Editor** | 3-4 days | Professional modal UI, no more alerts |
+| **1. Profile Editor** ✅ | 3-4 days | Professional modal UI, no more alerts |
 | **2. Production Polish** | 5-7 days | Icons, privacy policy, Chrome Web Store ready |
-| **3. API Key Vault** | 1 week | PRO feature built (free initially) |
+| **3. API Key Vault** 🚧 | 1 week | FREE (10 keys) + PRO (unlimited) tiers |
 | **4. Service Testing** | 2-3 days | Verify 7 services work |
-| **5. Image Scanning** | SKIP | Build later based on user feedback |
+| **5. Alias Variations** | 3-4 days | Auto-generate name/email/phone variations |
+| **6. Dev Terms Spell Check** | 4-5 days | Catch company name typos before sending |
+| **7. AI Profile Fill** | 1-2 weeks | Generate fake profiles using AI chat |
+| **8. Image Scanning** | SKIP | Build later based on user feedback |
 
-**Total: ~3 weeks to launch-ready**
+**Core Launch (Phases 1-4): ~3 weeks**
+**Enhanced Features (Phases 5-7): +3-4 weeks**
+**Total to full feature set: ~6-7 weeks**
 
 ---
 

@@ -16,17 +16,49 @@ The key insight: **Developers are our early adopters AND our trust validators**.
 **Goal**: Protect 90% of users, demonstrate value, build trust
 
 ✅ **Included FREE:**
-- Unlimited basic PII protection (name, email, phone)
-- 1-2 identity profiles
-- ChatGPT, Claude, Gemini support
-- Basic stats (7-day history)
-- Manual profile creation
-- Debug console
+
+#### Core Features
+- **Unlimited PII protection**: Name, email, phone, address, company, custom fields
+- **Multiple profiles**: Create profiles for different contexts (work, personal, testing)
+- **AI Services**: ChatGPT, Claude, Gemini, Perplexity, Poe, Copilot, You.com
+- **Bidirectional aliasing**: Real → alias in requests, alias → real in responses
+- **Profile Editor UI**: Professional Add/Edit/Delete modal interface
+- **Stats tracking**: 30-day activity log, substitution counts by service
+- **Debug console**: Real-time activity monitoring
+
+#### 🔒 API Key Vault (FREE: 10 Keys)
+- Store 10 API keys max in encrypted vault
+- Auto-detect OpenAI keys only (`sk-...`, `sk-proj-...`)
+- Warn before sending detected keys
+- Stats: "X keys protected this week"
+
+#### 🔀 Alias Variations (FREE)
+- **Auto-generated variations**: GregBarker, gregbarker, gbarker, G.Barker
+- **Email variations**: greg@test.com, g.barker@test.com
+- **Phone format variations**: (555) 123-4567, 555-123-4567, 5551234567
+- **Custom variations**: Add 10 custom variations per profile
+
+#### ✍️ Dev Terms Spell Check (FREE)
+- **Curated dictionary**: 50 tech terms (OpenAI, ChatGPT, Anthropic, Claude, Google, React, etc.)
+- **Custom terms**: Add 10 custom terms
+- **Diff-style modal**: Shows suggestions before sending
+- **Accept/Ignore**: User control over each suggestion
+
+#### 🤖 AI Profile Fill (FREE)
+- **Generate profiles with AI**: Click "AI Generate" to create fake identity
+- **100% transparent**: Message visible in chat (you see the request)
+- **Supports all services**: ChatGPT, Claude, Gemini
+- **Pre-fills form**: Parses JSON response and populates alias fields
+- **Safe**: Real PII NEVER sent, only AI-generated fake data
+
+#### Community
 - Community support (Discord)
+- GitHub Issues for bug reports
+- Feature request voting
 
 **Why FREE?**
 - Removes barrier to entry
-- Users can verify it works before paying
+- Users verify it works before paying
 - Builds Chrome Web Store reviews/ratings
 - Word-of-mouth growth
 
@@ -35,55 +67,71 @@ The key insight: **Developers are our early adopters AND our trust validators**.
 
 💎 **PRO Features:**
 
-#### 1. **Advanced PII Types**
+#### 1. **API Key Vault PRO** 🔥 (Developer Favorite)
+- **Unlimited stored keys** (vs 10 FREE)
+- **All detection patterns**:
+  - OpenAI: `sk-...`, `sk-proj-...`
+  - Anthropic: `sk-ant-...`
+  - Google: `AIza...`
+  - AWS: `AKIA...`, `ASIA...`
+  - GitHub: `ghp_...`, `gho_...`, `ghs_...`
+  - Stripe: `sk_live_...`, `pk_live_...`
+  - Generic: 32+ hex/base64 patterns
+- **Custom patterns**: Add your own regex patterns
+- **Auto-redact mode**: Automatically redact without prompting
+- **Detailed stats**: Per-key protection counts, exposure risk scoring
+
+#### 2. **Alias Variations PRO**
+- **100+ custom variations** (vs 10 FREE)
+- **AI-powered suggestions**: Generate variations using ChatGPT/Claude
+- **Nickname support**: Auto-generate common nicknames (William → Bill, Robert → Bob)
+- **Smart learning**: Suggests variations based on past usage
+
+#### 3. **Dev Terms Spell Check PRO**
+- **500+ curated terms** (vs 50 FREE)
+- **100 custom terms** (vs 10 FREE)
+- **Editable dictionary**: Customize and remove curated terms
+- **Export/Import**: Share custom dictionaries with team
+- **Performance optimized**: <50ms check time (vs <200ms FREE)
+
+#### 4. **Advanced PII Types**
 - SSN/National ID masking
 - Credit card numbers
 - Medical record numbers
 - Custom regex patterns (for company-specific PII)
 
-#### 2. **API Key Vault** 🔥 (Developer Favorite)
-- Store API keys/tokens in encrypted vault
-- Auto-detect keys in error logs and code snippets
-- Redact before sending to AI (prevent accidental leaks)
-- Support common formats:
-  - OpenAI: `sk-...`, `sk-proj-...`
-  - Anthropic: `sk-ant-...`
-  - Google: `AIza...`
-  - AWS: `AKIA...`
-  - GitHub: `ghp_...`, `gho_...`
-  - Stripe: `sk_live_...`, `pk_live_...`
-  - Generic: 32+ hex/base64 patterns
-- Manual vault for custom keys
-- Stats: "X API keys protected this week"
-
-#### 3. **Unlimited Profiles**
-- Create profiles for different contexts (work, personal, testing)
-- Team profiles (shared across organization)
+#### 5. **Unlimited Profiles**
+- Create unlimited profiles (vs multiple profiles FREE)
 - Profile templates library
+- Profile groups/categories
+- Bulk import/export
 
-#### 4. **Enterprise Features**
+#### 6. **Enterprise Features**
+- Team profiles (shared across organization)
 - Team management (5-100 seats)
 - Centralized policy management
 - Audit logs and compliance reports
 - SSO integration
 - Custom branding
 
-#### 5. **Advanced Analytics**
-- 90-day+ history
+#### 7. **Advanced Analytics**
+- 90-day+ history (vs 30-day FREE)
 - Export to CSV/JSON
 - Breach risk scoring
 - PII exposure heatmaps
 - Compliance dashboards
+- Per-profile usage analytics
 
-#### 6. **AI Model Support**
-- Perplexity, Poe, Hugging Face
+#### 8. **AI Model Support**
 - Custom API endpoints
 - Local LLM support (Ollama, LM Studio)
+- Advanced service-specific features
 
-#### 7. **Priority Support**
+#### 9. **Priority Support**
 - Email support (24hr response)
 - Feature requests prioritized
 - Beta access to new features
+- Direct chat support
 
 ---
 
@@ -91,10 +139,10 @@ The key insight: **Developers are our early adopters AND our trust validators**.
 
 | Tier | Price | Target User | Key Features |
 |------|-------|-------------|--------------|
-| **Free** | $0 | Casual users, students | Basic PII, 2 profiles, 3 services |
-| **PRO** | $4.99/mo or $39/yr | Power users, freelancers | All PII types, unlimited profiles, advanced analytics |
-| **Team** | $9.99/user/mo | Small teams (5-25) | Shared profiles, team analytics, priority support |
-| **Enterprise** | Custom | Large orgs (25+) | SSO, audit logs, custom SLA, on-prem option |
+| **Free** | $0 | Casual users, students, devs | All PII types, multi-profiles, 7 services, 10 API keys, 10 variations, 50 spell check terms, AI profile fill |
+| **PRO** | $4.99/mo or $39/yr | Power users, freelancers | Unlimited API keys + all patterns, 100+ variations, 500+ spell check terms, advanced analytics, unlimited profiles |
+| **Team** | $9.99/user/mo | Small teams (5-25) | Shared profiles, team dictionaries, team analytics, priority support |
+| **Enterprise** | Custom | Large orgs (25+) | SSO, audit logs, custom SLA, compliance reports, custom branding |
 
 **Conversion Strategy:**
 - Free trial: 14 days PRO features unlocked

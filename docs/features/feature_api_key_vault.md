@@ -1,4 +1,4 @@
-# Feature Spec: API Key Vault (PRO)
+# Feature Spec: API Key Vault (FREE + PRO)
 
 ## Overview
 
@@ -6,7 +6,7 @@
 
 **Solution:** Encrypted vault to store API keys. Extension auto-detects and redacts keys before sending to AI services.
 
-**Target Users:** Developers (PRO tier only)
+**Target Users:** Developers (FREE tier with limits, PRO unlimited)
 
 **Value Prop:** "Never accidentally leak API keys to ChatGPT again"
 
@@ -28,11 +28,11 @@
 
 ## UI/UX Design
 
-### Settings Tab - New Section: "API Keys" (PRO Badge)
+### Settings Tab - New Section: "API Keys"
 
 ```
 ┌─────────────────────────────────────────────┐
-│ 🔐 API Key Vault (PRO)                      │
+│ 🔐 API Key Vault (3/10 FREE) ⭐ PRO         │
 ├─────────────────────────────────────────────┤
 │ Protect your API keys from accidental leaks │
 │                                             │
@@ -43,7 +43,7 @@
 │ (•) Warn first (recommended)                │
 │ ( ) Log only (no redaction)                 │
 │                                             │
-│ Stored Keys (3)                             │
+│ Stored Keys (3/10 FREE tier limit)          │
 │ ┌───────────────────────────────────────┐   │
 │ │ 🔑 OpenAI Production                  │   │
 │ │    sk-proj-••••••••••••••••••••F8k2   │   │
@@ -61,17 +61,18 @@
 │ └───────────────────────────────────────┘   │
 │                                             │
 │ [+ Add API Key]                             │
+│ [Upgrade to PRO for Unlimited Keys] ⭐      │
 │                                             │
-│ Auto-detect patterns (always active):       │
-│ ✓ OpenAI (sk-*, sk-proj-*)                  │
-│ ✓ Anthropic (sk-ant-*)                      │
-│ ✓ Google (AIza*)                            │
-│ ✓ AWS (AKIA*, ASIA*)                        │
-│ ✓ GitHub (ghp_*, gho_*, ghs_*)              │
-│ ✓ Stripe (sk_live_*, pk_live_*)             │
-│ ✓ Generic (32+ hex/base64)                  │
+│ Auto-detect patterns:                       │
+│ ✓ OpenAI (sk-*, sk-proj-*) - FREE          │
+│ ✓ Anthropic (sk-ant-*) - PRO ⭐             │
+│ ✓ Google (AIza*) - PRO ⭐                   │
+│ ✓ AWS (AKIA*, ASIA*) - PRO ⭐               │
+│ ✓ GitHub (ghp_*, gho_*, ghs_*) - PRO ⭐     │
+│ ✓ Stripe (sk_live_*, pk_live_*) - PRO ⭐    │
+│ ✓ Generic (32+ hex/base64) - PRO ⭐         │
 │                                             │
-│ [Export Patterns] [Import Patterns]         │
+│ [Export Patterns] [Import Patterns] (PRO) ⭐│
 └─────────────────────────────────────────────┘
 ```
 
@@ -716,12 +717,36 @@ Closest alternatives:
 3. **Should free tier get basic key detection?**
    - PRO: Builds trust, shows value
    - CON: Cannibalizes PRO sales
-   - **Answer:** Free tier gets 1 stored key + OpenAI detection only
+   - **Answer:** FREE tier gets 10 stored keys + OpenAI detection only (enough to be useful, limited enough to encourage PRO upgrade)
 
 4. **How to test without exposing real keys?**
    - Use test/example keys from provider docs
    - Generate fake keys with correct format
    - Never commit real keys to test fixtures
+
+---
+
+## FREE vs PRO Comparison
+
+| Feature | FREE | PRO |
+|---------|------|-----|
+| **Stored Keys** | ✅ 10 keys max | ✅ Unlimited |
+| **Auto-Detect Patterns** | ✅ OpenAI only | ✅ All patterns (OpenAI, GitHub, AWS, Stripe, Anthropic, Google, Generic) |
+| **Detection Modes** | ✅ All 3 modes | ✅ All 3 modes |
+| **Custom Patterns** | ❌ No | ✅ Yes (regex patterns) |
+| **Per-Key Stats** | ✅ Basic | ✅ Advanced |
+| **Export/Import** | ❌ No | ✅ Yes |
+| **Team Sharing** | ❌ No | ❌ No (Enterprise only) |
+
+**FREE Tier Strategy:**
+- 10 keys is enough for most solo developers (1-2 keys per major service)
+- OpenAI detection only catches the most common leak scenario (ChatGPT users)
+- Provides real value while incentivizing PRO upgrade for multi-service protection
+
+**PRO Upgrade Triggers:**
+- User hits 10-key limit ("Upgrade for unlimited keys")
+- User pastes GitHub/AWS key but it's not detected ("Upgrade for GitHub/AWS detection")
+- User wants to export keys for backup ("Upgrade for export/import")
 
 ---
 

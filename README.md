@@ -2,35 +2,60 @@
 
 A Chrome extension that protects your privacy by replacing real personally identifiable information (PII) with aliases when using AI chat services like ChatGPT, Claude, and Gemini.
 
-## 🎉 Current Status: **WORKING DEV MODE PROTOTYPE**
+## 🎉 Current Status: **V2 REFACTOR COMPLETE - READY FOR FEATURES**
 
-✅ **End-to-end substitution confirmed working (in dev mode)**
+✅ **Profile-based architecture refactored and tested**
 - **ChatGPT**: Fully tested and working ✅
-- **Claude**: Integration complete, ready for testing ✅
+- **Claude**: Fully tested and working ✅
 - **Gemini**: Code ready, untested ⏳
+- **Profile Editor UI**: Professional modal-based Add/Edit/Delete ✅
 - Real PII automatically replaced with aliases in requests
 - AI responses decoded back to show real names
 - Streaming responses (SSE) fully supported
-- Minimal mode (400×80px) with live activity indicators
+- Multi-field support (name, email, phone, address, company, custom)
+- Stats tracking with activity log
 - All tests passing (9/9)
-- Loaded as unpacked extension for development
 
-⚠️ **NOT Production Ready:**
-- Only tested in dev mode (unpacked extension)
-- Claude/Gemini need real-world testing
-- Debug logs still active
-- No error handling UI
-- Stats tracking incomplete
+**Next Up:**
+- 🔒 **API Key Vault** (10 keys FREE, unlimited PRO) - foundation complete
+- 🔀 **Alias Variations** - auto-detect GregBarker, gregbarker, gbarker
+- ✍️ **Dev Terms Spell Check** - catch "openIA" → "OpenAI" typos
+- 🤖 **AI Profile Fill** - generate fake profiles using ChatGPT/Claude
 
-**Try it now (dev mode):** Load unpacked in chrome://extensions, add a profile, mention your real name in ChatGPT or Claude!
+**Try it now (dev mode):** Load unpacked in chrome://extensions, create a profile, mention your real PII in ChatGPT or Claude!
 
 ## Features
 
-- **Bidirectional Aliasing**: Automatically replace real names with aliases in outgoing requests and reverse them in AI responses
-- **Privacy-First**: All data stored locally with encryption, no data sent to external servers
-- **Multiple AI Services**: Supports ChatGPT, Claude, and Gemini
-- **Easy Management**: Simple popup interface to manage your aliases
-- **Real-Time Protection**: Intercepts requests before they leave your browser
+### ✅ Current (V2)
+- **Profile-Based Management**: Create multiple profiles with real ↔ alias mappings
+- **Multi-Field Support**: Name, email, phone, address, company, custom fields
+- **Bidirectional Aliasing**: Real → alias in requests, alias → real in responses
+- **Privacy-First**: All data stored locally with AES-256-GCM encryption
+- **Multiple AI Services**: ChatGPT, Claude, Gemini, Perplexity, Poe, Copilot, You.com
+- **Professional UI**: Modal-based Add/Edit/Delete with form validation
+- **Stats Tracking**: Activity log showing substitutions by service
+- **Real-Time Protection**: Intercepts fetch requests before they leave your browser
+
+### 🚧 In Development
+- **🔒 API Key Vault** (FREE + PRO): Protect API keys from accidental exposure
+  - FREE: Store 10 keys, OpenAI detection only
+  - PRO: Unlimited keys, all patterns (GitHub, AWS, Stripe, etc.)
+
+- **🔀 Alias Variations** (FREE + PRO): Auto-detect name/email format variations
+  - Auto-generate: GregBarker, gregbarker, gbarker, G.Barker
+  - FREE: Auto-generated + 10 custom variations
+  - PRO: Auto-generated + 100+ custom variations, AI-powered suggestions
+
+- **✍️ Dev Terms Spell Check** (FREE + PRO): Catch typos before sending
+  - Detects: "openIA" → "OpenAI", "Goggle" → "Google", "reactJs" → "React"
+  - FREE: 50 curated terms + 10 custom terms
+  - PRO: 500+ curated terms + 100 custom terms, editable dictionary
+
+- **🤖 AI Profile Fill** (FREE): Generate fake profiles using AI chat
+  - Click "AI Generate" → sends visible message to ChatGPT/Claude/Gemini
+  - 100% transparent (you see the request)
+  - Parses JSON response and pre-fills alias fields
+  - Real PII NEVER sent (only the AI generates fake data)
 
 ## Installation
 
@@ -109,47 +134,89 @@ AI_Interceptor/
 ## Privacy
 
 - All aliases are stored locally in your browser
-- Data is encrypted using Web Crypto API
+- Data is encrypted using AES-256-GCM (Web Crypto API)
 - No telemetry or analytics
 - No data sent to external servers
 - Open source for transparency
 
+## Browser Compatibility
+
+AI PII Sanitizer is built for Chrome using Manifest V3. Expansion to other browsers follows this priority:
+
+### Tier 1: Chromium Browsers (95-100% Compatible) ✅
+| Browser | Compatibility | Effort | Status |
+|---------|---------------|--------|--------|
+| **Chrome** | 100% ✅ | 0 days | Primary platform |
+| **Edge** | 99% ✅ | 0.5 days | Same codebase |
+| **Opera** | 98% ✅ | 0.5 days | Same codebase |
+| **Brave** | 98% ✅ | 0.5 days | Same codebase |
+
+**Launch Plan:** Chrome first (Months 1-3), then Edge/Opera/Brave (Month 4)
+
+### Tier 2: Firefox (70-80% Compatible) ⚠️
+| Browser | Compatibility | Effort | Status |
+|---------|---------------|--------|--------|
+| **Firefox** | 75% ⚠️ | 1-2 weeks | After 5,000+ Chrome installs |
+
+**Key Differences:** `browser.*` namespace, Manifest V3 differences, storage quota limits
+
+### Tier 3: Safari (60-70% Compatible) ⚠️
+| Browser | Compatibility | Effort | Status |
+|---------|---------------|--------|--------|
+| **Safari** | 60% ⚠️ | 3-4 weeks | After 10,000+ Chrome installs + revenue |
+
+**Requirements:** Xcode conversion, macOS development, Apple Developer account ($99/year)
+
+### Tier 4: Mobile (20-30% Compatible) ❌
+| Platform | Compatibility | Effort | Status |
+|----------|---------------|--------|--------|
+| **Chrome Android** | 30% ⚠️ | 2-3 months | Skip until PMF proven |
+| **Firefox Android** | 40% ⚠️ | 2-3 months | Skip until PMF proven |
+| **Safari iOS** | 20% ⚠️ | 3-4 months | Native app required |
+
+**Strategy:** Focus on desktop browsers first. Mobile requires separate native app architecture.
+
+For detailed browser compatibility information, see [Launch Roadmap](docs/current/launch_roadmap.md#browser-compatibility).
+
 ## Roadmap
 
-### ✅ Phase 1: Dev Mode Prototype (COMPLETE!)
-- [x] Basic project structure
-- [x] Core substitution engine
-- [x] Request/response interception (fetch override with message relay)
-- [x] Simple popup UI
-- [x] **ChatGPT support (working in dev mode!)** 🎉
-- [x] End-to-end testing
-- [x] Streaming response support (SSE)
+### ✅ Phase 1: Profile Editor UI (COMPLETE!)
+- [x] Professional modal-based Add/Edit/Delete UI
+- [x] Multi-field support (name, email, phone, address, company, custom)
+- [x] Form validation and error handling
 - [x] Bidirectional substitution (real ↔ alias)
+- [x] ChatGPT + Claude fully tested and working
 - [x] All tests passing (9/9)
 
-### Phase 2: Production Readiness
-- [ ] Remove debug console logs (or add production flag)
-- [ ] Test as packed extension (.crx)
-- [ ] Claude.ai support + testing
-- [ ] Gemini support + testing
-- [ ] Stats tracking (increment counters)
-- [ ] Error handling UI (toasts/notifications)
-- [ ] Response text decoding (currently only request encoding works)
-- [ ] Edge case testing (empty aliases, special characters, etc.)
+### 🚧 Phase 2: Production Polish (Week 2)
+- [ ] Professional icons and screenshots for Chrome Web Store
+- [ ] Privacy Policy and Terms of Service
+- [ ] Remove debug logs (production mode)
+- [ ] User-facing error messages
+- [ ] Chrome Web Store submission
+
+### 🔜 Phase 3: API Key Vault (Week 3-4)
+- [ ] FREE: 10 stored keys, OpenAI detection
+- [ ] PRO: Unlimited keys, all patterns (GitHub, AWS, Stripe)
+- [ ] Warn-before-send modal
+- [ ] Stats tracking ("47 keys protected this month")
+
+### 🔜 Phase 4: Service Testing (Week 5)
+- [ ] Verify all 7 AI services (ChatGPT ✅, Claude ✅, Gemini, Perplexity, Poe, Copilot, You.com)
+- [ ] Edge case testing
 - [ ] Performance optimization
-- [ ] Build for distribution
 
-### Phase 3: Enhanced UX
-- [ ] Input field highlighting
-- [ ] Visual feedback notifications
-- [ ] Improved onboarding flow
-- [ ] Export/import aliases
+### 🔜 Phase 5-7: Enhanced Features (Weeks 6-9)
+- [ ] **Alias Variations**: Auto-detect GregBarker, gregbarker, gbarker
+- [ ] **Dev Terms Spell Check**: Catch "openIA" → "OpenAI" typos
+- [ ] **AI Profile Fill**: Generate fake profiles using ChatGPT/Claude/Gemini
 
-### Phase 4: Advanced Features
-- [ ] Additional PII types (email, phone, addresses)
-- [ ] Team shared dictionaries
-- [ ] Audit logs
-- [ ] Compliance reports
+### 📅 Launch Timeline
+- **Core Launch (Phases 1-4):** ~3 weeks
+- **Enhanced Features (Phases 5-7):** +3-4 weeks
+- **Total to full feature set:** ~6-7 weeks
+
+For detailed roadmap and browser compatibility plans, see [Launch Roadmap](docs/current/launch_roadmap.md).
 
 ## Contributing
 
