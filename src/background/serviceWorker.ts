@@ -6,6 +6,7 @@
 import { AliasEngine } from '../lib/aliasEngine';
 import { StorageManager } from '../lib/storage';
 import { Message } from '../lib/types';
+import { APIKeyDetector } from '../lib/apiKeyDetector';
 
 // Initialize storage on install
 // Inject content scripts into existing tabs on startup
@@ -72,6 +73,21 @@ async function handleMessage(message: Message): Promise<any> {
 
     case 'REINJECT_CONTENT_SCRIPTS':
       return handleReinjectContentScripts();
+
+    case 'ADD_API_KEY':
+      return handleAddAPIKey(message.payload);
+
+    case 'REMOVE_API_KEY':
+      return handleRemoveAPIKey(message.payload);
+
+    case 'UPDATE_API_KEY':
+      return handleUpdateAPIKey(message.payload);
+
+    case 'GET_API_KEYS':
+      return handleGetAPIKeys();
+
+    case 'UPDATE_API_KEY_VAULT_SETTINGS':
+      return handleUpdateAPIKeyVaultSettings(message.payload);
 
     default:
       throw new Error(`Unknown message type: ${message.type}`);
@@ -198,7 +214,105 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
     }
 
     // Reconstruct request body with substituted text
-    const modifiedRequestData = replaceAllText(requestData, substituted.text);
+    let modifiedText = substituted.text;
+
+    // ========== API KEY DETECTION ==========
+    const storage = StorageManager.getInstance();
+    const config = await storage.loadConfig();
+
+    // Service name mapping for activity log
+    const serviceName = service === 'chatgpt' ? 'ChatGPT' :
+                        service === 'claude' ? 'Claude' :
+                        service === 'gemini' ? 'Gemini' :
+                        service === 'perplexity' ? 'Perplexity' :
+                        service === 'poe' ? 'Poe' :
+                        service === 'copilot' ? 'Copilot' :
+                        service === 'you' ? 'You.com' : 'Unknown';
+
+    if (config?.apiKeyVault?.enabled) {
+      console.log('🔐 API Key Vault enabled, scanning for keys...');
+
+      // Get user's stored keys
+      const storedKeys = config.apiKeyVault.keys
+        .filter((k) => k.enabled)
+        .map((k) => k.keyValue);
+
+      // Determine which patterns to check based on tier
+      const isFree = config.account?.tier === 'free';
+      const includeGeneric = !isFree; // PRO only
+
+      // Convert custom patterns from strings to RegExp
+      const customPatterns = (config.apiKeyVault.customPatterns || []).map(
+        (pattern: string) => new RegExp(pattern, 'g')
+      );
+
+      // Detect API keys
+      const detectedKeys = APIKeyDetector.detect(modifiedText, {
+        includeGeneric,
+        customPatterns,
+        storedKeys,
+      });
+
+      // Filter detections based on FREE tier restrictions
+      const allowedDetections = isFree
+        ? detectedKeys.filter((k) => k.format === 'openai')
+        : detectedKeys;
+
+      if (allowedDetections.length > 0) {
+        console.log(`🔐 Detected ${allowedDetections.length} API keys (mode: ${config.apiKeyVault.mode})`);
+
+        // Handle based on mode
+        if (config.apiKeyVault.mode === 'auto-redact') {
+          // Auto-redact keys
+          modifiedText = APIKeyDetector.redact(modifiedText, allowedDetections, 'placeholder');
+
+          // Update stats for each detected key
+          for (const detected of allowedDetections) {
+            const stored = config.apiKeyVault.keys.find((k) => k.keyValue === detected.value);
+            if (stored) {
+              await storage.incrementAPIKeyProtection(stored.id);
+            }
+          }
+
+          // Log activity
+          logActivity({
+            type: 'substitution',
+            service: service,
+            details: {
+              url: serviceName,
+              apiKeysProtected: allowedDetections.length,
+              keyTypes: allowedDetections.map((k) => k.format),
+              substitutionCount: allowedDetections.length,
+            },
+            message: `API Keys: ${allowedDetections.length} keys redacted`,
+          });
+
+          console.log('✅ API keys auto-redacted:', allowedDetections.map(k => k.format));
+        } else if (config.apiKeyVault.mode === 'warn-first') {
+          // TODO: Send message to content script to show warning dialog
+          // For now, auto-redact (will implement dialog in Phase 3)
+          console.log('⚠️  Warn-first mode not yet implemented, auto-redacting...');
+          modifiedText = APIKeyDetector.redact(modifiedText, allowedDetections, 'placeholder');
+        } else if (config.apiKeyVault.mode === 'log-only') {
+          // Just log, don't redact
+          console.log('📋 Log-only mode: Keys detected but not redacted');
+          logActivity({
+            type: 'warning',
+            service: service,
+            details: {
+              url: serviceName,
+              apiKeysFound: allowedDetections.length,
+              keyTypes: allowedDetections.map((k) => k.format),
+              substitutionCount: 0,
+            },
+            message: `Warning: ${allowedDetections.length} API keys found but not redacted (log-only mode)`,
+          });
+        }
+      }
+    }
+
+    // Reconstruct request body with modified text (PII + API keys substituted)
+    const modifiedRequestData = replaceAllText(requestData, modifiedText);
 
     return {
       success: true,
@@ -517,6 +631,94 @@ async function handleReinjectContentScripts() {
 }
 
 /**
+ * Handle ADD_API_KEY message from popup
+ */
+async function handleAddAPIKey(payload: { name?: string; keyValue: string; format?: import('../lib/types').APIKeyFormat }) {
+  try {
+    const storage = StorageManager.getInstance();
+    const newKey = await storage.addAPIKey(payload);
+    return { success: true, data: newKey };
+  } catch (error: any) {
+    console.error('[Background] Failed to add API key:', error);
+
+    // Check for FREE tier limits
+    if (error.message.startsWith('FREE_TIER_LIMIT')) {
+      return {
+        success: false,
+        error: 'FREE_TIER_LIMIT',
+        message: 'You have reached the FREE tier limit of 10 API keys. Upgrade to PRO for unlimited keys.',
+      };
+    }
+
+    if (error.message.startsWith('FREE_TIER_PATTERN')) {
+      return {
+        success: false,
+        error: 'FREE_TIER_PATTERN',
+        message: 'FREE tier only supports OpenAI key detection. Upgrade to PRO for GitHub, AWS, Stripe, and other patterns.',
+      };
+    }
+
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Handle REMOVE_API_KEY message from popup
+ */
+async function handleRemoveAPIKey(payload: { id: string }) {
+  try {
+    const storage = StorageManager.getInstance();
+    await storage.removeAPIKey(payload.id);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Background] Failed to remove API key:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Handle UPDATE_API_KEY message from popup
+ */
+async function handleUpdateAPIKey(payload: { id: string; updates: Partial<import('../lib/types').APIKey> }) {
+  try {
+    const storage = StorageManager.getInstance();
+    await storage.updateAPIKey(payload.id, payload.updates);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Background] Failed to update API key:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Handle GET_API_KEYS message from popup
+ */
+async function handleGetAPIKeys() {
+  try {
+    const storage = StorageManager.getInstance();
+    const keys = await storage.getAllAPIKeys();
+    return { success: true, data: keys };
+  } catch (error: any) {
+    console.error('[Background] Failed to get API keys:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Handle UPDATE_API_KEY_VAULT_SETTINGS message from popup
+ */
+async function handleUpdateAPIKeyVaultSettings(payload: Partial<import('../lib/types').APIKeyVaultConfig>) {
+  try {
+    const storage = StorageManager.getInstance();
+    await storage.updateAPIKeyVaultSettings(payload);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Background] Failed to update API Key Vault settings:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Log activity to storage for debug console
  */
 async function logActivity(entry: {
@@ -528,6 +730,10 @@ async function logActivity(entry: {
     piiTypesFound?: string[];
     substitutionCount: number;
     error?: string;
+    // Optional API Key Vault fields
+    apiKeysProtected?: number;
+    apiKeysFound?: number;
+    keyTypes?: string[];
   };
   message: string;
 }) {

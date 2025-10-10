@@ -93,10 +93,14 @@ export interface ActivityLogEntry {
   service: AIService;
   details: {
     url: string;
-    profilesUsed: string[];      // Profile IDs
-    piiTypesFound: string[];     // ['name', 'email']
+    profilesUsed?: string[];      // Profile IDs
+    piiTypesFound?: string[];     // ['name', 'email']
     substitutionCount: number;
     error?: string;
+    // API Key Vault fields
+    apiKeysProtected?: number;
+    apiKeysFound?: number;
+    keyTypes?: string[];         // ['openai', 'github']
   };
   message: string;
 }
@@ -286,6 +290,14 @@ export type MessageType =
   | 'GET_ACTIVITY_LOG'
   | 'CLEAR_ACTIVITY_LOG'
   | 'ADD_ACTIVITY_LOG'
+
+  // API Key Vault
+  | 'ADD_API_KEY'
+  | 'REMOVE_API_KEY'
+  | 'UPDATE_API_KEY'
+  | 'GET_API_KEYS'
+  | 'UPDATE_API_KEY_VAULT_SETTINGS'
+
   // Health & Status
   | 'PING'
   | 'HEALTH_CHECK'

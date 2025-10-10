@@ -48,15 +48,23 @@ export function renderActivityLog(activityLog: ActivityLogEntry[]) {
       const typeIcon = entry.type === 'substitution' ? '✓' : entry.type === 'warning' ? '⚠' : '✗';
       const typeClass = entry.type === 'substitution' ? 'success' : entry.type === 'warning' ? 'warning' : 'error';
 
+      // Ensure optional arrays are defined before accessing length
+      const profiles = entry.details.profilesUsed || [];
+      const piiTypes = entry.details.piiTypesFound || [];
+      const keyTypes = (entry.details as any).keyTypes || [];
+
       const details = [
         `URL: ${entry.details.url}`,
-        entry.details.profilesUsed?.length > 0
-          ? `Profiles: ${entry.details.profilesUsed.join(', ')}`
-          : '',
-        entry.details.piiTypesFound?.length > 0
-          ? `PII Types: ${entry.details.piiTypesFound.join(', ')}`
-          : '',
+        profiles.length > 0 ? `Profiles: ${profiles.join(', ')}` : '',
+        piiTypes.length > 0 ? `PII Types: ${piiTypes.join(', ')}` : '',
         `Substitutions: ${entry.details.substitutionCount}`,
+        // API Key Vault info if present
+        (entry.details as any).apiKeysProtected !== undefined
+          ? `API Keys Protected: ${(entry.details as any).apiKeysProtected}`
+          : (entry.details as any).apiKeysFound !== undefined
+          ? `API Keys Found: ${(entry.details as any).apiKeysFound}`
+          : '',
+        keyTypes.length > 0 ? `Key Types: ${keyTypes.join(', ')}` : '',
         entry.details.error ? `Error: ${entry.details.error}` : '',
       ]
         .filter(Boolean)

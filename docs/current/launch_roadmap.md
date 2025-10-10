@@ -127,6 +127,21 @@ Don't build features no one uses. Get free tier perfect, share with devs, build 
 - Added types: `APIKey`, `APIKeyFormat`, `APIKeyVaultConfig`
 - Updated `UserConfig` to include optional `apiKeyVault` field
 
+### UI plan & next steps (proposal)
+
+- Surface API Key Vault under Settings → Features → "API Keys" (recommended). This avoids crowding top-level tabs while keeping features discoverable via a features submenu.
+- Add a compact card in the main popup summarizing vault state (ON/OFF, X/10 FREE) with a link to the full Settings page.
+- Implement Add/Edit/Delete modals for keys with format auto-detection and preview (masking in UI by default).
+- Implement warn-first dialog flow: content script displays modal when keys are detected and sends user decision back to background (accept/redact/send anyway). This requires message plumbing between content script and service worker and a small modal UI component in the page context (or content script overlay).
+- Add unit tests for detection and redact behavior and an integration e2e test for the warn-first flow (Playwright) before enabling warn-first by default.
+
+### Impact considerations
+
+- Stats & storage: Each key must track protectionCount and lastUsed; the Stats dashboard must be extended to show keys-protected by type.
+- UX scalability: If we add many feature pages, use a single "Features" menu with feature pages as submenu items instead of adding top-level tabs for each feature. This keeps the popup compact and allows grouping (Security, Productivity, Integrations).
+- Permissions & privacy: Keep all key data encrypted at rest and never transmitted. Warn users clearly when enabling auto-detection for "generic" patterns (may cause false positives).
+
+
 ### Success Criteria
 - ⏳ Detects OpenAI keys in error logs
 - ⏳ Shows warning before sending

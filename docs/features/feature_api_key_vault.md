@@ -413,6 +413,46 @@ async function handleSubstituteRequest(payload: { body: string }): Promise<any> 
 
   // Continue with normal PII substitution...
 }
+
+---
+
+## Recent changes & next steps
+
+### What was just completed (backend)
+
+- API key detection engine implemented (`src/lib/apiKeyDetector.ts`) with patterns for OpenAI, GitHub, AWS, Stripe, Google and a generic fallback.
+- Types added: `APIKey`, `APIKeyFormat`, `APIKeyVaultConfig` and integrated into `UserConfig`.
+- Service worker integration scaffolded: `handleSubstituteRequest` now detects keys, supports `auto-redact` mode and records protections in `config`/activity log. The code path is present and wired, but the UI flows are not yet available.
+- Storage layer extended with save/load hooks for API keys and protection counters (storage changes implemented in `src/lib/storage.ts`).
+
+### Current status
+
+- Build: ✅ Project builds successfully (webpack) after fixes to activity logging and UI rendering.
+- Runtime: ⚠️ Feature not exposed in UI yet — UI controls, Add Key modal, and warn-first dialog need implementation before end-user testing.
+
+### Short-term next steps (proposal)
+
+1. UI implementation (Settings → API Keys section)
+  - Add API Keys subsection to Settings tab (re-use settings layout). Include FREE counter, list of keys, Add/Edit/Delete actions, and mode selector (auto-redact / warn-first / log-only).
+  - Implement Add Key modal with detection preview and format auto-detection.
+  - Implement warn-first flow: content script shows modal when keys detected and relays user choice to service worker.
+
+2. UX decisions
+  - Decide how features surface in the popup vs settings: Recommend a single "Features" top-level tab with per-feature submenu (API Keys, Alias Variations, Dev Terms, Image Scanning). This keeps the popup compact and avoids a crowded top-level tab bar.
+  - Keep a lightweight settings summary in the main popup (e.g., small card showing "API Key Vault: ON, 0/10 FREE") linking to the full settings page.
+
+3. Metrics & telemetry (local)
+  - Store protectionCount, lastUsed on each key. Expose aggregated metrics in Stats tab (keys protected by type). Keep all telemetry local and encrypted.
+
+4. Tests
+  - Unit tests for `APIKeyDetector.detect()` and `.redact()` (edge cases, overlapping matches).
+  - Integration test: service worker + content script warn-first modal flow (mock chrome.runtime messages in jest or playwright e2e).
+
+5. Docs
+  - Add quick-start screenshots to `docs/features/feature_api_key_vault.md` showing Add Key modal, Settings slice, and Warning Dialog.
+
+---
+
 ```
 
 ### 4. Storage Manager Updates
