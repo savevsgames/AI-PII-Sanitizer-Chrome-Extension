@@ -77,8 +77,13 @@ export function renderProfiles(profiles: AliasProfile[]) {
           <div class="profile-header">
             <div class="profile-title">👤 ${escapeHtml(profile.profileName)}</div>
             <div class="profile-actions">
-              <button class="icon-btn" title="Toggle" data-action="toggle" data-id="${profile.id}">
-                ${profile.enabled ? '✓' : '○'}
+              <span class="profile-status ${profile.enabled ? 'status-enabled' : 'status-disabled'}">
+                ${profile.enabled ? 'Alias Enabled' : 'Alias Disabled'}
+              </span>
+              <button class="btn-sm ${profile.enabled ? 'btn-danger' : 'btn-success'}"
+                      data-action="toggle"
+                      data-id="${profile.id}">
+                ${profile.enabled ? 'Disable' : 'Enable'}
               </button>
               <button class="icon-btn" title="Edit" data-action="edit" data-id="${profile.id}">✏️</button>
               <button class="icon-btn" title="Delete" data-action="delete" data-id="${profile.id}">🗑️</button>
@@ -96,7 +101,7 @@ export function renderProfiles(profiles: AliasProfile[]) {
     .join('');
 
   // Attach event listeners to profile action buttons
-  profileList.querySelectorAll('.icon-btn').forEach((btn) => {
+  profileList.querySelectorAll('.icon-btn, .btn-sm').forEach((btn) => {
     btn.addEventListener('click', handleProfileAction);
   });
 }

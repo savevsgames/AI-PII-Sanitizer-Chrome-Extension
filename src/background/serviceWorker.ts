@@ -8,10 +8,18 @@ import { StorageManager } from '../lib/storage';
 import { Message } from '../lib/types';
 
 // Initialize storage on install
+// Inject content scripts into existing tabs on startup
+chrome.runtime.onStartup.addListener(async () => {
+  console.log('AI PII Sanitizer startup');
+  await injectIntoExistingTabs();
+});
+
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('AI PII Sanitizer installed');
   const storage = StorageManager.getInstance();
   await storage.initialize();
+  // Inject content scripts into existing tabs
+  await injectIntoExistingTabs();
 });
 
 // Handle messages from content script
@@ -34,6 +42,10 @@ chrome.runtime.onMessage.addListener(
  */
 async function handleMessage(message: Message): Promise<any> {
   switch (message.type) {
+    case 'HEALTH_CHECK':
+      // Simple health check for page status detection
+      return { success: true, status: 'ok' };
+
     case 'SUBSTITUTE_REQUEST':
       return handleSubstituteRequest(message.payload);
 
@@ -57,6 +69,9 @@ async function handleMessage(message: Message): Promise<any> {
 
     case 'GET_CONFIG':
       return handleGetConfig();
+
+    case 'REINJECT_CONTENT_SCRIPTS':
+      return handleReinjectContentScripts();
 
     default:
       throw new Error(`Unknown message type: ${message.type}`);
@@ -102,13 +117,37 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
 
     console.log('🔄 Substituting request body');
 
+    // Handle empty or non-JSON bodies (streaming, multipart, etc.)
+    if (!body || body.trim() === '') {
+      console.log('⚠️ Empty request body, skipping substitution');
+      return {
+        success: true,
+        modifiedBody: body,
+        substitutions: 0,
+      };
+    }
+
     // Parse request body
     let requestData;
     try {
       requestData = JSON.parse(body);
     } catch (e) {
-      console.error('❌ Cannot parse request body:', e);
-      return { success: false, error: 'Cannot parse request body' };
+      // Not JSON - might be streaming, form data, or other format
+      console.log('⚠️ Non-JSON request body, attempting plain text substitution');
+
+      // Try plain text substitution for non-JSON bodies
+      const aliasEngine = await AliasEngine.getInstance();
+      const substituted = aliasEngine.substitute(body, 'encode');
+
+      if (substituted.substitutions.length > 0) {
+        console.log('✅ Plain text substituted:', substituted.substitutions.length, 'replacements');
+      }
+
+      return {
+        success: true,
+        modifiedBody: substituted.text,
+        substitutions: substituted.substitutions.length,
+      };
     }
 
     // Extract all text content from messages/prompt
@@ -403,6 +442,78 @@ async function handleReloadProfiles() {
   const profiles = aliasEngine.getProfiles();
   console.log('[Background] ✅ Profiles reloaded:', profiles.length, 'active profiles');
   return { success: true, profileCount: profiles.length };
+}
+
+/**
+ * Check if content script is already injected in a tab
+ */
+async function isContentScriptInjected(tabId: number): Promise<boolean> {
+  try {
+    const response = await chrome.tabs.sendMessage(tabId, { type: 'PING' });
+    return response === 'PONG';
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Inject content scripts into all existing AI service tabs
+ */
+async function injectIntoExistingTabs(): Promise<void> {
+  console.log('[Background] Injecting content scripts into existing tabs...');
+
+  const AI_SERVICE_PATTERNS = [
+    '*://chatgpt.com/*',
+    '*://*.openai.com/*',
+    '*://claude.ai/*',
+    '*://gemini.google.com/*',
+    '*://perplexity.ai/*',
+    '*://poe.com/*',
+    '*://copilot.microsoft.com/*',
+    '*://you.com/*',
+  ];
+
+  try {
+    // Query all tabs matching AI service URLs
+    for (const pattern of AI_SERVICE_PATTERNS) {
+      const tabs = await chrome.tabs.query({ url: pattern });
+
+      for (const tab of tabs) {
+        if (!tab.id) continue;
+
+        // Check if content script is already injected
+        const isInjected = await isContentScriptInjected(tab.id);
+
+        if (!isInjected) {
+          console.log(`[Background] Injecting into tab ${tab.id}: ${tab.url}`);
+
+          try {
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              files: ['content.js'],
+            });
+            console.log(`[Background] ✅ Injected into tab ${tab.id}`);
+          } catch (error) {
+            console.warn(`[Background] Failed to inject into tab ${tab.id}:`, error);
+          }
+        } else {
+          console.log(`[Background] Already injected in tab ${tab.id}`);
+        }
+      }
+    }
+
+    console.log('[Background] ✅ Content script injection complete');
+  } catch (error) {
+    console.error('[Background] Error injecting into existing tabs:', error);
+  }
+}
+
+/**
+ * Handle REINJECT_CONTENT_SCRIPTS message from popup
+ */
+async function handleReinjectContentScripts() {
+  await injectIntoExistingTabs();
+  return { success: true, message: 'Content scripts reinjected' };
 }
 
 /**

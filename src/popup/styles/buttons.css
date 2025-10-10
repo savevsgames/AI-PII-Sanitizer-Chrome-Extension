@@ -89,6 +89,27 @@
   gap: var(--space-md);
 }
 
+/* Success Button (Green for Enable) */
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Warning Button */
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-warning:hover {
+  background: #d97706;
+}
+
 /* Expand Button (for minimal mode) */
 .expand-btn {
   background: var(--color-gradient);

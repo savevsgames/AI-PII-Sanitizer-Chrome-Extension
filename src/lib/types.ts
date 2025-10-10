@@ -285,7 +285,11 @@ export type MessageType =
   | 'UPDATE_STATS'
   | 'GET_ACTIVITY_LOG'
   | 'CLEAR_ACTIVITY_LOG'
-  | 'ADD_ACTIVITY_LOG';
+  | 'ADD_ACTIVITY_LOG'
+  // Health & Status
+  | 'PING'
+  | 'HEALTH_CHECK'
+  | 'REINJECT_CONTENT_SCRIPTS';
 
 /**
  * Generic message structure

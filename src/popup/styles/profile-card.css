@@ -42,6 +42,24 @@
 .profile-actions {
   display: flex;
   gap: var(--space-sm);
+  align-items: center;
+}
+
+.profile-status {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+}
+
+.status-enabled {
+  color: #059669;
+  background: #d1fae5;
+}
+
+.status-disabled {
+  color: #dc2626;
+  background: #fee2e2;
 }
 
 .profile-mappings {
