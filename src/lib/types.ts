@@ -379,6 +379,7 @@ export type APIKeyFormat =
 export interface APIKey {
   id: string;
   name?: string; // User-provided label
+  project?: string; // Project/directory name (e.g., "Work", "Personal", "Client A")
   keyValue: string; // The actual key (encrypted in storage)
   format: APIKeyFormat; // Detected format
   createdAt: number;

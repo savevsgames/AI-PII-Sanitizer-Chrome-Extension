@@ -547,7 +547,7 @@ Pick one and commit. Changing later is painful.
 - [ ] Keep "AI PII Sanitizer"
 - [ ] PrivacyShield
 - [ ] SafePrompt
-- [ ] Other: __________
+- [ ] Other: PromptBlocker.com
 
 ### 2. Domain
 Register yourname.com for landing page

@@ -63,6 +63,10 @@
         <span class="tab-icon">📊</span>
         <span class="tab-label">Stats</span>
       </button>
+      <button class="tab-button" data-tab="features">
+        <span class="tab-icon">✨</span>
+        <span class="tab-label">Features</span>
+      </button>
       <button class="tab-button" data-tab="settings">
         <span class="tab-icon">⚙️</span>
         <span class="tab-label">Settings</span>
@@ -144,6 +148,39 @@
           <h3>Most Active Profile</h3>
           <div class="profile-highlight" id="mostActiveProfile">
             <span>No data yet</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEATURES TAB -->
+      <section class="tab-content" id="features-tab">
+        <!-- Features Hub View -->
+        <div class="features-hub-view" id="featuresHubView">
+          <div class="tab-header">
+            <h2>Features</h2>
+            <span class="tier-badge" id="currentTierBadge">FREE</span>
+          </div>
+
+          <div class="features-grid" id="featuresGrid">
+            <!-- Feature cards will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Feature Detail View (slide-in) -->
+        <div class="feature-detail-view hidden" id="featureDetailView">
+          <div class="feature-detail-header">
+            <button class="back-button" id="featureBackBtn">
+              <span class="back-icon">←</span>
+              <span>Back to Features</span>
+            </button>
+            <div class="feature-detail-title" id="featureDetailTitle">
+              <h2 id="featureDetailName">Feature Name</h2>
+              <span class="tier-badge" id="featureDetailTier">PRO</span>
+            </div>
+          </div>
+
+          <div class="feature-detail-content" id="featureDetailContent">
+            <!-- Feature-specific content will be rendered here -->
           </div>
         </div>
       </section>
@@ -395,6 +432,60 @@
         <button type="button" class="btn btn-secondary" id="modalCancel">Cancel</button>
         <button type="button" class="btn btn-danger hidden" id="modalDelete">Delete Profile</button>
         <button type="submit" class="btn btn-primary" id="modalSave">Save Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Key Modal -->
+  <div class="modal hidden" id="apiKeyModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="apiKeyModalTitle">Add API Key</h3>
+        <button class="modal-close" id="apiKeyModalClose">&times;</button>
+      </div>
+
+      <form class="modal-body" id="apiKeyForm">
+        <div class="form-section">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="apiKeyName">Key Nickname</label>
+              <input type="text" id="apiKeyName" name="name" placeholder="e.g., My OpenAI Key" maxlength="50">
+              <span class="form-hint">Optional: A friendly name for this key</span>
+            </div>
+
+            <div class="form-group">
+              <label for="apiKeyProject">Project</label>
+              <input type="text" id="apiKeyProject" name="project" placeholder="e.g., Work, Personal" maxlength="50" list="projectSuggestions">
+              <datalist id="projectSuggestions">
+                <!-- Will be populated dynamically with existing projects -->
+              </datalist>
+              <span class="form-hint">Optional: Group keys by project</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="apiKeyValue">API Key *</label>
+            <textarea id="apiKeyValue" name="keyValue" placeholder="Paste your API key here..." required rows="3"></textarea>
+            <span class="form-hint" id="apiKeyDetectedFormat"></span>
+            <span class="form-error hidden" id="apiKeyError">Please enter a valid API key</span>
+          </div>
+
+          <div class="form-group" id="apiKeyTierWarning" style="display: none;">
+            <div class="tier-warning">
+              <span class="tier-warning-icon">⚠️</span>
+              <div class="tier-warning-text">
+                <strong>FREE Tier Limit</strong>
+                <p>You can only protect OpenAI keys on the FREE tier. Upgrade to PRO to protect all API key types.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="apiKeyModalCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="apiKeyModalSave">Save Key</button>
       </div>
     </div>
   </div>
