@@ -166,31 +166,15 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
       };
     }
 
-    // Extract all text content from messages/prompt
-    const textContent = extractAllText(requestData);
-
-    console.log('📝 Extracted text:', textContent.substring(0, 300));
-
-    if (!textContent) {
-      console.log('⚠️ No text extracted from request');
-      return {
-        success: true,
-        modifiedBody: body,
-        substitutions: 0,
-      };
-    }
-
-    // Apply substitution (real → alias)
+    // Apply substitution IN-PLACE (real → alias)
     const aliasEngine = await AliasEngine.getInstance();
     const profiles = aliasEngine.getProfiles();
     console.log('📋 Active profiles:', profiles.length, '-', profiles.map((p: any) => p.profileName).join(', '));
 
-    const substituted = aliasEngine.substitute(textContent, 'encode');
+    const inPlace = await substituteInPlace(requestData, aliasEngine);
 
-    console.log('✅ Request substituted:', substituted.substitutions.length, 'replacements');
-    if (substituted.substitutions.length > 0) {
-      console.log('🔀 Changes:', substituted.substitutions);
-
+    console.log('✅ Request substituted:', inPlace.substitutionCount, 'replacements');
+    if (inPlace.substitutionCount > 0) {
       // Log activity for debug console
       const serviceName = service === 'chatgpt' ? 'ChatGPT' :
                          service === 'claude' ? 'Claude' :
@@ -205,119 +189,60 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
         service: service,
         details: {
           url: serviceName,
-          profilesUsed: substituted.profilesMatched?.map(p => p.profileName) || [],
-          piiTypesFound: substituted.profilesMatched?.flatMap(p => p.piiTypes) || [],
-          substitutionCount: substituted.substitutions.length,
+          profilesUsed: inPlace.profilesMatched?.map(p => p.profileName) || [],
+          piiTypesFound: inPlace.profilesMatched?.flatMap(p => p.piiTypes) || [],
+          substitutionCount: inPlace.substitutionCount,
         },
-        message: `${serviceName}: ${substituted.substitutions.length} items replaced`,
+        message: `${serviceName}: ${inPlace.substitutionCount} items replaced`,
       });
     }
-
-    // Reconstruct request body with substituted text
-    let modifiedText = substituted.text;
 
     // ========== API KEY DETECTION ==========
     const storage = StorageManager.getInstance();
     const config = await storage.loadConfig();
 
-    // Service name mapping for activity log
-    const serviceName = service === 'chatgpt' ? 'ChatGPT' :
-                        service === 'claude' ? 'Claude' :
-                        service === 'gemini' ? 'Gemini' :
-                        service === 'perplexity' ? 'Perplexity' :
-                        service === 'poe' ? 'Poe' :
-                        service === 'copilot' ? 'Copilot' :
-                        service === 'you' ? 'You.com' : 'Unknown';
+  // Service name mapping for activity log
+  const serviceName = service === 'chatgpt' ? 'ChatGPT' :
+            service === 'claude' ? 'Claude' :
+            service === 'gemini' ? 'Gemini' :
+            service === 'perplexity' ? 'Perplexity' :
+            service === 'poe' ? 'Poe' :
+            service === 'copilot' ? 'Copilot' :
+            service === 'you' ? 'You.com' : 'Unknown';
+
+    let modifiedRequestData = inPlace.data;
 
     if (config?.apiKeyVault?.enabled) {
-      console.log('🔐 API Key Vault enabled, scanning for keys...');
+      const apiRedaction = await redactApiKeysInPlace(modifiedRequestData, config);
 
-      // Get user's stored keys
-      const storedKeys = config.apiKeyVault.keys
-        .filter((k) => k.enabled)
-        .map((k) => k.keyValue);
 
-      // Determine which patterns to check based on tier
-      const isFree = config.account?.tier === 'free';
-      const includeGeneric = !isFree; // PRO only
-
-      // Convert custom patterns from strings to RegExp
-      const customPatterns = (config.apiKeyVault.customPatterns || []).map(
-        (pattern: string) => new RegExp(pattern, 'g')
-      );
-
-      // Detect API keys
-      const detectedKeys = APIKeyDetector.detect(modifiedText, {
-        includeGeneric,
-        customPatterns,
-        storedKeys,
-      });
-
-      // Filter detections based on FREE tier restrictions
-      const allowedDetections = isFree
-        ? detectedKeys.filter((k) => k.format === 'openai')
-        : detectedKeys;
-
-      if (allowedDetections.length > 0) {
-        console.log(`🔐 Detected ${allowedDetections.length} API keys (mode: ${config.apiKeyVault.mode})`);
-
-        // Handle based on mode
-        if (config.apiKeyVault.mode === 'auto-redact') {
-          // Auto-redact keys
-          modifiedText = APIKeyDetector.redact(modifiedText, allowedDetections, 'placeholder');
-
-          // Update stats for each detected key
-          for (const detected of allowedDetections) {
-            const stored = config.apiKeyVault.keys.find((k) => k.keyValue === detected.value);
-            if (stored) {
-              await storage.incrementAPIKeyProtection(stored.id);
-            }
+      if (apiRedaction.redactedCount > 0) {
+        // Update per-key stats
+        for (const detected of apiRedaction.detectedAllowed) {
+          const stored = config.apiKeyVault.keys.find((k: any) => k.keyValue === detected.value);
+          if (stored) {
+            await storage.incrementAPIKeyProtection(stored.id);
           }
-
-          // Log activity
-          logActivity({
-            type: 'substitution',
-            service: service,
-            details: {
-              url: serviceName,
-              apiKeysProtected: allowedDetections.length,
-              keyTypes: allowedDetections.map((k) => k.format),
-              substitutionCount: allowedDetections.length,
-            },
-            message: `API Keys: ${allowedDetections.length} keys redacted`,
-          });
-
-          console.log('✅ API keys auto-redacted:', allowedDetections.map(k => k.format));
-        } else if (config.apiKeyVault.mode === 'warn-first') {
-          // TODO: Send message to content script to show warning dialog
-          // For now, auto-redact (will implement dialog in Phase 3)
-          console.log('⚠️  Warn-first mode not yet implemented, auto-redacting...');
-          modifiedText = APIKeyDetector.redact(modifiedText, allowedDetections, 'placeholder');
-        } else if (config.apiKeyVault.mode === 'log-only') {
-          // Just log, don't redact
-          console.log('📋 Log-only mode: Keys detected but not redacted');
-          logActivity({
-            type: 'warning',
-            service: service,
-            details: {
-              url: serviceName,
-              apiKeysFound: allowedDetections.length,
-              keyTypes: allowedDetections.map((k) => k.format),
-              substitutionCount: 0,
-            },
-            message: `Warning: ${allowedDetections.length} API keys found but not redacted (log-only mode)`,
-          });
         }
+
+        logActivity({
+          type: 'substitution',
+          service: service,
+          details: {
+            url: serviceName,
+            apiKeysProtected: apiRedaction.redactedCount,
+            keyTypes: apiRedaction.detectedAllowed.map((k: any) => k.format),
+            substitutionCount: apiRedaction.redactedCount,
+          },
+          message: `API Keys: ${apiRedaction.redactedCount} keys redacted`,
+        });
       }
     }
-
-    // Reconstruct request body with modified text (PII + API keys substituted)
-    const modifiedRequestData = replaceAllText(requestData, modifiedText);
 
     return {
       success: true,
       modifiedBody: JSON.stringify(modifiedRequestData),
-      substitutions: substituted.substitutions.length,
+      substitutions: inPlace.substitutionCount,
     };
   } catch (error: any) {
     console.error('❌ Request substitution error:', error);
@@ -363,131 +288,174 @@ async function handleSubstituteResponse(payload: { text: string }): Promise<any>
   }
 }
 
+// (legacy extractAllText/replaceAllText removed after in-place refactor)
+
 /**
- * Extract all text content from request data
- * Handles ChatGPT, Claude, and Gemini message formats
+ * In-place text substitution for request payloads
+ * Preserves structure across ChatGPT, Claude, and Gemini formats
  */
-function extractAllText(data: any): string {
+async function substituteInPlace(data: any, aliasEngine: AliasEngine): Promise<{
+  data: any;
+  substitutionCount: number;
+  profilesMatched: Array<{ profileName: string; piiTypes: string[] }>;
+}> {
+  const modified = JSON.parse(JSON.stringify(data));
+  let totalSubstitutions = 0;
+  const profileMatchesMap = new Map<string, Set<string>>();
+
+  const trackMatches = (substituted: any) => {
+    totalSubstitutions += substituted.substitutions?.length || 0;
+    if (substituted.profilesMatched) {
+      for (const match of substituted.profilesMatched) {
+        if (!profileMatchesMap.has(match.profileName)) {
+          profileMatchesMap.set(match.profileName, new Set());
+        }
+        for (const piiType of match.piiTypes) {
+          profileMatchesMap.get(match.profileName)!.add(piiType);
+        }
+      }
+    }
+  };
+
   // ChatGPT format: { messages: [{ role, content }] }
-  // content can be:
-  //   - string: "hello world"
-  //   - object: { content_type: "text", parts: ["hello world"] }
-  if (data.messages && Array.isArray(data.messages)) {
-    return data.messages
-      .map((m: any) => {
-        if (typeof m.content === 'string') {
-          return m.content;
-        }
-        // Handle nested ChatGPT format
-        if (m.content?.parts && Array.isArray(m.content.parts)) {
-          return m.content.parts.join('\n');
-        }
-        // Handle array of content blocks
-        if (Array.isArray(m.content)) {
-          return m.content
-            .map((c: any) => (typeof c === 'string' ? c : c.text || ''))
-            .join('\n');
-        }
-        return '';
-      })
-      .filter(Boolean)
-      .join('\n\n');
-  }
-
-  // Claude format: { prompt: "..." } or { messages: [...] }
-  if (data.prompt && typeof data.prompt === 'string') {
-    return data.prompt;
-  }
-
-  // Gemini format: { contents: [{ parts: [{ text }] }] }
-  if (data.contents && Array.isArray(data.contents)) {
-    return data.contents
-      .flatMap((c: any) => c.parts?.map((p: any) => p.text) || [])
-      .filter(Boolean)
-      .join('\n\n');
-  }
-
-  return '';
-}
-
-/**
- * Replace all text content in request data with substituted text
- */
-function replaceAllText(data: any, substitutedText: string): any {
-  const modified = JSON.parse(JSON.stringify(data)); // Deep clone
-
-  // Split substituted text back into messages
-  const textParts = substitutedText.split('\n\n').filter(Boolean);
-  let partIndex = 0;
-
-  // ChatGPT format
   if (modified.messages && Array.isArray(modified.messages)) {
-    modified.messages = modified.messages.map((m: any) => {
-      if (!m.content) return m;
+    for (let i = 0; i < modified.messages.length; i++) {
+      const msg = modified.messages[i];
+      if (!msg.content) continue;
 
-      // String content
-      if (typeof m.content === 'string' && m.content) {
-        return { ...m, content: textParts[partIndex++] || m.content };
-      }
-
-      // Nested object: { content_type: "text", parts: [...] }
-      if (m.content.parts && Array.isArray(m.content.parts)) {
-        const substituted = textParts[partIndex++];
-        if (substituted) {
-          return {
-            ...m,
-            content: {
-              ...m.content,
-              parts: [substituted]
-            }
-          };
+      if (typeof msg.content === 'string') {
+        const substituted = aliasEngine.substitute(msg.content, 'encode');
+        modified.messages[i].content = substituted.text;
+        trackMatches(substituted);
+      } else if (msg.content.parts && Array.isArray(msg.content.parts)) {
+        for (let j = 0; j < msg.content.parts.length; j++) {
+          const substituted = aliasEngine.substitute(msg.content.parts[j], 'encode');
+          modified.messages[i].content.parts[j] = substituted.text;
+          trackMatches(substituted);
+        }
+      } else if (Array.isArray(msg.content)) {
+        for (let j = 0; j < msg.content.length; j++) {
+          const block = msg.content[j];
+          if (typeof block === 'string') {
+            const substituted = aliasEngine.substitute(block, 'encode');
+            modified.messages[i].content[j] = substituted.text;
+            trackMatches(substituted);
+          } else if (block && typeof block === 'object' && 'text' in block) {
+            const substituted = aliasEngine.substitute(block.text, 'encode');
+            modified.messages[i].content[j].text = substituted.text;
+            trackMatches(substituted);
+          }
         }
       }
-
-      // Array of content blocks
-      if (Array.isArray(m.content)) {
-        return {
-          ...m,
-          content: m.content.map((c: any) => {
-            if (typeof c === 'string') {
-              return textParts[partIndex++] || c;
-            }
-            if (c.text) {
-              return { ...c, text: textParts[partIndex++] || c.text };
-            }
-            return c;
-          })
-        };
-      }
-
-      return m;
-    });
+    }
   }
 
   // Claude prompt format
-  if (modified.prompt && typeof modified.prompt === 'string') {
-    modified.prompt = substitutedText;
+  else if (modified.prompt && typeof modified.prompt === 'string') {
+    const substituted = aliasEngine.substitute(modified.prompt, 'encode');
+    modified.prompt = substituted.text;
+    trackMatches(substituted);
   }
 
   // Gemini format
-  if (modified.contents && Array.isArray(modified.contents)) {
-    modified.contents = modified.contents.map((c: any) => {
-      if (c.parts && Array.isArray(c.parts)) {
-        return {
-          ...c,
-          parts: c.parts.map((p: any) => {
-            if (p.text) {
-              return { ...p, text: textParts[partIndex++] || p.text };
-            }
-            return p;
-          }),
-        };
+  else if (modified.contents && Array.isArray(modified.contents)) {
+    for (let i = 0; i < modified.contents.length; i++) {
+      const content = modified.contents[i];
+      if (content.parts && Array.isArray(content.parts)) {
+        for (let j = 0; j < content.parts.length; j++) {
+          const part = content.parts[j];
+          if (part && 'text' in part) {
+            const substituted = aliasEngine.substitute(part.text, 'encode');
+            modified.contents[i].parts[j].text = substituted.text;
+            trackMatches(substituted);
+          }
+        }
       }
-      return c;
-    });
+    }
   }
 
-  return modified;
+  const profilesMatched = Array.from(profileMatchesMap.entries()).map(([profileName, piiTypes]) => ({
+    profileName,
+    piiTypes: Array.from(piiTypes)
+  }));
+
+  return { data: modified, substitutionCount: totalSubstitutions, profilesMatched };
+}
+
+/**
+ * In-place API key detection and redaction across supported payload shapes
+ */
+async function redactApiKeysInPlace(data: any, config: any): Promise<{
+  data: any;
+  redactedCount: number;
+  detectedAllowed: any[];
+}> {
+  const modified = JSON.parse(JSON.stringify(data));
+  let redactedCount = 0;
+  const detectedAllowed: any[] = [];
+
+  const storedKeys = config.apiKeyVault.keys
+    .filter((k: any) => k.enabled)
+    .map((k: any) => k.keyValue);
+  const isFree = config.account?.tier === 'free';
+  const includeGeneric = !isFree; // PRO only
+  const customPatterns = (config.apiKeyVault.customPatterns || []).map((pattern: string) => new RegExp(pattern, 'g'));
+
+  const detectAndMaybeRedact = (text: string): string => {
+    const detections = APIKeyDetector.detect(text, { includeGeneric, customPatterns, storedKeys });
+    const allowed = isFree ? detections.filter((k: any) => k.format === 'openai') : detections;
+
+    if (allowed.length > 0) {
+      detectedAllowed.push(...allowed);
+      if (config.apiKeyVault.mode === 'auto-redact' || config.apiKeyVault.mode === 'warn-first') {
+        // warn-first not yet implemented → fallback to redact
+        redactedCount += allowed.length;
+        return APIKeyDetector.redact(text, allowed, 'placeholder');
+      }
+    }
+    return text;
+  };
+
+  // ChatGPT format
+  if (modified.messages && Array.isArray(modified.messages)) {
+    for (let i = 0; i < modified.messages.length; i++) {
+      const msg = modified.messages[i];
+      if (!msg.content) continue;
+
+      if (typeof msg.content === 'string') {
+        modified.messages[i].content = detectAndMaybeRedact(msg.content);
+      } else if (msg.content.parts && Array.isArray(msg.content.parts)) {
+        for (let j = 0; j < msg.content.parts.length; j++) {
+          modified.messages[i].content.parts[j] = detectAndMaybeRedact(msg.content.parts[j]);
+        }
+      } else if (Array.isArray(msg.content)) {
+        for (let j = 0; j < msg.content.length; j++) {
+          const block = msg.content[j];
+          if (typeof block === 'string') {
+            modified.messages[i].content[j] = detectAndMaybeRedact(block);
+          } else if (block && typeof block === 'object' && 'text' in block) {
+            modified.messages[i].content[j].text = detectAndMaybeRedact(block.text);
+          }
+        }
+      }
+    }
+  } else if (modified.prompt && typeof modified.prompt === 'string') {
+    modified.prompt = detectAndMaybeRedact(modified.prompt);
+  } else if (modified.contents && Array.isArray(modified.contents)) {
+    for (let i = 0; i < modified.contents.length; i++) {
+      const content = modified.contents[i];
+      if (content.parts && Array.isArray(content.parts)) {
+        for (let j = 0; j < content.parts.length; j++) {
+          const part = content.parts[j];
+          if (part && 'text' in part) {
+            modified.contents[i].parts[j].text = detectAndMaybeRedact(part.text);
+          }
+        }
+      }
+    }
+  }
+
+  return { data: modified, redactedCount, detectedAllowed };
 }
 
 /**

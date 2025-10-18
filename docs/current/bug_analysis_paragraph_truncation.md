@@ -46,7 +46,24 @@ The extension is **only sending the first paragraph** of multi-paragraph message
 
 ---
 
-## 🔍 Root Cause Analysis
+## � Field Evidence (from DevTools screenshot)
+
+Observed while chatting with ChatGPT:
+
+- Logs show extraction, active profiles, and `✅ Request substituted: 1 replacements` — so aliasing ran.
+- After "Reconstruct request body" the AI still responds as if it only saw the first paragraph.
+- You put name + phone in paragraph 2; they weren’t sent, even though your name was flagged.
+
+Conclusion from evidence:
+
+- Substitution ran on the entire concatenated text, but truncation happened when rebuilding JSON.
+- In ChatGPT’s payload, there was a single message with `content` as one string containing multiple paragraphs (separated by `\n\n`).
+- `replaceAllText()` splits on `\n\n` and writes only `textParts[0]` back when there’s just one string field, silently dropping the rest.
+- Therefore the AI saw only paragraph 1; paragraph 2 (with phone) was lost during the replace step.
+
+This exactly matches the screenshot behavior: “it flagged them” (detection OK) but second-paragraph data never reached the AI (bad reassembly).
+
+## �🔍 Root Cause Analysis
 
 ### The Flawed Logic
 
@@ -264,6 +281,30 @@ async function substituteInPlace(data: any): Promise<any> {
 - ✅ No splitting/joining logic needed
 - ✅ Works for all AI services (ChatGPT, Claude, Gemini)
 - ✅ Cleaner code, easier to maintain
+
+---
+
+## 🩹 Quick Hotfix (if you need a stopgap)
+
+Until the in-place refactor is merged, a minimal safe change avoids truncation for single-string message content:
+
+1) In `replaceAllText(...)`, for the ChatGPT branch where `typeof m.content === 'string'`, replace this line:
+
+```ts
+return { ...m, content: textParts[partIndex++] || m.content };
+```
+
+with:
+
+```ts
+// Do not split multi-paragraph content for single-string messages — keep the whole text
+return { ...m, content: substitutedText };
+```
+
+Pros: No data loss; paragraphs preserved.  
+Cons: If the request truly had multiple messages, they will be merged visually in that one message — acceptable as a short-term mitigation.
+
+Strongly recommended to still do the full refactor below.
 
 ---
 
@@ -528,6 +569,22 @@ The bug fix should focus on **correctness** (sending all paragraphs), not perfor
 
 5. **Update logging**
    - Return total substitution count from `substituteInPlace()`
+
+### Final fix applied checklist
+- [ ] `replaceAllText` calls removed from request path
+- [ ] `substituteInPlace` handles ChatGPT/Claude/Gemini structures in place
+- [ ] API Key detection runs on `extractAllText(modifiedData)` only for scanning, not for rebuild
+- [ ] Added tests for single-message multi-paragraph case (the one from your screenshot)
+- [ ] Verified on ChatGPT that name+phone in paragraph 2 are sent and substituted
+
+---
+
+## ✅ Status Update (Hotfix → Refactor)
+
+- The quick hotfix that preserved entire text for single-string payloads was deployed first to stop truncation.
+- We have now integrated the robust in-place substitution in `serviceWorker.ts` (no extract/split/replace), so name/phone replacements modify the actual outgoing JSON fields directly.
+- API Key scanning/redaction is also applied in-place per field, avoiding any split/join loss.
+- Next manual step: reload the unpacked extension and validate on ChatGPT with a two-paragraph prompt containing your real name in paragraph 1 and phone in paragraph 2; confirm both are present and aliased in the Network request payload.
 
 ---
 
