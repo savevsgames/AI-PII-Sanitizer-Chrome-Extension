@@ -5,6 +5,7 @@
 
 import { APIKey, APIKeyVaultConfig, UserConfig } from '../../lib/types';
 import { useAppStore } from '../../lib/store';
+import { chromeApi } from '../api/chromeApi';
 
 /**
  * Render API keys list with project grouping
@@ -288,13 +289,7 @@ async function toggleAPIKey(keyId: string) {
     if (!key) return;
 
     // Update key enabled state
-    await chrome.runtime.sendMessage({
-      type: 'UPDATE_API_KEY',
-      payload: {
-        keyId,
-        updates: { enabled: !key.enabled }
-      }
-    });
+    await chromeApi.updateAPIKey(keyId, { enabled: !key.enabled });
 
     // Reload config
     await store.loadConfig();
@@ -315,10 +310,7 @@ async function deleteAPIKey(keyId: string, keyName: string) {
 
   try {
     // Send delete message to background
-    await chrome.runtime.sendMessage({
-      type: 'REMOVE_API_KEY',
-      payload: { keyId }
-    });
+    await chromeApi.removeAPIKey(keyId);
 
     // Reload config
     const store = useAppStore.getState();
@@ -356,10 +348,7 @@ function updateProtectionMode(config: UserConfig) {
  */
 async function updateProtectionModeSetting(mode: APIKeyVaultConfig['mode']) {
   try {
-    await chrome.runtime.sendMessage({
-      type: 'UPDATE_API_KEY_VAULT_SETTINGS',
-      payload: { mode }
-    });
+    await chromeApi.updateAPIKeyVaultSettings({ mode });
 
     // Reload config
     const store = useAppStore.getState();
