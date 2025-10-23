@@ -1,6 +1,7 @@
 /**
- * Features Tab Styles
+ * Features Tab Styles - Modern Update
  * Hub view with feature cards and slide-in detail view
+ * Phase 2.5: Updated badges with modern colors
  */
 
 /* ========== FEATURES TAB LAYOUT ========== */
@@ -11,31 +12,35 @@
   overflow: hidden; /* For slide animation */
 }
 
-/* ========== TIER BADGES ========== */
+/* ========== TIER BADGES - MODERNIZED ========== */
 
 .tier-badge {
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
+  padding: 5px 12px;
+  border-radius: 14px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .tier-badge.free {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
+  color: #059669;
+  border: 1px solid rgba(5, 150, 105, 0.2);
 }
 
 .tier-badge.pro {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(168, 139, 250, 0.15) 100%);
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
 .tier-badge.locked {
-  background: var(--color-border);
+  background: rgba(0, 0, 0, 0.05);
   color: var(--color-text-secondary);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 /* ========== FEATURES HUB VIEW ========== */
@@ -179,20 +184,22 @@
   background: var(--color-border);
 }
 
-/* Coming Soon Badge */
+/* Coming Soon Badge - MODERNIZED */
 .feature-card.coming-soon::after {
   content: 'Coming Soon';
   position: absolute;
   top: 12px;
   right: 12px;
-  background: var(--color-border);
-  color: var(--color-text-secondary);
-  padding: 4px 8px;
-  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%);
+  color: #d97706;
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  padding: 5px 10px;
+  border-radius: 12px;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 /* ========== FEATURE DETAIL VIEW (SLIDE-IN) ========== */
