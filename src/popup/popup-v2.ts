@@ -100,10 +100,12 @@ async function loadInitialData() {
     // Load saved mode preference
     await loadModePreference();
 
-    // Poll for activity log updates every 2 seconds
-    setInterval(async () => {
-      await store.loadConfig();
-    }, 2000);
+    // Listen for storage changes instead of polling (fixes memory leak)
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'local' && changes.userConfig) {
+        store.loadConfig();
+      }
+    });
 
     console.log('[Popup V2] Data loaded successfully');
   } catch (error) {
