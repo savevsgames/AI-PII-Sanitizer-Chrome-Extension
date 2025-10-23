@@ -5,6 +5,7 @@
 
 import { useAppStore } from '../../lib/store';
 import { renderAPIKeys } from './apiKeyVault';
+import { chromeApi } from '../api/chromeApi';
 
 /**
  * Initialize API Key modal handlers
@@ -142,35 +143,24 @@ async function handleSaveAPIKey() {
 
   try {
     // Send message to background to add key
-    const response = await chrome.runtime.sendMessage({
-      type: 'ADD_API_KEY',
-      payload: {
-        name: keyName || undefined,
-        project: keyProject || undefined,
-        keyValue: keyValue,
-      }
+    await chromeApi.addAPIKey({
+      name: keyName || undefined,
+      project: keyProject || undefined,
+      keyValue: keyValue,
     });
 
-    if (response.success) {
-      // Close modal
-      modal?.classList.add('hidden');
+    // Success - chromeApi throws on error, so we only get here if successful
+    // Close modal
+    modal?.classList.add('hidden');
 
-      // Reload config and re-render
-      const store = useAppStore.getState();
-      await store.loadConfig();
-      if (store.config) {
-        renderAPIKeys(store.config);
-      }
-
-      console.log('[API Key Modal] API key added successfully');
-    } else {
-      // Show error
-      if (errorSpan) {
-        errorSpan.textContent = response.error || 'Failed to save API key';
-        errorSpan.classList.remove('hidden');
-      }
-      console.error('[API Key Modal] Error adding key:', response.error);
+    // Reload config and re-render
+    const store = useAppStore.getState();
+    await store.loadConfig();
+    if (store.config) {
+      renderAPIKeys(store.config);
     }
+
+    console.log('[API Key Modal] API key added successfully');
   } catch (error) {
     console.error('[API Key Modal] Error saving API key:', error);
     if (errorSpan) {

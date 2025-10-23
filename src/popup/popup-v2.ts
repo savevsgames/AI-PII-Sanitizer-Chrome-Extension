@@ -14,41 +14,17 @@ import { initMinimalMode, loadModePreference, updateMinimalView } from './compon
 import { initPageStatus } from './components/pageStatus';
 import { initFeaturesTab, renderFeaturesHub } from './components/featuresTab';
 import { initAPIKeyModal } from './components/apiKeyModal';
+import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/initUI';
 
 // ========== INITIALIZATION ==========
 
 document.addEventListener('DOMContentLoaded', async () => {
   initTabNavigation();
+  initKeyboardShortcuts();
+  initTheme();
   initUI();
   await loadInitialData();
 });
-
-/**
- * Initialize tab switching functionality
- */
-function initTabNavigation() {
-  const tabButtons = document.querySelectorAll('.tab-button');
-  const tabContents = document.querySelectorAll('.tab-content');
-
-  tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const tabName = button.getAttribute('data-tab');
-
-      // Remove active class from all buttons and contents
-      tabButtons.forEach(btn => btn.classList.remove('active'));
-      tabContents.forEach(content => content.classList.remove('active'));
-
-      // Add active class to clicked button and corresponding content
-      button.classList.add('active');
-      const targetTab = document.getElementById(`${tabName}-tab`);
-      if (targetTab) {
-        targetTab.classList.add('active');
-      }
-
-      console.log(`[Popup V2] Switched to ${tabName} tab`);
-    });
-  });
-}
 
 /**
  * Initialize UI components
