@@ -1,12 +1,23 @@
 /**
- * Header Styles
+ * Header Styles - Modern Glassmorphism
+ * Phase 2.5: Updated gradient colors
  */
 
 .header {
   padding: var(--space-lg) var(--space-xl);
-  background: var(--color-gradient);
+  
+  /* Glass header with modern gradient tint */
+  background: linear-gradient(135deg, 
+    rgba(91, 95, 230, 0.3) 0%, 
+    rgba(139, 92, 246, 0.3) 100%
+  );
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  
+  border-bottom: var(--glass-border);
+  box-shadow: var(--glass-shadow-md);
+  
   color: white;
-  box-shadow: var(--shadow-md);
 }
 
 .header-content {
@@ -21,6 +32,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .header-actions {
@@ -34,9 +47,21 @@
   align-items: center;
   gap: var(--space-sm);
   font-size: var(--font-size-sm);
-  background: rgba(255, 255, 255, 0.2);
+  
+  /* Glass pill */
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  
   padding: var(--space-xs) var(--space-md);
   border-radius: var(--radius-xl);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  
+  transition: all var(--transition-base);
+}
+
+.status-indicator:hover {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .status-dot {
@@ -44,29 +69,42 @@
   height: 8px;
   border-radius: var(--radius-full);
   background: var(--color-status-inactive);
+  transition: all var(--transition-base);
 }
 
 .status-dot.active {
-  background: var(--color-status-active);
-  box-shadow: 0 0 0 2px var(--color-success-light);
+  background: #4caf50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.3),
+              0 0 8px rgba(76, 175, 80, 0.6);
   animation: var(--animation-pulse);
 }
 
 .minimize-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
   font-size: var(--font-size-lg);
   width: 32px;
   height: 32px;
   border-radius: var(--radius-md);
   cursor: pointer;
+  
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background var(--transition-base);
+  
+  transition: all var(--transition-base);
 }
 
 .minimize-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.minimize-btn:active {
+  transform: translateY(0);
 }

@@ -1,101 +1,246 @@
 /**
- * Profile Card Styles (Aliases Tab)
+ * Profile Card Styles (Aliases Tab) - Modern Glassmorphism
+ * Phase 2.5: Better spacing, modern colors
  */
 
 .profile-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: 16px; /* More breathing room */
 }
 
 .profile-card {
-  background: var(--color-bg-white);
-  border-radius: var(--radius-xl);
-  padding: var(--space-lg);
-  box-shadow: var(--shadow-md);
-  transition: all var(--transition-base);
+  /* Frosted glass card */
+  background: var(--glass-white-heavy);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  
+  border-radius: 16px; /* More rounded */
+  padding: 20px; /* More padding */
+  
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow-md);
+  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glass shimmer effect on hover */
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  
+  transition: left 0.5s ease;
+}
+
+.profile-card:hover::before {
+  left: 100%;
 }
 
 .profile-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--glass-shadow-lg);
+  transform: translateY(-4px);
+  border-color: rgba(99, 102, 241, 0.3); /* Updated color */
 }
 
 .profile-card.disabled {
-  opacity: 0.5;
-  background: var(--color-bg-hover);
+  opacity: 0.6;
+  background: rgba(255, 255, 255, 0.5);
+  filter: grayscale(0.3);
+}
+
+.profile-card.disabled:hover {
+  transform: translateY(-2px);
 }
 
 .profile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-md);
+  margin-bottom: 16px; /* More spacing */
 }
 
 .profile-title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-on-glass-primary);
+  
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .profile-actions {
   display: flex;
-  gap: var(--space-sm);
+  gap: 10px; /* More spacing between buttons */
   align-items: center;
 }
 
 .profile-status {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 16px; /* More rounded pill */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  
+  /* Glass pill style */
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  
+  transition: all var(--transition-base);
 }
 
 .status-enabled {
   color: #059669;
-  background: #d1fae5;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  animation: statusPulse 2s infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0);
+  }
 }
 
 .status-disabled {
   color: #dc2626;
-  background: #fee2e2;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .profile-mappings {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: 12px; /* Better spacing */
+  
+  /* Nested glass section */
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  
+  padding: 16px; /* More padding */
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .mapping-row {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: 12px;
   font-size: 13px;
+  
+  padding: 10px; /* More padding */
+  border-radius: 8px;
+  
+  transition: background var(--transition-base);
+}
+
+.mapping-row:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .mapping-real {
-  color: var(--color-text-secondary);
+  color: var(--text-on-glass-secondary);
   flex: 1;
   word-break: break-word;
+  
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
 }
 
 .mapping-arrow {
-  color: var(--color-text-muted);
+  color: #6366f1; /* Updated color */
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
 .mapping-alias {
-  color: var(--color-primary);
-  font-weight: var(--font-weight-medium);
+  color: #6366f1; /* Updated color */
+  font-weight: 600;
   flex: 1;
   word-break: break-word;
+  
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+  
+  /* Subtle glow for alias */
+  text-shadow: 0 0 10px rgba(99, 102, 241, 0.3); /* Updated color */
 }
 
 .profile-meta {
-  margin-top: var(--space-md);
-  padding-top: var(--space-md);
-  border-top: 1px solid var(--color-border);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  
+  font-size: 12px;
+  color: var(--text-on-glass-tertiary);
+  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Add Profile Button */
+.add-profile-btn {
+  /* Glass button */
+  background: var(--glass-white-heavy);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  
+  border: 2px dashed rgba(99, 102, 241, 0.4); /* Updated color */
+  border-radius: 16px;
+  
+  padding: 24px; /* More padding */
+  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  
+  color: #6366f1; /* Updated color */
+  font-weight: 600;
+  
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.add-profile-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #6366f1; /* Updated color */
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-md);
+}
+
+.add-profile-btn:active {
+  transform: translateY(0);
+}
+
+.add-profile-icon {
+  font-size: 20px;
 }
