@@ -1,6 +1,6 @@
 /**
  * Base Styles - Reset and core layout
- * Phase 2.5: Modern colors and improved gradients
+ * Phase 2: Glassmorphism applied
  */
 
 /* Reset and base styles */
@@ -16,10 +16,10 @@ body {
   line-height: var(--line-height-base);
   color: var(--text-on-glass-primary);
 
-  /* Animated gradient background - Modern, vibrant indigo/violet */
-  background: linear-gradient(135deg, #5b5fe6 0%, #6366f1 25%, #8b5cf6 50%, #a78bfa 75%, #c4b5fd 100%);
-  background-size: 300% 300%;
-  animation: gradientShift 20s ease infinite;
+  /* Animated gradient background */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
 
   width: var(--popup-width);
   height: var(--popup-height);
@@ -44,15 +44,15 @@ body.minimal-mode {
   background: var(--glass-white);
   backdrop-filter: var(--blur-medium);
   -webkit-backdrop-filter: var(--blur-medium);
-
+  
   display: flex;
   flex-direction: column;
   height: 100vh;
-
+  
   /* Subtle border and shadow */
   border: var(--glass-border);
   box-shadow: var(--glass-shadow-lg);
-
+  
   transition: var(--glass-transition);
 }
 
@@ -86,10 +86,10 @@ body.minimal-mode {
   background: var(--glass-warning);
   backdrop-filter: var(--blur-medium);
   -webkit-backdrop-filter: var(--blur-medium);
-
+  
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 152, 0, 0.3);
-
+  
   animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -137,7 +137,7 @@ body.minimal-mode {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: var(--blur-light);
   -webkit-backdrop-filter: var(--blur-light);
-
+  
   color: #ff6b00;
   font-weight: 600;
   padding: 8px 16px;

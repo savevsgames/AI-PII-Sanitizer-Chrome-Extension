@@ -1,61 +1,82 @@
 /**
- * Tab Navigation & Content
+ * Tab Navigation & Content - Modern Apple Style
+ * Phase 2.1: Horizontal tabs with refined spacing
  */
 
-/* Tab Navigation */
 .tab-nav {
   display: flex;
-  background: var(--color-bg-white);
-  border-bottom: 2px solid var(--color-border);
-  padding: 0;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .tab-button {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-md) var(--space-sm);
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  min-height: 40px;
   border: none;
-  background: none;
+  background: transparent;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all var(--transition-base);
-  color: var(--color-text-secondary);
-  border-bottom: 3px solid transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: rgba(0, 0, 0, 0.5);
+  font-weight: 500;
 }
 
 .tab-button:hover {
-  background: #f8f9fa;
-  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.4);
+  color: rgba(0, 0, 0, 0.75);
+  transform: translateY(-1px);
 }
 
 .tab-button.active {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
   color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
-  background: var(--color-bg-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .tab-icon {
-  font-size: var(--font-size-xl);
+  font-size: 20px;
+  line-height: 1;
 }
 
 .tab-label {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
-/* Tab Content */
 .tab-content-container {
   flex: 1;
   overflow-y: auto;
-  background: #fafafa;
+  background: transparent;
 }
 
 .tab-content {
   display: none;
-  padding: var(--space-xl);
-  animation: fadeIn 0.3s;
+  padding: 24px 20px;
+  animation: fadeInUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .tab-content.active {
@@ -66,32 +87,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-xl);
+  margin-bottom: 24px;
 }
 
 .tab-header h2 {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
-}
-
-/* Time filter for stats */
-.time-filter {
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--color-border-dark);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  background: var(--color-bg-white);
-  cursor: pointer;
-  transition: border-color var(--transition-base);
-}
-
-.time-filter:hover {
-  border-color: var(--color-primary);
-}
-
-.time-filter:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-focus);
+  font-size: 24px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.9);
+  letter-spacing: -0.02em;
 }
