@@ -54,9 +54,9 @@ export function renderActivityLog(activityLog: ActivityLogEntry[]) {
       const keyTypes = (entry.details as any).keyTypes || [];
 
       const details = [
-        `URL: ${entry.details.url}`,
-        profiles.length > 0 ? `Profiles: ${profiles.join(', ')}` : '',
-        piiTypes.length > 0 ? `PII Types: ${piiTypes.join(', ')}` : '',
+        `URL: ${escapeHtml(entry.details.url)}`,
+        profiles.length > 0 ? `Profiles: ${escapeHtml(profiles.join(', '))}` : '',
+        piiTypes.length > 0 ? `PII Types: ${escapeHtml(piiTypes.join(', '))}` : '',
         `Substitutions: ${entry.details.substitutionCount}`,
         // API Key Vault info if present
         (entry.details as any).apiKeysProtected !== undefined
@@ -64,8 +64,8 @@ export function renderActivityLog(activityLog: ActivityLogEntry[]) {
           : (entry.details as any).apiKeysFound !== undefined
           ? `API Keys Found: ${(entry.details as any).apiKeysFound}`
           : '',
-        keyTypes.length > 0 ? `Key Types: ${keyTypes.join(', ')}` : '',
-        entry.details.error ? `Error: ${entry.details.error}` : '',
+        keyTypes.length > 0 ? `Key Types: ${escapeHtml(keyTypes.join(', '))}` : '',
+        entry.details.error ? `Error: ${escapeHtml(entry.details.error)}` : '',
       ]
         .filter(Boolean)
         .join('<br>');

@@ -5,7 +5,6 @@ module.exports = {
   entry: {
     background: './src/background/serviceWorker.ts',
     content: './src/content/content.ts',
-    popup: './src/popup/popup.ts',
     'popup-v2': './src/popup/popup-v2.ts',
   },
   output: {
@@ -29,8 +28,6 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: 'src/manifest.json', to: 'manifest.json' },
-        { from: 'src/popup/popup.html', to: 'popup.html' },
-        { from: 'src/popup/popup.css', to: 'popup.css' },
         { from: 'src/popup/popup-v2.html', to: 'popup-v2.html' },
         { from: 'src/popup/popup-v2.css', to: 'popup-v2.css' },
         { from: 'src/popup/styles', to: 'styles' }, // Copy modular CSS
