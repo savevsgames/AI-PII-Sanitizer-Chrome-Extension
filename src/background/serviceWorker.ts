@@ -9,11 +9,110 @@ import { Message } from '../lib/types';
 import { APIKeyDetector } from '../lib/apiKeyDetector';
 import { extractAllText, replaceAllText } from '../lib/textProcessor';
 
+
+// ========== BADGE MANAGEMENT ==========
+
+/**
+ * Protection state for badge display
+ */
+type ProtectionState = 'protected' | 'unprotected' | 'disabled';
+
+/**
+ * AI service URL patterns for protection detection
+ */
+const AI_SERVICE_URLS = [
+  'chatgpt.com',
+  'openai.com',
+  'claude.ai',
+  'gemini.google.com',
+  'perplexity.ai',
+  'poe.com',
+  'copilot.microsoft.com',
+  'you.com',
+];
+
+/**
+ * Check if URL is an AI service
+ */
+function isAIServiceURL(url: string | undefined): boolean {
+  if (!url) return false;
+  return AI_SERVICE_URLS.some(domain => url.includes(domain));
+}
+
+/**
+ * Update extension badge based on protection state
+ */
+async function updateBadge(tabId: number, state: ProtectionState): Promise<void> {
+  try {
+    switch (state) {
+      case 'protected':
+        await chrome.action.setBadgeText({ tabId, text: '✓' });
+        await chrome.action.setBadgeBackgroundColor({ tabId, color: '#10B981' }); // Green
+        await chrome.action.setTitle({ tabId, title: 'AI PII Sanitizer - Protected ✓' });
+        console.log(`[Badge] Tab ${tabId}: PROTECTED (Green)`);
+        break;
+
+      case 'unprotected':
+        await chrome.action.setBadgeText({ tabId, text: '!' });
+        await chrome.action.setBadgeBackgroundColor({ tabId, color: '#EF4444' }); // Red
+        await chrome.action.setTitle({ tabId, title: 'AI PII Sanitizer - NOT PROTECTED! Click to reload page' });
+        console.log(`[Badge] Tab ${tabId}: UNPROTECTED (Red)`);
+        break;
+
+      case 'disabled':
+        await chrome.action.setBadgeText({ tabId, text: '' });
+        await chrome.action.setBadgeBackgroundColor({ tabId, color: '#6B7280' }); // Grey
+        await chrome.action.setTitle({ tabId, title: 'AI PII Sanitizer - Disabled' });
+        console.log(`[Badge] Tab ${tabId}: DISABLED (No badge)`);
+        break;
+    }
+  } catch (error) {
+    console.error(`[Badge] Failed to update badge for tab ${tabId}:`, error);
+  }
+}
+
+/**
+ * Check tab protection status and update badge
+ */
+async function checkAndUpdateBadge(tabId: number, url?: string): Promise<void> {
+  try {
+    // Clear badge for non-AI service pages
+    if (!isAIServiceURL(url)) {
+      await chrome.action.setBadgeText({ tabId, text: '' });
+      console.log(`[Badge] Tab ${tabId}: Not an AI service, badge cleared`);
+      return;
+    }
+
+    // Check if extension is enabled
+    const storage = StorageManager.getInstance();
+    const config = await storage.loadConfig();
+
+    if (!config?.settings?.enabled) {
+      await updateBadge(tabId, 'disabled');
+      return;
+    }
+
+    // Check if content script is injected and responding
+    const isInjected = await isContentScriptInjected(tabId);
+
+    if (isInjected) {
+      await updateBadge(tabId, 'protected');
+    } else {
+      await updateBadge(tabId, 'unprotected');
+    }
+  } catch (error) {
+    console.error(`[Badge] Error checking protection for tab ${tabId}:`, error);
+  }
+}
+
+// ========== EVENT LISTENERS ==========
+
 // Initialize storage on install
 // Inject content scripts into existing tabs on startup
 chrome.runtime.onStartup.addListener(async () => {
   console.log('AI PII Sanitizer startup');
   await injectIntoExistingTabs();
+// Update badges for all tabs  const tabs = await chrome.tabs.query({});  for (const tab of tabs) {    if (tab.id) {      await checkAndUpdateBadge(tab.id, tab.url);    }  }
 });
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -22,6 +121,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   await storage.initialize();
   // Inject content scripts into existing tabs
   await injectIntoExistingTabs();
+// Update badges for all tabs  const tabs = await chrome.tabs.query({});  for (const tab of tabs) {    if (tab.id) {      await checkAndUpdateBadge(tab.id, tab.url);    }  }
 });
 
 // Handle messages from content script
@@ -484,9 +584,13 @@ async function injectIntoExistingTabs(): Promise<void> {
               files: ['content.js'],
             });
             console.log(`[Background] ✅ Injected into tab ${tab.id}`);
+            // Update badge after successful injection
+            await checkAndUpdateBadge(tab.id, tab.url);
           } catch (error) {
             console.warn(`[Background] Failed to inject into tab ${tab.id}:`, error);
           }
+          // Update badge for already-injected tabs
+          await checkAndUpdateBadge(tab.id, tab.url);
         } else {
           console.log(`[Background] Already injected in tab ${tab.id}`);
         }
@@ -647,3 +751,50 @@ async function logActivity(entry: {
     console.error('[Background] Failed to log activity:', error);
   }
 }
+
+// ========== TAB EVENT LISTENERS FOR BADGE UPDATES ==========
+
+/**
+ * Update badge when tab becomes active
+ */
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    await checkAndUpdateBadge(activeInfo.tabId, tab.url);
+  } catch (error) {
+    console.error('[Badge] Error on tab activation:', error);
+  }
+});
+
+/**
+ * Update badge when tab URL changes (navigation)
+ */
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  // Only check when URL changes or page finishes loading
+  if (changeInfo.url || changeInfo.status === 'complete') {
+    await checkAndUpdateBadge(tabId, tab.url);
+  }
+});
+
+/**
+ * Update badges for all tabs when storage changes (config enable/disable)
+ */
+chrome.storage.onChanged.addListener(async (changes, areaName) => {
+  if (areaName === 'local' && changes.userConfig) {
+    const oldConfig = changes.userConfig.oldValue;
+    const newConfig = changes.userConfig.newValue;
+
+    // Check if enabled state changed
+    if (oldConfig?.settings?.enabled !== newConfig?.settings?.enabled) {
+      console.log('[Badge] Extension enabled state changed, updating all badges');
+
+      // Update badges for all tabs
+      const tabs = await chrome.tabs.query({});
+      for (const tab of tabs) {
+        if (tab.id) {
+          await checkAndUpdateBadge(tab.id, tab.url);
+        }
+      }
+    }
+  }
+});
