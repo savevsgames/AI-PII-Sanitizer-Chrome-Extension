@@ -62,11 +62,39 @@ export function renderAPIKeys(config: UserConfig) {
         if (isHidden) {
           keyValue?.setAttribute('data-hidden', 'false');
           keyValue!.textContent = key.keyValue;
-          showBtn.textContent = '👁️‍🗨️';
+          const icon = showBtn.querySelector('.show-icon');
+          if (icon) icon.textContent = '👁️‍🗨️';
         } else {
           keyValue?.setAttribute('data-hidden', 'true');
           keyValue!.textContent = maskAPIKey(key.keyValue);
-          showBtn.textContent = '👁️';
+          const icon = showBtn.querySelector('.show-icon');
+          if (icon) icon.textContent = '👁️';
+        }
+      });
+
+      // Copy key value
+      const copyBtn = card.querySelector('.api-key-copy');
+      copyBtn?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(key.keyValue);
+
+          // Visual feedback
+          const icon = copyBtn.querySelector('.copy-icon');
+          const originalIcon = icon?.textContent;
+
+          if (icon) icon.textContent = '✓';
+          copyBtn.classList.add('copied');
+
+          setTimeout(() => {
+            if (icon && originalIcon) icon.textContent = originalIcon;
+            copyBtn.classList.remove('copied');
+          }, 2000);
+
+          console.log('[API Key Vault] Copied key to clipboard');
+        } catch (error) {
+          console.error('[API Key Vault] Failed to copy:', error);
+          alert('Failed to copy to clipboard.');
         }
       });
     });
@@ -200,7 +228,14 @@ function renderAPIKeyCard(key: APIKey): string {
           </div>
           <div class="api-key-value-row">
             <code class="api-key-value" data-hidden="true">${maskedKey}</code>
-            <button class="api-key-show icon-button" title="Show/Hide key">👁️</button>
+            <div class="api-key-value-actions">
+              <button class="api-key-show icon-button" title="Show/Hide key">
+                <span class="show-icon">👁️</span>
+              </button>
+              <button class="api-key-copy icon-button" title="Copy to clipboard">
+                <span class="copy-icon">📋</span>
+              </button>
+            </div>
           </div>
         </div>
         <div class="api-key-actions">
@@ -213,16 +248,25 @@ function renderAPIKeyCard(key: APIKey): string {
       </div>
       <div class="api-key-stats">
         <div class="api-key-stat">
-          <span class="api-key-stat-label">Protected</span>
-          <span class="api-key-stat-value">${key.protectionCount} times</span>
+          <span class="api-key-stat-icon">🛡️</span>
+          <div class="api-key-stat-content">
+            <span class="api-key-stat-value">${key.protectionCount}</span>
+            <span class="api-key-stat-label">protected</span>
+          </div>
         </div>
         <div class="api-key-stat">
-          <span class="api-key-stat-label">Last used</span>
-          <span class="api-key-stat-value">${lastUsedText}</span>
+          <span class="api-key-stat-icon">🕐</span>
+          <div class="api-key-stat-content">
+            <span class="api-key-stat-value">${lastUsedText}</span>
+            <span class="api-key-stat-label">last used</span>
+          </div>
         </div>
         <div class="api-key-stat">
-          <span class="api-key-stat-label">Added</span>
-          <span class="api-key-stat-value">${formatDate(key.createdAt)}</span>
+          <span class="api-key-stat-icon">📅</span>
+          <div class="api-key-stat-content">
+            <span class="api-key-stat-value">${formatDate(key.createdAt)}</span>
+            <span class="api-key-stat-label">created</span>
+          </div>
         </div>
       </div>
     </div>
