@@ -495,6 +495,7 @@ export class StorageManager {
         enabled: true,
         defaultMode: 'auto-replace',
         showNotifications: true,
+        decodeResponses: false,        // Don't convert aliases back to real names by default
         protectedDomains: [
           'chat.openai.com',
           'chatgpt.com',
@@ -648,6 +649,7 @@ export class StorageManager {
           enabled: oldConfig.settings.enabled,
           defaultMode: 'auto-replace',
           showNotifications: oldConfig.settings.showNotifications,
+          decodeResponses: false,        // Default to false for migrated configs
           protectedDomains: oldConfig.settings.protectedDomains,
           excludedDomains: oldConfig.settings.excludedDomains,
           strictMode: oldConfig.settings.strictMode,

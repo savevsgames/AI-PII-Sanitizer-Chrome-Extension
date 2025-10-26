@@ -126,6 +126,7 @@ export interface UserConfig {
     enabled: boolean;
     defaultMode: 'auto-replace' | 'warn-first';
     showNotifications: boolean;
+    decodeResponses: boolean;    // If true, converts aliases back to real names in responses (default: false)
     protectedDomains: string[];
     excludedDomains: string[];
     strictMode: boolean;
