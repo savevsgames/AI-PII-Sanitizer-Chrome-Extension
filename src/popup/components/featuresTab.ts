@@ -257,6 +257,20 @@ function renderFeatureContent(featureId: string): string {
             <button class="btn btn-primary" id="addAPIKeyBtn">+ Add API Key</button>
           </div>
 
+          <!-- Search Bar -->
+          <div class="search-bar-container">
+            <div class="search-bar">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                id="apiKeySearch"
+                class="search-input"
+                placeholder="Search keys by name, project, or format..."
+              />
+              <button class="search-clear" id="apiKeySearchClear" style="display: none;">✕</button>
+            </div>
+          </div>
+
           <div class="api-keys-list" id="apiKeysList">
             <!-- Keys will be rendered here -->
           </div>

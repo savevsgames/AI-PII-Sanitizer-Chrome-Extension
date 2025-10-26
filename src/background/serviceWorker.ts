@@ -227,12 +227,12 @@ function detectService(url: string): import('../lib/types').AIService {
  * Handle request substitution (real → alias)
  * NO FETCHING HERE - just text substitution!
  */
-async function handleSubstituteRequest(payload: { body: string; url?: string }): Promise<any> {
+async function handleSubstituteRequest(payload: { body: string; url?: string; skipApiKeyCheck?: boolean }): Promise<any> {
   try {
-    const { body, url } = payload;
+    const { body, url, skipApiKeyCheck = false } = payload;
     const service = url ? detectService(url) : 'unknown';
 
-    console.log('🔄 Substituting request body');
+    console.log('🔄 Substituting request body', skipApiKeyCheck ? '(skipping API key check)' : '');
 
     // Handle empty or non-JSON bodies (streaming, multipart, etc.)
     if (!body || body.trim() === '') {
@@ -330,7 +330,11 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
                         service === 'copilot' ? 'Copilot' :
                         service === 'you' ? 'You.com' : 'Unknown';
 
-    if (config?.apiKeyVault?.enabled) {
+    if (skipApiKeyCheck) {
+      console.log('🔑 Skipping API key check per user choice (PII still protected)');
+    }
+
+    if (!skipApiKeyCheck && config?.apiKeyVault?.enabled) {
       console.log('🔐 API Key Vault enabled, scanning for keys...');
 
       // Get user's stored keys

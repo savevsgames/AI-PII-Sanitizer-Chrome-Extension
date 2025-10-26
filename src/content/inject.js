@@ -111,7 +111,7 @@
 
           const timeout = setTimeout(() => {
             window.removeEventListener('message', handleResponse);
-            resolve(false); // Block by default on timeout
+            resolve('block'); // Block by default on timeout
           }, 30000); // 30 second timeout
 
           const handleResponse = (event) => {
@@ -134,7 +134,7 @@
           }, '*');
         });
 
-        if (!userChoice) {
+        if (userChoice === 'block') {
           console.log('🛡️ User blocked API key transmission');
           // Return fake successful response to avoid errors
           return new Response(JSON.stringify({ error: 'Request blocked by user' }), {
@@ -142,9 +142,65 @@
             statusText: 'Forbidden - API Key Blocked',
             headers: { 'Content-Type': 'application/json' }
           });
-        }
+        } else if (userChoice === 'allow-all') {
+          console.log('⚠️ User allowed everything - ALL PROTECTION DISABLED');
+          // Use original body without any substitutions
+          return nativeFetch.apply(this, args);
+        } else if (userChoice === 'allow-key-only') {
+          console.log('🔑 User allowed API key only - PII still protected');
+          // Re-request substitution with flag to skip API key check
+          const retrySubstitution = await new Promise((resolve) => {
+            const messageId = Math.random().toString(36);
 
-        console.log('⚠️ User allowed API key transmission');
+            const timeout = setTimeout(() => {
+              window.removeEventListener('message', handleResponse);
+              resolve({ success: false, error: 'timeout' });
+            }, 2000);
+
+            const handleResponse = (event) => {
+              if (event.data?.source === 'ai-pii-content' &&
+                  event.data?.messageId === messageId) {
+                clearTimeout(timeout);
+                window.removeEventListener('message', handleResponse);
+                resolve(event.data.response);
+              }
+            };
+
+            window.addEventListener('message', handleResponse);
+
+            window.postMessage({
+              source: 'ai-pii-inject',
+              messageId: messageId,
+              type: 'SUBSTITUTE_REQUEST',
+              payload: {
+                body: requestBody,
+                url: urlStr,
+                skipApiKeyCheck: true  // New flag
+              }
+            }, '*');
+          });
+
+          if (!retrySubstitution || !retrySubstitution.success) {
+            console.warn('⚠️ Retry substitution failed');
+            return nativeFetch.apply(this, args);
+          }
+
+          // Use the PII-substituted body (but with original API key)
+          const modifiedOptions = {
+            ...options,
+            body: retrySubstitution.modifiedBody
+          };
+          const response = await nativeFetch(urlStr, modifiedOptions);
+
+          // Still need to reverse PII substitution on response
+          // Continue to response handling below
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('text/event-stream')) {
+            return handleStreamingResponse(response);
+          } else {
+            return handleNormalResponse(response);
+          }
+        }
       }
 
       console.log('✅ Request substituted:', substituteRequest.substitutions, 'replacements');

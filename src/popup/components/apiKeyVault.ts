@@ -423,6 +423,83 @@ export function initAPIKeyVaultUI() {
       showAddAPIKeyModal();
     });
 
+    // Initialize search functionality
+    initSearchBar();
+
     console.log('[API Key Vault] UI handlers initialized');
+  });
+}
+
+/**
+ * Initialize search bar functionality
+ */
+function initSearchBar() {
+  const searchInput = document.getElementById('apiKeySearch') as HTMLInputElement;
+  const searchClear = document.getElementById('apiKeySearchClear');
+
+  if (!searchInput) return;
+
+  // Search input handler
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.trim();
+
+    // Show/hide clear button
+    if (searchClear) {
+      searchClear.style.display = query ? 'flex' : 'none';
+    }
+
+    filterKeys(query);
+  });
+
+  // Clear button handler
+  searchClear?.addEventListener('click', () => {
+    searchInput.value = '';
+    searchClear.style.display = 'none';
+    filterKeys('');
+  });
+}
+
+/**
+ * Filter displayed keys based on search query
+ */
+function filterKeys(query: string) {
+  const allCards = document.querySelectorAll('.api-key-card');
+  const allGroups = document.querySelectorAll('.project-group');
+
+  if (!query) {
+    // Show all cards and groups
+    allCards.forEach(card => {
+      (card as HTMLElement).style.display = 'block';
+    });
+    allGroups.forEach(group => {
+      (group as HTMLElement).style.display = 'block';
+    });
+    return;
+  }
+
+  const lowerQuery = query.toLowerCase();
+
+  // Filter cards
+  allCards.forEach(card => {
+    const keyName = card.querySelector('.api-key-name')?.textContent?.toLowerCase() || '';
+    const keyFormat = card.querySelector('.api-key-format-badge')?.textContent?.toLowerCase() || '';
+    const keyValue = card.querySelector('.api-key-value')?.textContent?.toLowerCase() || '';
+
+    // Get project from parent group
+    const projectGroup = card.closest('.project-group');
+    const projectName = projectGroup?.querySelector('.project-name')?.textContent?.toLowerCase() || '';
+
+    const matches = keyName.includes(lowerQuery) ||
+                    keyFormat.includes(lowerQuery) ||
+                    keyValue.includes(lowerQuery) ||
+                    projectName.includes(lowerQuery);
+
+    (card as HTMLElement).style.display = matches ? 'block' : 'none';
+  });
+
+  // Hide empty groups
+  allGroups.forEach(group => {
+    const visibleCards = group.querySelectorAll('.api-key-card[style*="display: block"], .api-key-card:not([style*="display"])');
+    (group as HTMLElement).style.display = visibleCards.length > 0 ? 'block' : 'none';
   });
 }

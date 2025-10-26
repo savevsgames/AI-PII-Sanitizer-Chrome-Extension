@@ -245,9 +245,9 @@ window.addEventListener('message', async (event) => {
 
 /**
  * Show API Key Warning Modal
- * Returns Promise<boolean> - true if user allows, false if blocked
+ * Returns Promise<string> - 'block', 'allow-key-only', or 'allow-all'
  */
-function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }): Promise<boolean> {
+function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }): Promise<'block' | 'allow-key-only' | 'allow-all'> {
   return new Promise((resolve) => {
     // Remove existing modal if any
     const existing = document.getElementById('api-key-warning-modal');
@@ -324,13 +324,25 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
             ${payload.keyTypes.map(type => `• ${type.toUpperCase()} API Key`).join('<br>')}
           </div>
         </div>
-        <p style="margin: 0; font-size: 14px; color: #374151; line-height: 1.5;">
+        <p style="margin: 0 0 12px 0; font-size: 14px; color: #374151; line-height: 1.5;">
           Sending API keys to AI services is <strong style="color: #dc2626;">not recommended</strong> as they could be logged or misused.
         </p>
+        <div style="
+          background: rgba(239, 68, 68, 0.1);
+          backdrop-filter: blur(10px);
+          border-left: 4px solid #ef4444;
+          padding: 12px 16px;
+          border-radius: 8px;
+          margin-top: 12px;
+        ">
+          <p style="margin: 0; font-size: 13px; color: #7f1d1d; font-weight: 600; line-height: 1.5;">
+            ⚠️ <strong>Important:</strong> If you choose "Send Anyway", <strong>ALL protection will be disabled</strong> for this message (including PII aliases).
+          </p>
+        </div>
       </div>
-      <div style="padding: 0 24px 24px 24px; display: flex; gap: 12px;">
+      <div style="padding: 0 24px 24px 24px; display: flex; flex-direction: column; gap: 10px;">
         <button id="api-key-block" style="
-          flex: 1;
+          width: 100%;
           background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
           color: white;
           border: none;
@@ -341,12 +353,17 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
           cursor: pointer;
           transition: all 0.2s;
           box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
         ">
-          🛡️ Block Request
+          <span style="font-size: 18px;">🛡️</span>
+          <span>Block Everything</span>
         </button>
-        <button id="api-key-allow" style="
-          flex: 1;
-          background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        <button id="api-key-allow-pii-protected" style="
+          width: 100%;
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
           color: white;
           border: none;
           padding: 14px 24px;
@@ -355,8 +372,33 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
+          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
         ">
-          Send Anyway
+          <span style="font-size: 18px;">🔑</span>
+          <span>Send API Key Only (PII Protected)</span>
+        </button>
+        <button id="api-key-allow-all" style="
+          width: 100%;
+          background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+          color: white;
+          border: none;
+          padding: 14px 24px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        ">
+          <span style="font-size: 18px;">⚠️</span>
+          <span>Send Everything Unprotected</span>
         </button>
       </div>
     `;
@@ -365,18 +407,11 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
     document.body.appendChild(modal);
 
     // Add hover effects
-    const allowBtn = content.querySelector('#api-key-allow') as HTMLButtonElement;
     const blockBtn = content.querySelector('#api-key-block') as HTMLButtonElement;
+    const allowPiiProtectedBtn = content.querySelector('#api-key-allow-pii-protected') as HTMLButtonElement;
+    const allowAllBtn = content.querySelector('#api-key-allow-all') as HTMLButtonElement;
 
-    allowBtn.addEventListener('mouseenter', () => {
-      allowBtn.style.transform = 'translateY(-2px)';
-      allowBtn.style.boxShadow = '0 4px 12px rgba(107, 114, 128, 0.4)';
-    });
-    allowBtn.addEventListener('mouseleave', () => {
-      allowBtn.style.transform = 'translateY(0)';
-      allowBtn.style.boxShadow = 'none';
-    });
-
+    // Hover effect for block button
     blockBtn.addEventListener('mouseenter', () => {
       blockBtn.style.transform = 'translateY(-2px)';
       blockBtn.style.boxShadow = '0 4px 16px rgba(239, 68, 68, 0.4)';
@@ -386,15 +421,40 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
       blockBtn.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.3)';
     });
 
+    // Hover effect for allow PII protected button
+    allowPiiProtectedBtn.addEventListener('mouseenter', () => {
+      allowPiiProtectedBtn.style.transform = 'translateY(-2px)';
+      allowPiiProtectedBtn.style.boxShadow = '0 4px 16px rgba(245, 158, 11, 0.4)';
+    });
+    allowPiiProtectedBtn.addEventListener('mouseleave', () => {
+      allowPiiProtectedBtn.style.transform = 'translateY(0)';
+      allowPiiProtectedBtn.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.3)';
+    });
+
+    // Hover effect for allow all button
+    allowAllBtn.addEventListener('mouseenter', () => {
+      allowAllBtn.style.transform = 'translateY(-2px)';
+      allowAllBtn.style.boxShadow = '0 4px 12px rgba(107, 114, 128, 0.4)';
+    });
+    allowAllBtn.addEventListener('mouseleave', () => {
+      allowAllBtn.style.transform = 'translateY(0)';
+      allowAllBtn.style.boxShadow = 'none';
+    });
+
     // Handle button clicks
     blockBtn.addEventListener('click', () => {
       modal.remove();
-      resolve(false); // Block
+      resolve('block'); // Block everything
     });
 
-    allowBtn.addEventListener('click', () => {
+    allowPiiProtectedBtn.addEventListener('click', () => {
       modal.remove();
-      resolve(true); // Allow
+      resolve('allow-key-only'); // Allow API key, protect PII
+    });
+
+    allowAllBtn.addEventListener('click', () => {
+      modal.remove();
+      resolve('allow-all'); // Allow everything unprotected
     });
 
     // Block on escape key
@@ -402,7 +462,7 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
       if (e.key === 'Escape') {
         modal.remove();
         document.removeEventListener('keydown', handleEscape);
-        resolve(false); // Block by default
+        resolve('block'); // Block by default
       }
     };
     document.addEventListener('keydown', handleEscape);
