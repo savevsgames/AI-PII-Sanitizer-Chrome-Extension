@@ -436,56 +436,145 @@
     </div>
   </div>
 
-  <!-- API Key Modal -->
+  <!-- API Key Modal with .env Import -->
   <div class="modal hidden" id="apiKeyModal">
     <div class="modal-overlay"></div>
-    <div class="modal-content">
+    <div class="modal-content modal-large">
       <div class="modal-header">
         <h3 id="apiKeyModalTitle">Add API Key</h3>
         <button class="modal-close" id="apiKeyModalClose">&times;</button>
       </div>
 
+      <!-- Import Method Tabs -->
+      <div class="modal-tabs">
+        <button class="modal-tab-btn active" data-import-method="manual">
+          <span class="tab-icon">✏️</span>
+          Manual Entry
+        </button>
+        <button class="modal-tab-btn" data-import-method="env">
+          <span class="tab-icon">📄</span>
+          Import from .env
+        </button>
+      </div>
+
       <form class="modal-body" id="apiKeyForm">
-        <div class="form-section">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="apiKeyName">Key Nickname</label>
-              <input type="text" id="apiKeyName" name="name" placeholder="e.g., My OpenAI Key" maxlength="50">
-              <span class="form-hint">Optional: A friendly name for this key</span>
-            </div>
+        <!-- MANUAL ENTRY TAB -->
+        <div class="import-method-content active" id="manualEntryContent">
+          <div class="form-section form-vertical">
 
             <div class="form-group">
-              <label for="apiKeyProject">Project</label>
-              <input type="text" id="apiKeyProject" name="project" placeholder="e.g., Work, Personal" maxlength="50" list="projectSuggestions">
-              <datalist id="projectSuggestions">
-                <!-- Will be populated dynamically with existing projects -->
-              </datalist>
-              <span class="form-hint">Optional: Group keys by project</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="apiKeyValue">API Key *</label>
-            <textarea id="apiKeyValue" name="keyValue" placeholder="Paste your API key here..." required rows="3"></textarea>
-            <span class="form-hint" id="apiKeyDetectedFormat"></span>
-            <span class="form-error hidden" id="apiKeyError">Please enter a valid API key</span>
-          </div>
-
-          <div class="form-group" id="apiKeyTierWarning" style="display: none;">
-            <div class="tier-warning">
-              <span class="tier-warning-icon">⚠️</span>
-              <div class="tier-warning-text">
-                <strong>FREE Tier Limit</strong>
-                <p>You can only protect OpenAI keys on the FREE tier. Upgrade to PRO to protect all API key types.</p>
+              <label for="apiKeyValue">
+                API Key <span class="required-label">*</span>
+              </label>
+              <div class="input-with-button">
+                <textarea
+                  id="apiKeyValue"
+                  name="keyValue"
+                  placeholder="Paste your API key here..."
+                  required
+                  rows="4"
+                  class="api-key-textarea"></textarea>
+                <button type="button" class="btn-icon-overlay" id="pasteKeyBtn" title="Paste from clipboard">
+                  📋 Paste
+                </button>
+              </div>
+              <div class="form-feedback">
+                <span class="form-hint detected" id="apiKeyDetectedFormat"></span>
+                <span class="form-error hidden" id="apiKeyError"></span>
               </div>
             </div>
+
+            <div class="form-group">
+              <label for="apiKeyName">
+                Nickname <span class="optional-label">(optional)</span>
+              </label>
+              <input
+                type="text"
+                id="apiKeyName"
+                name="name"
+                placeholder="e.g., Production OpenAI Key"
+                maxlength="50">
+              <span class="form-hint">Give this key a friendly name</span>
+            </div>
+
+            <div class="form-group">
+              <label for="apiKeyProject">
+                Project <span class="optional-label">(optional)</span>
+              </label>
+              <input
+                type="text"
+                id="apiKeyProject"
+                name="project"
+                placeholder="e.g., Work, Personal"
+                maxlength="50"
+                list="projectSuggestions">
+              <datalist id="projectSuggestions"></datalist>
+              <span class="form-hint">Group keys by project</span>
+            </div>
+
+            <div class="form-group tier-warning-group" id="apiKeyTierWarning" style="display: none;">
+              <div class="tier-warning">
+                <span class="tier-warning-icon">⚠️</span>
+                <div class="tier-warning-text">
+                  <strong>FREE Tier Limitation</strong>
+                  <p>FREE tier only protects OpenAI keys. Upgrade to PRO for GitHub, AWS, Stripe, and more.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- .ENV IMPORT TAB -->
+        <div class="import-method-content" id="envImportContent">
+          <div class="form-section">
+
+            <div class="env-instructions">
+              <h4>📄 Import keys from your .env file</h4>
+              <p>Paste your .env file contents below. We'll automatically detect and extract all API keys.</p>
+            </div>
+
+            <div class="form-group">
+              <label for="envFileContent">.env File Content</label>
+              <textarea
+                id="envFileContent"
+                name="envContent"
+                placeholder="OPENAI_API_KEY=sk-proj-...&#10;GITHUB_TOKEN=ghp_...&#10;AWS_ACCESS_KEY_ID=AKIA..."
+                rows="12"
+                class="env-textarea"></textarea>
+            </div>
+
+            <button type="button" class="btn btn-secondary btn-block btn-parse" id="parseEnvBtn">
+              <span class="btn-icon">🔍</span>
+              Parse .env File
+            </button>
+
+            <div class="env-preview" id="envPreview" style="display: none;">
+              <h4>✅ Detected Keys <span id="envKeyCount" class="env-count"></span></h4>
+              <div id="envDetectedKeys" class="env-detected-keys"></div>
+
+              <div class="form-group">
+                <label for="envProjectName">
+                  Assign to Project <span class="optional-label">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="envProjectName"
+                  placeholder="e.g., Production"
+                  maxlength="50">
+                <span class="form-hint">All imported keys will be grouped under this project</span>
+              </div>
+            </div>
+
           </div>
         </div>
       </form>
 
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="apiKeyModalCancel">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="apiKeyModalSave">Save Key</button>
+        <button type="button" class="btn btn-primary" id="apiKeyModalSave">
+          <span id="saveKeyBtnText">Save Key</span>
+        </button>
       </div>
     </div>
   </div>
