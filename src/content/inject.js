@@ -65,10 +65,18 @@
       const substituteRequest = await new Promise((resolve) => {
         const messageId = Math.random().toString(36);
 
+        // Timeout after 2 seconds (extension may be reloaded)
+        const timeout = setTimeout(() => {
+          window.removeEventListener('message', handleResponse);
+          console.warn('⚠️ Substitution timeout - extension may need reload');
+          resolve({ success: false, error: 'timeout' });
+        }, 2000);
+
         // Listen for response from content script
         const handleResponse = (event) => {
           if (event.data?.source === 'ai-pii-content' &&
               event.data?.messageId === messageId) {
+            clearTimeout(timeout);
             window.removeEventListener('message', handleResponse);
             resolve(event.data.response);
           }
@@ -91,6 +99,52 @@
       if (!substituteRequest || !substituteRequest.success) {
         console.warn('⚠️ Substitution failed, passing through original request');
         return nativeFetch.apply(this, args);
+      }
+
+      // Check if warning is needed (warn-first mode)
+      if (substituteRequest.needsWarning) {
+        console.warn('⚠️ API Key detected - showing warning modal');
+
+        // Show warning modal to user via content script
+        const userChoice = await new Promise((resolve) => {
+          const messageId = Math.random().toString(36);
+
+          const timeout = setTimeout(() => {
+            window.removeEventListener('message', handleResponse);
+            resolve(false); // Block by default on timeout
+          }, 30000); // 30 second timeout
+
+          const handleResponse = (event) => {
+            if (event.data?.source === 'ai-pii-content-warning' &&
+                event.data?.messageId === messageId) {
+              clearTimeout(timeout);
+              window.removeEventListener('message', handleResponse);
+              resolve(event.data.allow);
+            }
+          };
+
+          window.addEventListener('message', handleResponse);
+
+          // Send warning request to content script
+          window.postMessage({
+            source: 'ai-pii-inject-warning',
+            messageId,
+            keysDetected: substituteRequest.keysDetected,
+            keyTypes: substituteRequest.keyTypes
+          }, '*');
+        });
+
+        if (!userChoice) {
+          console.log('🛡️ User blocked API key transmission');
+          // Return fake successful response to avoid errors
+          return new Response(JSON.stringify({ error: 'Request blocked by user' }), {
+            status: 403,
+            statusText: 'Forbidden - API Key Blocked',
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        console.log('⚠️ User allowed API key transmission');
       }
 
       console.log('✅ Request substituted:', substituteRequest.substitutions, 'replacements');
@@ -117,9 +171,17 @@
       const substituteResponse = await new Promise((resolve) => {
         const messageId = Math.random().toString(36);
 
+        // Timeout after 2 seconds
+        const timeout = setTimeout(() => {
+          window.removeEventListener('message', handleResponse);
+          console.warn('⚠️ Response substitution timeout');
+          resolve({ success: false, error: 'timeout' });
+        }, 2000);
+
         const handleResponse = (event) => {
           if (event.data?.source === 'ai-pii-content' &&
               event.data?.messageId === messageId) {
+            clearTimeout(timeout);
             window.removeEventListener('message', handleResponse);
             resolve(event.data.response);
           }
@@ -179,9 +241,16 @@
           const substituteChunk = await new Promise((resolve) => {
             const messageId = Math.random().toString(36);
 
+            // Timeout after 2 seconds for streaming chunks
+            const timeout = setTimeout(() => {
+              window.removeEventListener('message', handleResponse);
+              resolve({ success: false, error: 'timeout' });
+            }, 2000);
+
             const handleResponse = (event) => {
               if (event.data?.source === 'ai-pii-content' &&
                   event.data?.messageId === messageId) {
+                clearTimeout(timeout);
                 window.removeEventListener('message', handleResponse);
                 resolve(event.data.response);
               }

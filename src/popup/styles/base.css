@@ -16,8 +16,8 @@ body {
   line-height: var(--line-height-base);
   color: var(--text-on-glass-primary);
 
-  /* Animated gradient background - Modern, vibrant indigo/violet */
-  background: linear-gradient(135deg, #5b5fe6 0%, #6366f1 25%, #8b5cf6 50%, #a78bfa 75%, #c4b5fd 100%);
+  /* Subtle modern gradient background - Professional gray-blue */
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 25%, #dee2e6 50%, #e9ecef 75%, #f8f9fa 100%);
   background-size: 300% 300%;
   animation: gradientShift 20s ease infinite;
 

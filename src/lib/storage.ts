@@ -330,6 +330,7 @@ export class StorageManager {
    */
   async addAPIKey(keyData: {
     name?: string;
+    project?: string;
     keyValue: string;
     format?: import('./types').APIKeyFormat;
   }): Promise<import('./types').APIKey> {
@@ -358,6 +359,7 @@ export class StorageManager {
     const newKey: import('./types').APIKey = {
       id: this.generateId(),
       name: keyData.name,
+      project: keyData.project,
       keyValue: keyData.keyValue, // Will be encrypted in config
       format: keyData.format || this.detectKeyFormat(keyData.keyValue),
       createdAt: Date.now(),
@@ -527,6 +529,13 @@ export class StorageManager {
           you: { requests: 0, substitutions: 0 },
         },
         activityLog: [],
+      },
+      apiKeyVault: {
+        enabled: true,
+        mode: 'auto-redact',
+        autoDetectPatterns: true,
+        keys: [],
+        customPatterns: [],
       },
     };
   }

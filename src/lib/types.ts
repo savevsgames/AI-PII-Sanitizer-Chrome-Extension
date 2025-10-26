@@ -157,6 +157,9 @@ export interface UserConfig {
 
   // API Key Vault (PRO feature)
   apiKeyVault?: APIKeyVaultConfig;
+
+  // Custom Redaction Rules (PRO feature)
+  customRedaction?: CustomRedactionConfig;
 }
 
 // ========== V1 LEGACY TYPES (for migration) ==========
@@ -298,6 +301,14 @@ export type MessageType =
   | 'GET_API_KEYS'
   | 'UPDATE_API_KEY_VAULT_SETTINGS'
 
+  // Custom Redaction Rules
+  | 'ADD_REDACTION_RULE'
+  | 'REMOVE_REDACTION_RULE'
+  | 'UPDATE_REDACTION_RULE'
+  | 'GET_REDACTION_RULES'
+  | 'TEST_REDACTION_RULE'
+  | 'UPDATE_REDACTION_SETTINGS'
+
   // Health & Status
   | 'PING'
   | 'HEALTH_CHECK'
@@ -397,4 +408,63 @@ export interface APIKeyVaultConfig {
   autoDetectPatterns: boolean; // Scan for known formats
   keys: APIKey[]; // User's stored keys
   customPatterns: string[]; // User-defined detection rules (stored as strings)
+}
+
+// ========== CUSTOM REDACTION RULES (PRO) ==========
+
+/**
+ * Custom redaction rule for domain-specific PII patterns
+ */
+export interface CustomRedactionRule {
+  id: string;
+  name: string; // e.g., "SSN", "Credit Card", "Employee ID"
+  description?: string; // What this rule matches
+  pattern: string; // Regex pattern (stored as string)
+  replacement: string; // Replacement text (supports variables $1, $2, etc.)
+  priority: number; // Higher priority rules match first (1-100)
+  enabled: boolean;
+  caseSensitive: boolean;
+  global: boolean; // Match all occurrences or just first
+  category?: 'financial' | 'medical' | 'personal' | 'corporate' | 'custom';
+  tags?: string[]; // For filtering and organization
+  createdAt: number;
+  updatedAt: number;
+  lastUsed: number;
+  matchCount: number; // How many times this rule has matched
+  examples?: string[]; // Example strings that match this pattern
+}
+
+/**
+ * Result of applying a custom redaction rule
+ */
+export interface RedactionRuleMatch {
+  ruleId: string;
+  ruleName: string;
+  originalText: string;
+  redactedText: string;
+  position: number;
+  length: number;
+}
+
+/**
+ * Custom Redaction Rules configuration (PRO feature)
+ */
+export interface CustomRedactionConfig {
+  enabled: boolean;
+  mode: 'auto-redact' | 'warn-first' | 'log-only';
+  rules: CustomRedactionRule[];
+  maxRules: number; // FREE: 5 rules, PRO: unlimited
+}
+
+/**
+ * Test result for a redaction rule
+ */
+export interface RuleTestResult {
+  matches: Array<{
+    text: string;
+    position: number;
+    replacement: string;
+  }>;
+  success: boolean;
+  error?: string;
 }

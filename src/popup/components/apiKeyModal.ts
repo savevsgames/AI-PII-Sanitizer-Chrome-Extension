@@ -7,6 +7,7 @@ import { useAppStore } from '../../lib/store';
 import { renderAPIKeys } from './apiKeyVault';
 import { chromeApi } from '../api/chromeApi';
 import { APIKeyDetector } from '../../lib/apiKeyDetector';
+import { showError, showSuccess, showWarning } from './notificationModal';
 
 interface ParsedEnvKey {
   name: string;
@@ -217,13 +218,14 @@ async function handleImportEnvKeys() {
   const selectedKeys = parsedEnvKeys.filter(k => k.selected);
 
   if (selectedKeys.length === 0) {
-    alert('Please select at least one key to import');
+    showWarning('Please select at least one key to import');
     return;
   }
 
   try {
     let successCount = 0;
     let failCount = 0;
+    const failedKeys: string[] = [];
 
     for (const key of selectedKeys) {
       try {
@@ -233,16 +235,11 @@ async function handleImportEnvKeys() {
           keyValue: key.value,
         });
         successCount++;
-      } catch (error) {
+      } catch (error: any) {
         console.error(`[API Key Modal] Failed to import ${key.name}:`, error);
         failCount++;
+        failedKeys.push(`${key.name} (${error?.message || 'Unknown error'})`);
       }
-    }
-
-    if (failCount > 0) {
-      alert(`Imported ${successCount} keys.\n${failCount} keys failed.`);
-    } else {
-      modal?.classList.add('hidden');
     }
 
     // Reload config and re-render
@@ -253,9 +250,19 @@ async function handleImportEnvKeys() {
     }
 
     console.log(`[API Key Modal] Bulk import complete: ${successCount} success, ${failCount} failed`);
+
+    if (failCount > 0) {
+      showWarning(
+        `Imported ${successCount} key${successCount !== 1 ? 's' : ''}.\n${failCount} key${failCount !== 1 ? 's' : ''} failed.\n\nFailed keys:\n${failedKeys.join('\n')}`,
+        'Import Complete with Errors'
+      );
+    } else {
+      showSuccess(`Successfully imported ${successCount} key${successCount !== 1 ? 's' : ''}!`);
+      modal?.classList.add('hidden');
+    }
   } catch (error) {
     console.error('[API Key Modal] Error during bulk import:', error);
-    alert('Failed to import keys. Please try again.');
+    showError('Failed to import keys. Please try again.');
   }
 }
 
@@ -321,7 +328,7 @@ function setupPasteButton() {
       }
     } catch (error) {
       console.error('[API Key Modal] Failed to read clipboard:', error);
-      alert('Failed to read clipboard. Please paste manually.');
+      showError('Failed to read clipboard. Please paste manually.');
     }
   });
 }
@@ -336,7 +343,7 @@ function setupEnvParser() {
   parseBtn?.addEventListener('click', () => {
     const envContent = envTextarea?.value || '';
     if (!envContent.trim()) {
-      alert('Please paste your .env file content first');
+      showWarning('Please paste your .env file content first');
       return;
     }
     parseEnvFile(envContent);
@@ -375,7 +382,7 @@ function parseEnvFile(content: string) {
   });
 
   if (detected.length === 0) {
-    alert('No API keys detected in .env file.');
+    showWarning('No API keys detected in .env file. Make sure you have valid API keys in the format: API_KEY_NAME=value');
     return;
   }
 
