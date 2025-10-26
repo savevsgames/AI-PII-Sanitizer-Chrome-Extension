@@ -179,9 +179,17 @@
           const substituteChunk = await new Promise((resolve) => {
             const messageId = Math.random().toString(36);
 
+            // Timeout after 1 second for streaming chunks (faster than request timeout)
+            const timeout = setTimeout(() => {
+              window.removeEventListener('message', handleResponse);
+              console.warn('⚠️ Chunk substitution timeout');
+              resolve({ success: false, error: 'timeout' });
+            }, 1000);
+
             const handleResponse = (event) => {
               if (event.data?.source === 'ai-pii-content' &&
                   event.data?.messageId === messageId) {
+                clearTimeout(timeout);
                 window.removeEventListener('message', handleResponse);
                 resolve(event.data.response);
               }

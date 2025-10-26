@@ -27,21 +27,24 @@ async function showActivationToast() {
       return; // Extension is disabled
     }
 
-    // Create toast container
+    // Create toast container with glassmorphism
     const toast = document.createElement('div');
     toast.id = 'ai-pii-sanitizer-toast';
     toast.style.cssText = `
       position: fixed;
       top: 20px;
       right: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: rgba(16, 185, 129, 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
       padding: 16px 24px;
       border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       z-index: 999999;
       display: flex;
       align-items: center;

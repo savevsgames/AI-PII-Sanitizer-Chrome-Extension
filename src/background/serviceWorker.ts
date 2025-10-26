@@ -444,6 +444,20 @@ async function handleSubstituteResponse(payload: { text: string }): Promise<any>
       };
     }
 
+    // Check if response decoding is enabled
+    const storage = StorageManager.getInstance();
+    const config = await storage.loadConfig();
+
+    if (!config?.settings?.decodeResponses) {
+      // Decoding disabled - return original text with aliases
+      console.log('ℹ️ Response decoding disabled - keeping aliases in response');
+      return {
+        success: true,
+        modifiedText: text,
+        substitutions: 0,
+      };
+    }
+
     // Apply reverse substitution (alias → real)
     const aliasEngine = await AliasEngine.getInstance();
     const decoded = aliasEngine.substitute(text, 'decode');
