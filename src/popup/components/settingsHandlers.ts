@@ -7,6 +7,11 @@ import { useAppStore } from '../../lib/store';
 import { UserConfig } from '../../lib/types';
 import { isValidEmail } from './utils';
 
+// Theme name type
+type ThemeName =
+  | 'classic-light' | 'lavender' | 'sky' | 'fire' | 'leaf' | 'sunlight'
+  | 'classic-dark' | 'midnight-purple' | 'deep-ocean' | 'embers' | 'forest' | 'sundown';
+
 /**
  * Initialize settings handlers
  */
@@ -171,11 +176,11 @@ async function handleExportProfiles() {
  * Initialize theme picker
  */
 function initThemePicker() {
-  const themeCards = document.querySelectorAll('.theme-card');
+  const themeSwatches = document.querySelectorAll('.theme-swatch, .theme-card');
 
-  themeCards.forEach((card) => {
-    card.addEventListener('click', async () => {
-      const theme = card.getAttribute('data-theme') as 'neutral' | 'dark' | 'blue' | 'green' | 'purple' | 'amber';
+  themeSwatches.forEach((swatch) => {
+    swatch.addEventListener('click', async () => {
+      const theme = swatch.getAttribute('data-theme') as ThemeName;
       if (theme) {
         await handleThemeChange(theme);
       }
@@ -186,9 +191,32 @@ function initThemePicker() {
 }
 
 /**
+ * Theme mode classification map - determines if theme is dark or light
+ */
+const THEME_MODES: Record<string, 'dark' | 'light'> = {
+  // Light mode themes (light backgrounds + white cards + black text)
+  'classic-light': 'light',
+  'lavender': 'light',
+  'sky': 'light',
+  'fire': 'light',
+  'leaf': 'light',
+  'sunlight': 'light',
+
+  // Dark mode themes (dark backgrounds + dark cards + white text)
+  'classic-dark': 'dark',
+  'midnight-purple': 'dark',
+  'deep-ocean': 'dark',
+  'embers': 'dark',
+  'forest': 'dark',
+  'sundown': 'dark',
+};
+
+// ThemeName type defined at top of file
+
+/**
  * Handle theme change
  */
-async function handleThemeChange(theme: 'neutral' | 'dark' | 'blue' | 'green' | 'purple' | 'amber') {
+async function handleThemeChange(theme: ThemeName) {
   const store = useAppStore.getState();
   await store.updateSettings({ theme });
 
@@ -199,51 +227,54 @@ async function handleThemeChange(theme: 'neutral' | 'dark' | 'blue' | 'green' | 
 }
 
 /**
- * Apply theme to CSS variables
+ * Legacy theme name migration map
+ * Maps old 6-theme names to new 12-theme names for backwards compatibility
  */
-export function applyTheme(theme: 'neutral' | 'dark' | 'blue' | 'green' | 'purple' | 'amber') {
-  const root = document.documentElement;
+const LEGACY_THEME_MAP: Record<string, ThemeName> = {
+  'dark': 'classic-dark',
+  'blue': 'deep-ocean',
+  'green': 'forest',
+  'purple': 'lavender',
+  'amber': 'sunlight',
+  'neutral': 'classic-light',
+};
 
-  // Map theme names to CSS variable values
-  const themeMap = {
-    neutral: {
-      bg: 'var(--theme-neutral)',
-      header: 'var(--theme-neutral-header)',
-    },
-    dark: {
-      bg: 'var(--theme-dark)',
-      header: 'var(--theme-dark-header)',
-    },
-    blue: {
-      bg: 'var(--theme-blue)',
-      header: 'var(--theme-blue-header)',
-    },
-    green: {
-      bg: 'var(--theme-green)',
-      header: 'var(--theme-green-header)',
-    },
-    purple: {
-      bg: 'var(--theme-purple)',
-      header: 'var(--theme-purple-header)',
-    },
-    amber: {
-      bg: 'var(--theme-amber)',
-      header: 'var(--theme-amber-header)',
-    },
-  };
+/**
+ * Apply theme to CSS variables and set theme mode
+ */
+export function applyTheme(themeInput: ThemeName | string) {
+  const root = document.documentElement;
+  const body = document.body;
+
+  // Migrate legacy theme names to new names
+  const theme = (LEGACY_THEME_MAP[themeInput] || themeInput) as ThemeName;
+
+  // Get theme mode (dark or light)
+  const themeMode = THEME_MODES[theme] || 'dark';
+
+  // Set data attribute for light mode CSS variable overrides
+  body.setAttribute('data-theme-mode', themeMode);
+
+  // Convert theme name to CSS variable format (e.g., 'midnight-blue' -> '--theme-midnight-blue')
+  const themeBgVar = `var(--theme-${theme})`;
+  const themeHeaderVar = `var(--theme-${theme}-header)`;
 
   // Update CSS variables
-  root.style.setProperty('--theme-bg-gradient', themeMap[theme].bg);
-  root.style.setProperty('--theme-header-gradient', themeMap[theme].header);
+  root.style.setProperty('--theme-bg-gradient', themeBgVar);
+  root.style.setProperty('--theme-header-gradient', themeHeaderVar);
 
-  // Update active state on theme cards
-  document.querySelectorAll('.theme-card').forEach((card) => {
-    if (card.getAttribute('data-theme') === theme) {
-      card.classList.add('active');
+  // Update active state on theme swatches (supports both old and new selectors)
+  document.querySelectorAll('.theme-swatch, .theme-card').forEach((swatch) => {
+    const swatchTheme = swatch.getAttribute('data-theme');
+    // Check if this swatch matches either the input theme or the migrated theme
+    if (swatchTheme === themeInput || swatchTheme === theme) {
+      swatch.classList.add('active');
     } else {
-      card.classList.remove('active');
+      swatch.classList.remove('active');
     }
   });
+
+  console.log(`[Theme] Applied ${theme} (${themeMode} mode)${themeInput !== theme ? ` [migrated from ${themeInput}]` : ''}`);
 }
 
 /**
@@ -252,6 +283,6 @@ export function applyTheme(theme: 'neutral' | 'dark' | 'blue' | 'green' | 'purpl
 export function updateThemeUI(config: UserConfig | null) {
   if (!config) return;
 
-  const theme = config.settings.theme || 'neutral';
+  const theme = (config.settings.theme || 'classic-dark') as ThemeName;
   applyTheme(theme);
 }

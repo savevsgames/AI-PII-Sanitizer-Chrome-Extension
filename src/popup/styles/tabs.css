@@ -6,7 +6,7 @@
 .tab-nav {
   display: flex;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--border-neutral);
   backdrop-filter: var(--blur-light);
   -webkit-backdrop-filter: var(--blur-light);
   padding: 8px;
@@ -27,18 +27,18 @@
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .tab-button:hover {
-  background: rgba(255, 255, 255, 0.4);
-  color: rgba(0, 0, 0, 0.75);
-  transform: translateY(-1px);
+  background: var(--card-bg-light);
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .tab-button.active {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--card-bg);
   backdrop-filter: var(--blur-medium);
   -webkit-backdrop-filter: var(--blur-medium);
   color: var(--color-primary);
@@ -93,6 +93,6 @@
 .tab-header h2 {
   font-size: 24px;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.9);
+  color: var(--text-primary);
   letter-spacing: -0.02em;
 }

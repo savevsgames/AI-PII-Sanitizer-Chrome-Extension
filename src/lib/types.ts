@@ -127,7 +127,11 @@ export interface UserConfig {
     defaultMode: 'auto-replace' | 'warn-first';
     showNotifications: boolean;
     decodeResponses: boolean;    // If true, converts aliases back to real names in responses (default: false)
-    theme: 'neutral' | 'dark' | 'blue' | 'green' | 'purple' | 'amber'; // Background gradient theme
+    theme:
+      // Light mode themes (light backgrounds + white cards + black text)
+      | 'classic-light' | 'lavender' | 'sky' | 'fire' | 'leaf' | 'sunlight'
+      // Dark mode themes (dark backgrounds + dark cards + white text)
+      | 'classic-dark' | 'midnight-purple' | 'deep-ocean' | 'embers' | 'forest' | 'sundown';
     protectedDomains: string[];
     excludedDomains: string[];
     strictMode: boolean;
