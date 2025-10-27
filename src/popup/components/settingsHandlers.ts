@@ -23,6 +23,9 @@ export function initSettingsHandlers() {
   clearStatsBtn?.addEventListener('click', handleClearStats);
   exportProfilesBtn?.addEventListener('click', handleExportProfiles);
 
+  // Theme picker
+  initThemePicker();
+
   console.log('[Settings Handlers] Initialized');
 }
 
@@ -162,4 +165,93 @@ async function handleExportProfiles() {
 
   URL.revokeObjectURL(url);
   console.log('[Settings] Exported', profiles.length, 'profiles');
+}
+
+/**
+ * Initialize theme picker
+ */
+function initThemePicker() {
+  const themeCards = document.querySelectorAll('.theme-card');
+
+  themeCards.forEach((card) => {
+    card.addEventListener('click', async () => {
+      const theme = card.getAttribute('data-theme') as 'neutral' | 'dark' | 'blue' | 'green' | 'purple' | 'amber';
+      if (theme) {
+        await handleThemeChange(theme);
+      }
+    });
+  });
+
+  console.log('[Theme Picker] Initialized');
+}
+
+/**
+ * Handle theme change
+ */
+async function handleThemeChange(theme: 'neutral' | 'dark' | 'blue' | 'green' | 'purple' | 'amber') {
+  const store = useAppStore.getState();
+  await store.updateSettings({ theme });
+
+  // Apply theme immediately
+  applyTheme(theme);
+
+  console.log('[Theme] Changed to:', theme);
+}
+
+/**
+ * Apply theme to CSS variables
+ */
+export function applyTheme(theme: 'neutral' | 'dark' | 'blue' | 'green' | 'purple' | 'amber') {
+  const root = document.documentElement;
+
+  // Map theme names to CSS variable values
+  const themeMap = {
+    neutral: {
+      bg: 'var(--theme-neutral)',
+      header: 'var(--theme-neutral-header)',
+    },
+    dark: {
+      bg: 'var(--theme-dark)',
+      header: 'var(--theme-dark-header)',
+    },
+    blue: {
+      bg: 'var(--theme-blue)',
+      header: 'var(--theme-blue-header)',
+    },
+    green: {
+      bg: 'var(--theme-green)',
+      header: 'var(--theme-green-header)',
+    },
+    purple: {
+      bg: 'var(--theme-purple)',
+      header: 'var(--theme-purple-header)',
+    },
+    amber: {
+      bg: 'var(--theme-amber)',
+      header: 'var(--theme-amber-header)',
+    },
+  };
+
+  // Update CSS variables
+  root.style.setProperty('--theme-bg-gradient', themeMap[theme].bg);
+  root.style.setProperty('--theme-header-gradient', themeMap[theme].header);
+
+  // Update active state on theme cards
+  document.querySelectorAll('.theme-card').forEach((card) => {
+    if (card.getAttribute('data-theme') === theme) {
+      card.classList.add('active');
+    } else {
+      card.classList.remove('active');
+    }
+  });
+}
+
+/**
+ * Update theme UI from config
+ */
+export function updateThemeUI(config: UserConfig | null) {
+  if (!config) return;
+
+  const theme = config.settings.theme || 'neutral';
+  applyTheme(theme);
 }
