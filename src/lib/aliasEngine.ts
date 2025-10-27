@@ -2,6 +2,7 @@
  * Alias Engine - Core substitution logic
  * Handles bidirectional text substitution with case preservation
  * Version 2.0 - Profile-based multi-PII matching
+ * Version 2.1 - Added alias variations support
  */
 
 import { AliasProfile, SubstitutionResult, SubstitutionOptions, PIIType } from './types';
@@ -43,6 +44,7 @@ export class AliasEngine {
 
   /**
    * Build efficient lookup maps from all PII fields in profiles
+   * Includes variations if enabled
    */
   private buildLookupMaps(): void {
     this.realToAliasMap.clear();
@@ -52,6 +54,8 @@ export class AliasEngine {
 
     for (const profile of this.profiles) {
       if (!profile.enabled) continue;
+
+      const useVariations = profile.settings?.enableVariations ?? true; // Default to enabled
 
       // Build mappings for each PII field
       for (const piiType of piiFields) {
@@ -67,8 +71,59 @@ export class AliasEngine {
             piiType,
           };
 
+          // Add primary values
           this.realToAliasMap.set(realValue.toLowerCase(), mapping);
           this.aliasToRealMap.set(aliasValue.toLowerCase(), mapping);
+
+          // Add variations if enabled
+          if (useVariations && profile.variations) {
+            // Get disabled variations list
+            const disabledRealVariations = profile.disabledVariations?.real[piiType] || [];
+            const disabledAliasVariations = profile.disabledVariations?.alias[piiType] || [];
+
+            // Add real variations (auto-generated) - skip disabled ones
+            const realVariations = profile.variations.real[piiType] || [];
+            for (const variation of realVariations) {
+              if (variation &&
+                  variation.toLowerCase() !== realValue.toLowerCase() &&
+                  !disabledRealVariations.includes(variation)) {
+                this.realToAliasMap.set(variation.toLowerCase(), mapping);
+              }
+            }
+
+            // Add alias variations (auto-generated) - skip disabled ones
+            const aliasVariations = profile.variations.alias[piiType] || [];
+            for (const variation of aliasVariations) {
+              if (variation &&
+                  variation.toLowerCase() !== aliasValue.toLowerCase() &&
+                  !disabledAliasVariations.includes(variation)) {
+                this.aliasToRealMap.set(variation.toLowerCase(), mapping);
+              }
+            }
+          }
+
+          // Add custom variations (only if enabled flag is true)
+          if (useVariations && profile.customVariations) {
+            // Add custom real variations (only if enabled)
+            const customRealVariations = profile.customVariations.real[piiType] || [];
+            for (const varObj of customRealVariations) {
+              if (varObj && varObj.enabled &&
+                  varObj.value &&
+                  varObj.value.toLowerCase() !== realValue.toLowerCase()) {
+                this.realToAliasMap.set(varObj.value.toLowerCase(), mapping);
+              }
+            }
+
+            // Add custom alias variations (only if enabled)
+            const customAliasVariations = profile.customVariations.alias[piiType] || [];
+            for (const varObj of customAliasVariations) {
+              if (varObj && varObj.enabled &&
+                  varObj.value &&
+                  varObj.value.toLowerCase() !== aliasValue.toLowerCase()) {
+                this.aliasToRealMap.set(varObj.value.toLowerCase(), mapping);
+              }
+            }
+          }
         }
       }
 
@@ -92,7 +147,7 @@ export class AliasEngine {
       }
     }
 
-    console.log('[AliasEngine] Built maps:', this.realToAliasMap.size, 'real→alias mappings');
+    console.log('[AliasEngine] Built maps:', this.realToAliasMap.size, 'real→alias mappings (with variations)');
   }
 
   /**

@@ -176,3 +176,290 @@
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
 }
+
+/* Variations Management */
+.variations-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-neutral);
+  border-radius: var(--radius-md);
+}
+
+.variations-header h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+}
+
+.btn-text {
+  background: var(--primary-color);
+  border: none;
+  color: white;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.btn-text:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-text:active {
+  transform: translateY(0);
+}
+
+#variationsToggleIcon {
+  transition: transform 0.2s ease;
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#variationsToggleIcon.expanded {
+  transform: rotate(180deg);
+}
+
+#variationsToggleText {
+  line-height: 1;
+}
+
+.variations-list-container {
+  margin-top: var(--space-md);
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border-neutral);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.variations-by-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.variation-field-group {
+  border-bottom: 1px solid var(--border-neutral);
+  padding-bottom: var(--space-md);
+}
+
+.variation-field-group:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.variation-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.variation-field-title {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.variation-field-title .badge {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.variation-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.variation-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--card-bg);
+  border: 1px solid var(--border-neutral);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.variation-item:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.variation-item.disabled {
+  opacity: 0.5;
+}
+
+.variation-item.disabled .variation-item-text {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+/* Toggle Switch */
+.variation-toggle {
+  width: 44px;
+  height: 24px;
+  position: relative;
+  display: inline-block;
+}
+
+.variation-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.variation-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-neutral);
+  border-radius: 24px;
+  transition: 0.3s;
+}
+
+.variation-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.variation-toggle input:checked + .variation-toggle-slider {
+  background-color: var(--primary-color);
+}
+
+.variation-toggle input:checked + .variation-toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.variation-item-text {
+  font-size: var(--font-size-sm);
+  font-family: 'Monaco', 'Courier New', monospace;
+  color: var(--text-primary);
+  flex: 1;
+  word-break: break-word;
+}
+
+.variation-item-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  margin-left: var(--space-xs);
+  font-style: italic;
+}
+
+.variation-item-actions {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.btn-icon {
+  background: var(--card-bg);
+  border: 1px solid var(--border-neutral);
+  cursor: pointer;
+  padding: 6px 8px;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.btn-icon:hover {
+  color: var(--text-primary);
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.btn-icon.delete:hover {
+  background: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+.add-variation-form {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  padding: var(--space-sm);
+  background: rgba(100, 149, 237, 0.05);
+  border: 1px dashed rgba(100, 149, 237, 0.3);
+  border-radius: var(--radius-sm);
+}
+
+.add-variation-input {
+  flex: 1;
+  padding: var(--space-xs) var(--space-sm);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-neutral);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.add-variation-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.btn-add-variation {
+  padding: var(--space-xs) var(--space-md);
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.btn-add-variation:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-add-variation:active {
+  transform: translateY(0);
+}
