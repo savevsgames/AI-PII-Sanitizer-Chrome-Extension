@@ -2,13 +2,15 @@
 
 A Chrome extension that protects your privacy by replacing real personally identifiable information (PII) with aliases when using AI chat services like ChatGPT, Claude, and Gemini.
 
-## 🎉 Current Status: **V2 REFACTOR COMPLETE - READY FOR FEATURES**
+## 🎉 Current Status: **PHASE 3 COMPLETE - API KEY VAULT & CUSTOM RULES LIVE!**
 
-✅ **Profile-based architecture refactored and tested**
+✅ **Profile-based architecture + Advanced Features**
 - **ChatGPT**: Fully tested and working ✅
 - **Claude**: Fully tested and working ✅
 - **Gemini**: Code ready, untested ⏳
 - **Profile Editor UI**: Professional modal-based Add/Edit/Delete ✅
+- **API Key Vault**: Store & protect API keys from accidental exposure ✅
+- **Custom Redaction Rules**: Create regex patterns for domain-specific PII ✅
 - Real PII automatically replaced with aliases in requests
 - AI responses decoded back to show real names
 - Streaming responses (SSE) fully supported
@@ -16,42 +18,52 @@ A Chrome extension that protects your privacy by replacing real personally ident
 - Stats tracking with activity log
 - All tests passing (9/9)
 
+**Just Shipped (Phase 3):**
+- 🔒 **API Key Vault** - Protect OpenAI, GitHub, AWS, Stripe, and custom API keys
+- 🎯 **Custom Redaction Rules** - Regex-based patterns for SSN, credit cards, medical records, etc.
+- 📊 **Usage Analytics** - Track protected keys and rule matches
+- 🎨 **Glassmorphism UI Overhaul** - Beautiful new visual design
+
 **Next Up:**
-- 🔒 **API Key Vault** (10 keys FREE, unlimited PRO) - foundation complete
 - 🔀 **Alias Variations** - auto-detect GregBarker, gregbarker, gbarker
 - ✍️ **Dev Terms Spell Check** - catch "openIA" → "OpenAI" typos
 - 🤖 **AI Profile Fill** - generate fake profiles using ChatGPT/Claude
 
-**Try it now (dev mode):** Load unpacked in chrome://extensions, create a profile, mention your real PII in ChatGPT or Claude!
+**Try it now (dev mode):** Load unpacked in chrome://extensions, create a profile, add API keys, create custom rules!
 
 ## Features
 
-### ✅ Current (V2)
+### ✅ Current Features (Phase 3)
 - **Profile-Based Management**: Create multiple profiles with real ↔ alias mappings
 - **Multi-Field Support**: Name, email, phone, address, company, custom fields
 - **Bidirectional Aliasing**: Real → alias in requests, alias → real in responses
+- **API Key Vault**: Store & protect API keys (OpenAI, GitHub, AWS, Stripe, Anthropic, Google, custom)
+  - Auto-detect known API key formats
+  - Custom pattern support for proprietary keys
+  - Protection modes: auto-redact, warn-first, log-only
+  - Usage stats tracking
+- **Custom Redaction Rules**: Create regex-based patterns for domain-specific PII
+  - 10 preset templates (SSN, credit cards, phone, IP addresses, medical records, etc.)
+  - Custom pattern builder with live testing
+  - Priority-based rule execution
+  - Category organization (PII, Financial, Medical, Custom)
+  - Match count tracking
 - **Privacy-First**: All data stored locally with AES-256-GCM encryption
 - **Multiple AI Services**: ChatGPT, Claude, Gemini, Perplexity, Poe, Copilot, You.com
-- **Professional UI**: Modal-based Add/Edit/Delete with form validation
-- **Stats Tracking**: Activity log showing substitutions by service
+- **Modern UI**: Glassmorphism design with tab navigation
+- **Stats Tracking**: Comprehensive activity log with service-specific metrics
 - **Real-Time Protection**: Intercepts fetch requests before they leave your browser
 
-### 🚧 In Development
-- **🔒 API Key Vault** (FREE + PRO): Protect API keys from accidental exposure
-  - FREE: Store 10 keys, OpenAI detection only
-  - PRO: Unlimited keys, all patterns (GitHub, AWS, Stripe, etc.)
-
-- **🔀 Alias Variations** (FREE + PRO): Auto-detect name/email format variations
+### 🚧 In Development (Phase 4+)
+- **🔀 Alias Variations**: Auto-detect name/email format variations
   - Auto-generate: GregBarker, gregbarker, gbarker, G.Barker
-  - FREE: Auto-generated + 10 custom variations
-  - PRO: Auto-generated + 100+ custom variations, AI-powered suggestions
+  - Smart matching for partial names
 
-- **✍️ Dev Terms Spell Check** (FREE + PRO): Catch typos before sending
+- **✍️ Dev Terms Spell Check**: Catch typos before sending
   - Detects: "openIA" → "OpenAI", "Goggle" → "Google", "reactJs" → "React"
-  - FREE: 50 curated terms + 10 custom terms
-  - PRO: 500+ curated terms + 100 custom terms, editable dictionary
+  - Curated dictionary of tech terms
 
-- **🤖 AI Profile Fill** (FREE): Generate fake profiles using AI chat
+- **🤖 AI Profile Fill**: Generate fake profiles using AI chat
   - Click "AI Generate" → sends visible message to ChatGPT/Claude/Gemini
   - 100% transparent (you see the request)
   - Parses JSON response and pre-fills alias fields
@@ -188,33 +200,42 @@ For detailed browser compatibility information, see [Launch Roadmap](docs/curren
 - [x] ChatGPT + Claude fully tested and working
 - [x] All tests passing (9/9)
 
-### 🚧 Phase 2: Production Polish (Week 2)
-- [ ] Professional icons and screenshots for Chrome Web Store
-- [ ] Privacy Policy and Terms of Service
-- [ ] Remove debug logs (production mode)
-- [ ] User-facing error messages
-- [ ] Chrome Web Store submission
+### ✅ Phase 2: Production Polish (COMPLETE!)
+- [x] Glassmorphism UI design system
+- [x] Tab-based navigation
+- [x] Privacy Policy and Terms of Service
+- [x] Professional icons and branding
+- [x] Error handling and user feedback
 
-### 🔜 Phase 3: API Key Vault (Week 3-4)
-- [ ] FREE: 10 stored keys, OpenAI detection
-- [ ] PRO: Unlimited keys, all patterns (GitHub, AWS, Stripe)
-- [ ] Warn-before-send modal
-- [ ] Stats tracking ("47 keys protected this month")
+### ✅ Phase 3: API Key Vault & Custom Rules (COMPLETE!)
+- [x] API Key Vault with auto-detection (OpenAI, GitHub, AWS, Stripe, Anthropic, Google)
+- [x] Custom pattern support for proprietary keys
+- [x] Protection modes: auto-redact, warn-first, log-only
+- [x] Custom Redaction Rules with regex patterns
+- [x] 10 preset templates (SSN, credit cards, phone, medical records, etc.)
+- [x] Priority-based rule execution
+- [x] Live pattern testing
+- [x] Usage stats and match tracking
 
-### 🔜 Phase 4: Service Testing (Week 5)
+### 🚧 Phase 4: Service Testing & Polish (Current)
 - [ ] Verify all 7 AI services (ChatGPT ✅, Claude ✅, Gemini, Perplexity, Poe, Copilot, You.com)
 - [ ] Edge case testing
 - [ ] Performance optimization
+- [ ] Remove debug logs (production mode)
+- [ ] Chrome Web Store submission prep
 
-### 🔜 Phase 5-7: Enhanced Features (Weeks 6-9)
+### 🔜 Phase 5-7: Enhanced Features (Planned)
 - [ ] **Alias Variations**: Auto-detect GregBarker, gregbarker, gbarker
 - [ ] **Dev Terms Spell Check**: Catch "openIA" → "OpenAI" typos
 - [ ] **AI Profile Fill**: Generate fake profiles using ChatGPT/Claude/Gemini
+- [ ] **Cloud Sync** (PRO): Sync profiles across devices
+- [ ] **Team Sharing** (Enterprise): Share profiles with team members
 
-### 📅 Launch Timeline
-- **Core Launch (Phases 1-4):** ~3 weeks
-- **Enhanced Features (Phases 5-7):** +3-4 weeks
-- **Total to full feature set:** ~6-7 weeks
+### 📅 Timeline
+- **Phase 1-3:** Complete ✅
+- **Phase 4:** 1-2 weeks
+- **Phase 5-7:** 3-4 weeks
+- **Total to Chrome Web Store launch:** ~2 weeks
 
 For detailed roadmap and browser compatibility plans, see [Launch Roadmap](docs/current/launch_roadmap.md).
 
