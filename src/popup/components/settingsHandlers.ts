@@ -6,6 +6,13 @@
 import { useAppStore } from '../../lib/store';
 import { UserConfig } from '../../lib/types';
 import { isValidEmail } from './utils';
+import { applyChromeTheme } from '../../lib/chromeTheme';
+
+// Theme name type
+type ThemeName =
+  | 'chrome-theme'
+  | 'classic-light' | 'lavender' | 'sky' | 'fire' | 'leaf' | 'sunlight'
+  | 'classic-dark' | 'midnight-purple' | 'deep-ocean' | 'embers' | 'forest' | 'sundown';
 
 /**
  * Initialize settings handlers
@@ -22,6 +29,9 @@ export function initSettingsHandlers() {
   subscribeBtn?.addEventListener('click', handleSubscribe);
   clearStatsBtn?.addEventListener('click', handleClearStats);
   exportProfilesBtn?.addEventListener('click', handleExportProfiles);
+
+  // Theme picker
+  initThemePicker();
 
   console.log('[Settings Handlers] Initialized');
 }
@@ -162,4 +172,130 @@ async function handleExportProfiles() {
 
   URL.revokeObjectURL(url);
   console.log('[Settings] Exported', profiles.length, 'profiles');
+}
+
+/**
+ * Initialize theme picker
+ */
+function initThemePicker() {
+  const themeSwatches = document.querySelectorAll('.theme-swatch, .theme-card');
+
+  themeSwatches.forEach((swatch) => {
+    swatch.addEventListener('click', async () => {
+      const theme = swatch.getAttribute('data-theme') as ThemeName;
+      if (theme) {
+        await handleThemeChange(theme);
+      }
+    });
+  });
+
+  console.log('[Theme Picker] Initialized');
+}
+
+/**
+ * Theme mode classification map - determines if theme is dark or light
+ */
+const THEME_MODES: Record<string, 'dark' | 'light'> = {
+  // Light mode themes (light backgrounds + white cards + black text)
+  'classic-light': 'light',
+  'lavender': 'light',
+  'sky': 'light',
+  'fire': 'light',
+  'leaf': 'light',
+  'sunlight': 'light',
+
+  // Dark mode themes (dark backgrounds + dark cards + white text)
+  'classic-dark': 'dark',
+  'midnight-purple': 'dark',
+  'deep-ocean': 'dark',
+  'embers': 'dark',
+  'forest': 'dark',
+  'sundown': 'dark',
+};
+
+// ThemeName type defined at top of file
+
+/**
+ * Handle theme change
+ */
+async function handleThemeChange(theme: ThemeName) {
+  const store = useAppStore.getState();
+  await store.updateSettings({ theme });
+
+  // Apply theme immediately
+  applyTheme(theme);
+
+  console.log('[Theme] Changed to:', theme);
+}
+
+/**
+ * Legacy theme name migration map
+ * Maps old 6-theme names to new 12-theme names for backwards compatibility
+ */
+const LEGACY_THEME_MAP: Record<string, ThemeName> = {
+  'dark': 'classic-dark',
+  'blue': 'deep-ocean',
+  'green': 'forest',
+  'purple': 'lavender',
+  'amber': 'sunlight',
+  'neutral': 'classic-light',
+};
+
+/**
+ * Apply theme to CSS variables and set theme mode
+ */
+export async function applyTheme(themeInput: ThemeName | string) {
+  const root = document.documentElement;
+  const body = document.body;
+
+  // Migrate legacy theme names to new names
+  const theme = (LEGACY_THEME_MAP[themeInput] || themeInput) as ThemeName;
+
+  // Handle Chrome theme dynamically
+  if (theme === 'chrome-theme') {
+    const success = await applyChromeTheme();
+    if (!success) {
+      console.warn('[Theme] Chrome theme not available, falling back to classic-dark');
+      // Fallback to classic-dark if Chrome theme fails
+      await applyTheme('classic-dark');
+      return;
+    }
+  } else {
+    // Get theme mode (dark or light)
+    const themeMode = THEME_MODES[theme] || 'dark';
+
+    // Set data attribute for light mode CSS variable overrides
+    body.setAttribute('data-theme-mode', themeMode);
+
+    // Convert theme name to CSS variable format (e.g., 'midnight-blue' -> '--theme-midnight-blue')
+    const themeBgVar = `var(--theme-${theme})`;
+    const themeHeaderVar = `var(--theme-${theme}-header)`;
+
+    // Update CSS variables
+    root.style.setProperty('--theme-bg-gradient', themeBgVar);
+    root.style.setProperty('--theme-header-gradient', themeHeaderVar);
+  }
+
+  // Update active state on theme swatches (supports both old and new selectors)
+  document.querySelectorAll('.theme-swatch, .theme-card').forEach((swatch) => {
+    const swatchTheme = swatch.getAttribute('data-theme');
+    // Check if this swatch matches either the input theme or the migrated theme
+    if (swatchTheme === themeInput || swatchTheme === theme) {
+      swatch.classList.add('active');
+    } else {
+      swatch.classList.remove('active');
+    }
+  });
+
+  console.log(`[Theme] Applied ${theme}${themeInput !== theme ? ` [migrated from ${themeInput}]` : ''}`);
+}
+
+/**
+ * Update theme UI from config
+ */
+export function updateThemeUI(config: UserConfig | null) {
+  if (!config) return;
+
+  const theme = (config.settings.theme || 'classic-dark') as ThemeName;
+  applyTheme(theme);
 }

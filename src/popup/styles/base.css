@@ -16,8 +16,8 @@ body {
   line-height: var(--line-height-base);
   color: var(--text-on-glass-primary);
 
-  /* Animated gradient background - Modern, vibrant indigo/violet */
-  background: linear-gradient(135deg, #5b5fe6 0%, #6366f1 25%, #8b5cf6 50%, #a78bfa 75%, #c4b5fd 100%);
+  /* Animated gradient background - Uses CSS variable for theme switching */
+  background: var(--theme-bg-gradient);
   background-size: 300% 300%;
   animation: gradientShift 20s ease infinite;
 
@@ -40,19 +40,14 @@ body.minimal-mode {
 }
 
 .container {
-  /* Frosted glass container */
-  background: var(--glass-white);
-  backdrop-filter: var(--blur-medium);
-  -webkit-backdrop-filter: var(--blur-medium);
+  /* Transparent container - let the body gradient show through */
+  background: transparent;
 
   display: flex;
   flex-direction: column;
   height: 100vh;
 
-  /* Subtle border and shadow */
-  border: var(--glass-border);
-  box-shadow: var(--glass-shadow-lg);
-
+  /* No filters on the main container - glassmorphism applied to individual elements */
   transition: var(--glass-transition);
 }
 

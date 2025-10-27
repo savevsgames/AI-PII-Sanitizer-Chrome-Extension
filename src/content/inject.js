@@ -93,6 +93,58 @@
         return nativeFetch.apply(this, args);
       }
 
+      // Handle API Key Warning (warn-first mode)
+      if (substituteRequest.needsWarning) {
+        console.warn('⚠️ API Key detected - showing warning modal');
+
+        // Show warning modal to user via content script
+        const userChoice = await new Promise((resolve) => {
+          const messageId = Math.random().toString(36);
+
+          const timeout = setTimeout(() => {
+            window.removeEventListener('message', handleResponse);
+            resolve('block'); // Block by default on timeout
+          }, 30000); // 30 second timeout
+
+          const handleResponse = (event) => {
+            if (event.data?.source === 'ai-pii-content-warning' &&
+                event.data?.messageId === messageId) {
+              clearTimeout(timeout);
+              window.removeEventListener('message', handleResponse);
+              resolve(event.data.allow);
+            }
+          };
+
+          window.addEventListener('message', handleResponse);
+
+          // Send warning request to content script
+          window.postMessage({
+            source: 'ai-pii-inject-warning',
+            messageId,
+            keysDetected: substituteRequest.keysDetected,
+            keyTypes: substituteRequest.keyTypes
+          }, '*');
+        });
+
+        if (userChoice === 'block') {
+          console.log('🛡️ User blocked API key transmission');
+          // Return fake successful response to avoid errors
+          return new Response(JSON.stringify({ error: 'Request blocked by user' }), {
+            status: 403,
+            statusText: 'Forbidden - API Key Blocked',
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else if (userChoice === 'allow-all') {
+          console.log('⚠️ User allowed everything - ALL PROTECTION DISABLED');
+          // Use original request without any substitutions
+          return nativeFetch.apply(this, args);
+        } else if (userChoice === 'allow-key-only') {
+          console.log('🔑 User allowed API key only - PII still protected');
+          // Continue with PII-protected body (API keys allowed through)
+          // The modifiedBody already has PII substituted, just no API key redaction
+        }
+      }
+
       console.log('✅ Request substituted:', substituteRequest.substitutions, 'replacements');
 
       // Step 2: Make actual fetch with substituted body
@@ -179,9 +231,17 @@
           const substituteChunk = await new Promise((resolve) => {
             const messageId = Math.random().toString(36);
 
+            // Timeout after 1 second for streaming chunks (faster than request timeout)
+            const timeout = setTimeout(() => {
+              window.removeEventListener('message', handleResponse);
+              console.warn('⚠️ Chunk substitution timeout');
+              resolve({ success: false, error: 'timeout' });
+            }, 1000);
+
             const handleResponse = (event) => {
               if (event.data?.source === 'ai-pii-content' &&
                   event.data?.messageId === messageId) {
+                clearTimeout(timeout);
                 window.removeEventListener('message', handleResponse);
                 resolve(event.data.response);
               }
