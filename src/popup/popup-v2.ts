@@ -9,7 +9,7 @@ import { initProfileModal } from './components/profileModal';
 import { renderProfiles } from './components/profileRenderer';
 import { renderStats } from './components/statsRenderer';
 import { initActivityLog, renderActivityLog } from './components/activityLog';
-import { initSettingsHandlers, updateSettingsUI } from './components/settingsHandlers';
+import { initSettingsHandlers, updateSettingsUI, updateThemeUI } from './components/settingsHandlers';
 import { initMinimalMode, loadModePreference, updateMinimalView } from './components/minimalMode';
 import { initPageStatus } from './components/pageStatus';
 import { initFeaturesTab, renderFeaturesHub } from './components/featuresTab';
@@ -68,6 +68,7 @@ async function loadInitialData() {
     renderStats(state.config, state.profiles);
     renderActivityLog(state.activityLog);
     updateSettingsUI(state.config);
+    updateThemeUI(state.config);  // Apply saved theme on load
     updateMinimalView(state.config);
     if (state.config) {
       renderFeaturesHub(state.config);
