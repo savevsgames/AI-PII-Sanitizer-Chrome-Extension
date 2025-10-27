@@ -339,18 +339,23 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
 
     if (config?.customRules?.enabled && config.customRules.rules.length > 0) {
       console.log('🎯 Custom rules enabled, applying redaction rules...');
+      console.log('📝 Text before custom rules:', modifiedText.substring(0, 200));
 
       // Apply custom redaction rules
       const rulesResult = redactionEngine.applyRules(modifiedText, config.customRules.rules);
 
+      console.log(`🎯 Rules result: ${rulesResult.matches.length} matches, ${rulesResult.rulesApplied.length} rules applied`);
       if (rulesResult.matches.length > 0) {
-        console.log(`🎯 Applied ${rulesResult.rulesApplied.length} custom rules, ${rulesResult.matches.length} matches`);
+        console.log('🔍 Matches:', rulesResult.matches);
+        console.log('📝 Text after custom rules:', rulesResult.modifiedText.substring(0, 200));
         modifiedText = rulesResult.modifiedText;
 
         // Update match counts for rules
         for (const ruleId of rulesResult.rulesApplied) {
           await storage.incrementRuleMatchCount(ruleId);
         }
+      } else {
+        console.log('⚠️ No matches found for custom rules');
       }
     }
 
