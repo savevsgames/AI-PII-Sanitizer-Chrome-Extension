@@ -130,6 +130,50 @@ window.addEventListener('message', async (event) => {
   // Only accept messages from our own page
   if (event.source !== window) return;
 
+  // Handle health check requests from inject.js
+  if (event.data?.source === 'ai-pii-inject-health') {
+    const { messageId } = event.data;
+
+    // Verify full chain: inject -> content -> background -> content -> inject
+    try {
+      await chrome.runtime.sendMessage({ type: 'HEALTH_CHECK' });
+
+      // If we got here, the full chain is working
+      window.postMessage({
+        source: 'ai-pii-content-health',
+        messageId,
+        isAlive: true
+      }, '*');
+    } catch (error) {
+      // Extension context invalidated or background not responding
+      window.postMessage({
+        source: 'ai-pii-content-health',
+        messageId,
+        isAlive: false
+      }, '*');
+    }
+
+    return;
+  }
+
+  // Handle "not protected" modal request from inject.js
+  if (event.data?.source === 'ai-pii-inject-not-protected') {
+    const { messageId } = event.data;
+
+    console.log('🛑 Showing NOT PROTECTED modal');
+
+    const userChoice = await showNotProtectedModal();
+
+    // Send response back to inject.js
+    window.postMessage({
+      source: 'ai-pii-content-not-protected',
+      messageId,
+      allow: userChoice === 'allow-anyway'
+    }, '*');
+
+    return;
+  }
+
   // Handle API key warning requests from inject.js
   if (event.data?.source === 'ai-pii-inject-warning') {
     const { messageId, keysDetected, keyTypes } = event.data;
@@ -411,6 +455,179 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
         resolve('block'); // Block by default
       }
     };
+    document.addEventListener('keydown', handleEscape);
+  });
+}
+
+/**
+ * Show Extension Not Protected Modal
+ * Returns Promise<string> - 'refresh' or 'allow-anyway'
+ */
+function showNotProtectedModal(): Promise<'refresh' | 'allow-anyway'> {
+  return new Promise((resolve) => {
+    // Remove existing modal if any
+    const existing = document.getElementById('not-protected-modal');
+    if (existing) existing.remove();
+
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.id = 'not-protected-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      animation: fadeIn 0.2s ease-out;
+      pointer-events: auto;
+    `;
+
+    // Create modal content with glassmorphism
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      pointer-events: auto;
+      position: relative;
+      z-index: 1;
+    `;
+
+    content.innerHTML = `
+      <div style="text-align: center;">
+        <div style="font-size: 64px; margin-bottom: 16px;">🛑</div>
+        <h2 style="margin: 0 0 8px 0; color: #1a202c; font-size: 24px; font-weight: 600;">
+          PromptBlocker.com
+        </h2>
+        <h3 style="margin: 0 0 16px 0; color: #ef4444; font-size: 18px; font-weight: 600;">
+          Extension Not Protected
+        </h3>
+        <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 15px; line-height: 1.6;">
+          The extension has lost connection and <strong style="color: #ef4444;">cannot protect your data</strong>.
+          <br><br>
+          This typically happens when the extension is reloaded. Please refresh this page to restore full protection.
+        </p>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button id="not-protected-refresh" style="
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+          ">
+            🔄 Refresh Page
+          </button>
+          <button id="not-protected-allow" style="
+            flex: 1;
+            background: rgba(0, 0, 0, 0.05);
+            color: #718096;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+          ">
+            ⚠️ Allow Anyway
+          </button>
+        </div>
+
+        <p style="margin: 16px 0 0 0; color: #a0aec0; font-size: 12px;">
+          Press Ctrl+Shift+R for hard refresh
+        </p>
+      </div>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    console.log('🛑 NOT PROTECTED modal displayed');
+
+    // Button handlers
+    const refreshBtn = content.querySelector('#not-protected-refresh') as HTMLButtonElement;
+    const allowBtn = content.querySelector('#not-protected-allow') as HTMLButtonElement;
+
+    if (!refreshBtn || !allowBtn) {
+      console.error('❌ Modal buttons not found!');
+      return;
+    }
+
+    console.log('✅ Modal buttons attached:', refreshBtn, allowBtn);
+
+    // Use both addEventListener AND onclick for maximum compatibility
+    const handleRefresh = () => {
+      console.log('🔄 User clicked Refresh - reloading page');
+      modal.remove();
+      location.reload();
+      resolve('refresh');
+    };
+
+    const handleAllow = () => {
+      console.log('⚠️ User clicked Allow Anyway - allowing unprotected request');
+      modal.remove();
+      resolve('allow-anyway');
+    };
+
+    refreshBtn.addEventListener('click', handleRefresh);
+    refreshBtn.onclick = handleRefresh;
+
+    allowBtn.addEventListener('click', handleAllow);
+    allowBtn.onclick = handleAllow;
+
+    // Hover effects
+    refreshBtn.addEventListener('mouseenter', () => {
+      refreshBtn.style.transform = 'translateY(-2px)';
+      refreshBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
+    });
+    refreshBtn.addEventListener('mouseleave', () => {
+      refreshBtn.style.transform = 'translateY(0)';
+      refreshBtn.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+    });
+
+    allowBtn.addEventListener('mouseenter', () => {
+      allowBtn.style.transform = 'translateY(-2px)';
+      allowBtn.style.background = 'rgba(0, 0, 0, 0.08)';
+    });
+    allowBtn.addEventListener('mouseleave', () => {
+      allowBtn.style.transform = 'translateY(0)';
+      allowBtn.style.background = 'rgba(0, 0, 0, 0.05)';
+    });
+
+    // ESC key to default to refresh
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        modal.remove();
+        document.removeEventListener('keydown', handleEscape);
+        location.reload();
+        resolve('refresh');
+      }
+    };
+
     document.addEventListener('keydown', handleEscape);
   });
 }

@@ -16,6 +16,88 @@
   const nativeFetch = window.fetch;
   window.__nativeFetch = nativeFetch;
 
+  // Health check system - fail safe approach with exponential backoff
+  let isProtected = false;
+  let healthCheckAttempts = 0;
+  let healthCheckInterval = 1000; // Start at 1 second
+  const MAX_HEALTH_CHECK_ATTEMPTS = 3;
+  const MIN_HEALTH_CHECK_INTERVAL = 1000; // 1 second
+  const MAX_HEALTH_CHECK_INTERVAL = 300000; // 5 minutes
+
+  /**
+   * Perform health check to verify extension is connected
+   * Returns true if protected, false if not
+   */
+  async function performHealthCheck() {
+    return new Promise((resolve) => {
+      const messageId = Math.random().toString(36);
+      const timeout = setTimeout(() => {
+        window.removeEventListener('message', handleResponse);
+        resolve(false); // Fail safe - assume not protected
+      }, 500); // 500ms timeout
+
+      const handleResponse = (event) => {
+        if (event.data?.source === 'ai-pii-content-health' &&
+            event.data?.messageId === messageId) {
+          clearTimeout(timeout);
+          window.removeEventListener('message', handleResponse);
+          resolve(event.data.isAlive === true);
+        }
+      };
+
+      window.addEventListener('message', handleResponse);
+
+      window.postMessage({
+        source: 'ai-pii-inject-health',
+        messageId
+      }, '*');
+    });
+  }
+
+  /**
+   * Continuous health monitoring with exponential backoff
+   */
+  async function monitorHealth() {
+    const wasProtected = isProtected;
+    isProtected = await performHealthCheck();
+
+    if (!isProtected) {
+      healthCheckAttempts++;
+
+      // Retry up to MAX_HEALTH_CHECK_ATTEMPTS times immediately
+      if (healthCheckAttempts < MAX_HEALTH_CHECK_ATTEMPTS) {
+        console.warn(`⚠️ Health check failed (attempt ${healthCheckAttempts}/${MAX_HEALTH_CHECK_ATTEMPTS}), retrying...`);
+        // Retry immediately
+        await new Promise(resolve => setTimeout(resolve, 200));
+        isProtected = await performHealthCheck();
+      }
+
+      if (!isProtected) {
+        // Only log once when first detected
+        if (wasProtected) {
+          console.error('🛑 NOT PROTECTED - Extension connection lost');
+          console.error('⚠️ Please refresh the page (Ctrl+Shift+R) to restore protection');
+        }
+
+        // Exponential backoff - double the interval each time, max 5 minutes
+        healthCheckInterval = Math.min(healthCheckInterval * 2, MAX_HEALTH_CHECK_INTERVAL);
+      }
+    } else {
+      // Reset on success
+      if (!wasProtected) {
+        console.log('✅ PROTECTED - Extension connection active');
+      }
+      healthCheckAttempts = 0;
+      healthCheckInterval = MIN_HEALTH_CHECK_INTERVAL; // Reset to 1 second
+    }
+
+    // Continue monitoring with current interval
+    setTimeout(monitorHealth, healthCheckInterval);
+  }
+
+  // Start health monitoring
+  monitorHealth();
+
   const aiDomains = [
     // ChatGPT
     'api.openai.com',
@@ -58,6 +140,46 @@
 
     console.log('🔒 AI PII Sanitizer: Intercepting', urlStr);
 
+    // SECURITY: Check if protection is active before allowing request
+    if (!isProtected) {
+      console.error('🛑 BLOCKING REQUEST - Extension not protected');
+
+      // Show modal to user asking what to do
+      const userChoice = await new Promise((resolve) => {
+        const messageId = Math.random().toString(36);
+
+        const timeout = setTimeout(() => {
+          window.removeEventListener('message', handleResponse);
+          resolve(false); // Block by default on timeout
+        }, 30000); // 30 second timeout
+
+        const handleResponse = (event) => {
+          if (event.data?.source === 'ai-pii-content-not-protected' &&
+              event.data?.messageId === messageId) {
+            clearTimeout(timeout);
+            window.removeEventListener('message', handleResponse);
+            resolve(event.data.allow === true);
+          }
+        };
+
+        window.addEventListener('message', handleResponse);
+
+        // Request modal from content script
+        window.postMessage({
+          source: 'ai-pii-inject-not-protected',
+          messageId
+        }, '*');
+      });
+
+      if (!userChoice) {
+        // User chose to refresh or modal timed out
+        throw new Error('AI PII Sanitizer: Request blocked - not protected');
+      }
+
+      // User chose "Allow Anyway" - log warning and continue
+      console.warn('⚠️ USER OVERRIDE: Allowing unprotected request');
+    }
+
     try {
       const requestBody = options?.body || '';
 
@@ -89,8 +211,13 @@
       });
 
       if (!substituteRequest || !substituteRequest.success) {
-        console.warn('⚠️ Substitution failed, passing through original request');
-        return nativeFetch.apply(this, args);
+        const errorMsg = substituteRequest?.error || 'Unknown error';
+        console.error('❌ Substitution failed:', errorMsg);
+        console.error('🛑 BLOCKING REQUEST - Extension protection unavailable');
+
+        // SECURITY: Block the request instead of passing through unprotected data
+        // Return a rejected promise to prevent the request from reaching the AI
+        throw new Error(`AI PII Sanitizer: Protection failed (${errorMsg}). Request blocked for your safety. Please refresh the page (Ctrl+Shift+R) to restore protection.`);
       }
 
       // Handle API Key Warning (warn-first mode)
