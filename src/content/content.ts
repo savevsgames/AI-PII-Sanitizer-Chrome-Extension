@@ -579,25 +579,38 @@ function showNotProtectedModal(): Promise<'refresh' | 'allow-anyway'> {
 
     console.log('✅ Modal buttons attached:', refreshBtn, allowBtn);
 
+    // Test: expose buttons to window for debugging
+    (window as any).__notProtectedRefreshBtn = refreshBtn;
+    (window as any).__notProtectedAllowBtn = allowBtn;
+
     // Use both addEventListener AND onclick for maximum compatibility
-    const handleRefresh = () => {
-      console.log('🔄 User clicked Refresh - reloading page');
+    const handleRefresh = (e?: Event) => {
+      console.log('🔄 User clicked Refresh - reloading page', e);
+      if (e) e.stopPropagation();
       modal.remove();
       location.reload();
       resolve('refresh');
     };
 
-    const handleAllow = () => {
-      console.log('⚠️ User clicked Allow Anyway - allowing unprotected request');
+    const handleAllow = (e?: Event) => {
+      console.log('⚠️ User clicked Allow Anyway - allowing unprotected request', e);
+      if (e) e.stopPropagation();
       modal.remove();
       resolve('allow-anyway');
     };
 
-    refreshBtn.addEventListener('click', handleRefresh);
+    // Try multiple event binding methods
+    refreshBtn.addEventListener('click', handleRefresh, true); // Use capture phase
     refreshBtn.onclick = handleRefresh;
 
-    allowBtn.addEventListener('click', handleAllow);
+    allowBtn.addEventListener('click', handleAllow, true); // Use capture phase
     allowBtn.onclick = handleAllow;
+
+    // Also try mousedown as fallback
+    allowBtn.addEventListener('mousedown', (e) => {
+      console.log('⚠️ Mousedown detected on Allow button');
+      handleAllow(e);
+    });
 
     // Hover effects
     refreshBtn.addEventListener('mouseenter', () => {

@@ -20,6 +20,7 @@
   let isProtected = false;
   let healthCheckAttempts = 0;
   let healthCheckInterval = 1000; // Start at 1 second
+  let userAllowedUnprotected = false; // User override flag
   const MAX_HEALTH_CHECK_ATTEMPTS = 3;
   const MIN_HEALTH_CHECK_INTERVAL = 1000; // 1 second
   const MAX_HEALTH_CHECK_INTERVAL = 300000; // 5 minutes
@@ -141,7 +142,8 @@
     console.log('🔒 AI PII Sanitizer: Intercepting', urlStr);
 
     // SECURITY: Check if protection is active before allowing request
-    if (!isProtected) {
+    // Skip check if user already allowed this request
+    if (!isProtected && !userAllowedUnprotected) {
       console.error('🛑 BLOCKING REQUEST - Extension not protected');
 
       // Show modal to user asking what to do
@@ -176,8 +178,21 @@
         throw new Error('AI PII Sanitizer: Request blocked - not protected');
       }
 
-      // User chose "Allow Anyway" - log warning and continue
+      // User chose "Allow Anyway" - set flag and log warning
+      userAllowedUnprotected = true;
       console.warn('⚠️ USER OVERRIDE: Allowing unprotected request');
+    }
+
+    // If user allowed unprotected request, pass through original request without any protection
+    if (userAllowedUnprotected) {
+      console.warn('🚨 PASSING THROUGH ORIGINAL UNPROTECTED REQUEST - User override active');
+      try {
+        return await nativeFetch.apply(this, args);
+      } finally {
+        // Reset flag after request
+        console.log('🔄 Resetting user override flag');
+        userAllowedUnprotected = false;
+      }
     }
 
     try {
@@ -334,7 +349,7 @@
 
     } catch (error) {
       console.error('❌ AI PII Sanitizer:', error);
-      return nativeFetch.apply(this, args);
+      throw error;
     }
   };
 
