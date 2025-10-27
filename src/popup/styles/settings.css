@@ -1,0 +1,303 @@
+/**
+ * Settings Tab Styles
+ * Theme picker and settings controls
+ */
+
+/* Settings Section */
+.settings-section {
+  margin-bottom: var(--space-2xl);
+}
+
+.settings-section h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.setting-description {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+  line-height: 1.5;
+}
+
+/* ========== THEME PICKER ========== */
+
+.theme-group-title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-top: var(--space-xl);
+  margin-bottom: var(--space-md);
+  opacity: 0.9;
+}
+
+.theme-group-title:first-of-type {
+  margin-top: var(--space-md);
+}
+
+.theme-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.theme-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 2px solid var(--border-neutral);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.theme-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.theme-card.active {
+  border-color: #6366f1;
+  border-width: 2px;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+/* Theme Preview */
+.theme-preview {
+  width: 100%;
+  height: 60px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Chrome Theme (Dynamic) */
+.theme-card-special .theme-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.theme-preview-chrome {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-preview-chrome::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.chrome-icon {
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.chrome-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  letter-spacing: 0.02em;
+}
+
+/* Theme-specific gradients - LIGHT MODES */
+.theme-preview-classic-light {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 33%, #e2e8f0 66%, #cbd5e1 100%);
+}
+
+.theme-preview-lavender {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 33%, #e9d5ff 66%, #d8b4fe 100%);
+}
+
+.theme-preview-sky {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 33%, #bae6fd 66%, #7dd3fc 100%);
+}
+
+.theme-preview-fire {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 33%, #fecaca 66%, #fca5a5 100%);
+}
+
+.theme-preview-leaf {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 33%, #bbf7d0 66%, #86efac 100%);
+}
+
+.theme-preview-sunlight {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 33%, #fde68a 66%, #fcd34d 100%);
+}
+
+/* Theme-specific gradients - DARK MODES */
+.theme-preview-classic-dark {
+  background: linear-gradient(135deg, #000000 0%, #0a0a0a 33%, #1a1a1a 66%, #2a2a2a 100%);
+}
+
+.theme-preview-midnight-purple {
+  background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 33%, #3e2a5f 66%, #4c3575 100%);
+}
+
+.theme-preview-deep-ocean {
+  background: linear-gradient(135deg, #001a33 0%, #002b4d 33%, #003d66 66%, #004e7a 100%);
+}
+
+.theme-preview-embers {
+  background: linear-gradient(135deg, #2d0a0a 0%, #4d1414 33%, #661a1a 66%, #7a2020 100%);
+}
+
+.theme-preview-forest {
+  background: linear-gradient(135deg, #0a1f0a 0%, #143314 33%, #1a4d1a 66%, #206620 100%);
+}
+
+.theme-preview-sundown {
+  background: linear-gradient(135deg, #2d1f0a 0%, #4d330a 33%, #664d14 66%, #7a6620 100%);
+}
+
+/* Theme Info */
+.theme-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.theme-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.theme-check {
+  font-size: 16px;
+  color: #6366f1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.theme-card.active .theme-check {
+  opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .theme-picker-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ========== SETTINGS CONTROLS ========== */
+
+.setting-item {
+  margin-bottom: var(--space-lg);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  cursor: pointer;
+}
+
+.toggle-slider {
+  width: 44px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.3s ease;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.3s ease;
+}
+
+input[type="checkbox"]:checked + .toggle-slider {
+  background: #6366f1;
+}
+
+input[type="checkbox"]:checked + .toggle-slider::after {
+  transform: translateX(20px);
+}
+
+input[type="checkbox"] {
+  display: none;
+}
+
+.setting-label-text {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+/* Radio Groups */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.radio-label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--card-bg-medium);
+  border: 2px solid var(--border-neutral);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.radio-label:hover {
+  background: var(--card-bg);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.radio-label input[type="radio"] {
+  margin-top: 2px;
+}
+
+.radio-text {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-weight: var(--font-weight-medium);
+}
+
+.radio-text strong {
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.radio-text small {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-normal);
+}

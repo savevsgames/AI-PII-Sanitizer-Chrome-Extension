@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI PII Sanitizer</title>
+  <title>PromptBlocker.com</title>
   <link rel="stylesheet" href="popup-v2.css">
+  <link rel="stylesheet" href="styles/custom-rules.css">
 </head>
 <body>
   <!-- Minimal Mode -->
@@ -30,7 +31,7 @@
     <!-- Header -->
     <header class="header">
       <div class="header-content">
-        <h1>🛡️ AI PII Sanitizer</h1>
+        <h1>🛡️ PromptBlocker.com</h1>
         <div class="header-actions">
           <div class="status-indicator" id="statusIndicator">
             <span class="status-dot active"></span>
@@ -103,52 +104,50 @@
       <!-- STATS TAB -->
       <section class="tab-content" id="stats-tab">
         <div class="tab-header">
-          <h2>Statistics</h2>
-          <select class="time-filter" id="timeFilter">
-            <option value="24h">Last 24 Hours</option>
-            <option value="7d" selected>Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="all">All Time</option>
-          </select>
+          <h2>📊 Protection Statistics</h2>
         </div>
 
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Protected</div>
-            <div class="stat-value" id="statProtected">0</div>
-            <div class="stat-subtitle">substitutions</div>
+        <!-- Overview Cards -->
+        <div class="stats-overview">
+          <div class="stat-card-glass">
+            <div class="stat-icon">🛡️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="totalSubstitutions">0</div>
+              <div class="stat-label">Total Protected</div>
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Intercepted</div>
-            <div class="stat-value" id="statIntercepted">0</div>
-            <div class="stat-subtitle">requests</div>
+          <div class="stat-card-glass">
+            <div class="stat-icon">🔒</div>
+            <div class="stat-info">
+              <div class="stat-value" id="totalInterceptions">0</div>
+              <div class="stat-label">Requests Analyzed</div>
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Success Rate</div>
-            <div class="stat-value" id="statSuccessRate">100%</div>
-            <div class="stat-subtitle">accuracy</div>
-          </div>
-        </div>
-
-        <div class="stats-section">
-          <h3>By Service</h3>
-          <div class="chart-container" id="serviceChart">
-            <!-- Service breakdown will go here -->
+          <div class="stat-card-glass">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <div class="stat-value" id="successRate">100%</div>
+              <div class="stat-label">Success Rate</div>
+            </div>
           </div>
         </div>
 
-        <div class="stats-section">
-          <h3>By PII Type</h3>
-          <div class="chart-container" id="piiTypeChart">
-            <!-- PII type breakdown will go here -->
-          </div>
+        <!-- Active Profiles -->
+        <div class="most-active-profile">
+          <h3>⭐ Active Profile(s)</h3>
+          <div id="mostActiveProfileCard"></div>
         </div>
 
-        <div class="stats-section">
-          <h3>Most Active Profile</h3>
-          <div class="profile-highlight" id="mostActiveProfile">
-            <span>No data yet</span>
-          </div>
+        <!-- Service Breakdown -->
+        <div class="service-breakdown">
+          <h3>🌐 Protection by Service</h3>
+          <div id="serviceBreakdownList"></div>
+        </div>
+
+        <!-- PII Type Breakdown -->
+        <div class="pii-breakdown">
+          <h3>🔐 Protected Data Types</h3>
+          <div id="piiBreakdownList"></div>
         </div>
       </section>
 
@@ -189,6 +188,121 @@
       <section class="tab-content" id="settings-tab">
         <div class="tab-header">
           <h2>Settings</h2>
+        </div>
+
+        <!-- Theme Picker Section -->
+        <div class="settings-section">
+          <h3>🎨 Theme</h3>
+          <p class="setting-description">Choose your preferred background theme</p>
+
+          <!-- Dynamic Theme -->
+          <h4 class="theme-group-title">Dynamic</h4>
+          <div class="theme-picker-grid" style="grid-template-columns: 1fr;">
+            <div class="theme-card theme-card-special" data-theme="chrome-theme">
+              <div class="theme-preview theme-preview-chrome">
+                <div class="chrome-icon">🎨</div>
+                <span class="chrome-label">Match Chrome</span>
+              </div>
+              <div class="theme-info">
+                <span class="theme-name">Your Browser Theme</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Light Mode Themes -->
+          <h4 class="theme-group-title">Light Modes</h4>
+          <div class="theme-picker-grid">
+            <div class="theme-card" data-theme="classic-light">
+              <div class="theme-preview theme-preview-classic-light"></div>
+              <div class="theme-info">
+                <span class="theme-name">Classic</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme="lavender">
+              <div class="theme-preview theme-preview-lavender"></div>
+              <div class="theme-info">
+                <span class="theme-name">Lavender</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme="sky">
+              <div class="theme-preview theme-preview-sky"></div>
+              <div class="theme-info">
+                <span class="theme-name">Sky</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme="fire">
+              <div class="theme-preview theme-preview-fire"></div>
+              <div class="theme-info">
+                <span class="theme-name">Fire</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme="leaf">
+              <div class="theme-preview theme-preview-leaf"></div>
+              <div class="theme-info">
+                <span class="theme-name">Leaf</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme="sunlight">
+              <div class="theme-preview theme-preview-sunlight"></div>
+              <div class="theme-info">
+                <span class="theme-name">Sunlight</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dark Mode Themes -->
+          <h4 class="theme-group-title">Dark Modes</h4>
+          <div class="theme-picker-grid">
+            <div class="theme-card" data-theme="classic-dark">
+              <div class="theme-preview theme-preview-classic-dark"></div>
+              <div class="theme-info">
+                <span class="theme-name">Classic</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme="midnight-purple">
+              <div class="theme-preview theme-preview-midnight-purple"></div>
+              <div class="theme-info">
+                <span class="theme-name">Midnight Purple</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme="deep-ocean">
+              <div class="theme-preview theme-preview-deep-ocean"></div>
+              <div class="theme-info">
+                <span class="theme-name">Deep Ocean</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme="embers">
+              <div class="theme-preview theme-preview-embers"></div>
+              <div class="theme-info">
+                <span class="theme-name">Embers</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme="forest">
+              <div class="theme-preview theme-preview-forest"></div>
+              <div class="theme-info">
+                <span class="theme-name">Forest</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme="sundown">
+              <div class="theme-preview theme-preview-sundown"></div>
+              <div class="theme-info">
+                <span class="theme-name">Sundown</span>
+                <span class="theme-check">✓</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="settings-section">

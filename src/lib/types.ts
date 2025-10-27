@@ -126,6 +126,14 @@ export interface UserConfig {
     enabled: boolean;
     defaultMode: 'auto-replace' | 'warn-first';
     showNotifications: boolean;
+    decodeResponses: boolean;    // If true, converts aliases back to real names in responses (default: false)
+    theme:
+      // Dynamic theme
+      | 'chrome-theme'
+      // Light mode themes (light backgrounds + white cards + black text)
+      | 'classic-light' | 'lavender' | 'sky' | 'fire' | 'leaf' | 'sunlight'
+      // Dark mode themes (dark backgrounds + dark cards + white text)
+      | 'classic-dark' | 'midnight-purple' | 'deep-ocean' | 'embers' | 'forest' | 'sundown';
     protectedDomains: string[];
     excludedDomains: string[];
     strictMode: boolean;
@@ -157,6 +165,9 @@ export interface UserConfig {
 
   // API Key Vault (PRO feature)
   apiKeyVault?: APIKeyVaultConfig;
+
+  // Custom Redaction Rules (PRO feature)
+  customRules?: CustomRulesConfig;
 }
 
 // ========== V1 LEGACY TYPES (for migration) ==========
@@ -298,6 +309,13 @@ export type MessageType =
   | 'GET_API_KEYS'
   | 'UPDATE_API_KEY_VAULT_SETTINGS'
 
+  // Custom Redaction Rules
+  | 'ADD_CUSTOM_RULE'
+  | 'REMOVE_CUSTOM_RULE'
+  | 'UPDATE_CUSTOM_RULE'
+  | 'TOGGLE_CUSTOM_RULE'
+  | 'UPDATE_CUSTOM_RULES_SETTINGS'
+
   // Health & Status
   | 'PING'
   | 'HEALTH_CHECK'
@@ -397,4 +415,30 @@ export interface APIKeyVaultConfig {
   autoDetectPatterns: boolean; // Scan for known formats
   keys: APIKey[]; // User's stored keys
   customPatterns: string[]; // User-defined detection rules (stored as strings)
+}
+
+/**
+ * Custom Redaction Rule
+ */
+export interface CustomRule {
+  id: string;
+  name: string; // User-friendly name
+  pattern: string; // Regex pattern (stored as string)
+  replacement: string; // Replacement text (supports $1, $2, etc.)
+  enabled: boolean;
+  priority: number; // Higher = runs first (0-100)
+  category: 'pii' | 'financial' | 'medical' | 'custom';
+  description?: string;
+  createdAt: number;
+  lastUsed?: number;
+  matchCount: number; // How many times this rule has matched
+  testCases?: { input: string; expected: string }[]; // For validation
+}
+
+/**
+ * Custom Redaction Rules configuration (PRO feature)
+ */
+export interface CustomRulesConfig {
+  enabled: boolean;
+  rules: CustomRule[];
 }

@@ -11,6 +11,65 @@
   --color-primary-dark: #764ba2;
   --color-gradient: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 
+  /* === THEME BACKGROUND GRADIENTS === */
+  /* Current active theme (updated dynamically by theme picker) */
+  --theme-bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 33%, #334155 66%, #475569 100%);
+  --theme-header-gradient: linear-gradient(135deg, rgba(15, 23, 42, 0.4) 0%, rgba(71, 85, 105, 0.4) 100%);
+
+  /* === 12 THEME PALETTE === */
+
+  /* LIGHT MODE THEMES (6) - Light pastel backgrounds + white cards + black text */
+
+  /* 1. Classic Light */
+  --theme-classic-light: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 33%, #e2e8f0 66%, #cbd5e1 100%);
+  --theme-classic-light-header: linear-gradient(135deg, rgba(248, 250, 252, 0.4) 0%, rgba(203, 213, 225, 0.4) 100%);
+
+  /* 2. Lavender */
+  --theme-lavender: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 33%, #e9d5ff 66%, #d8b4fe 100%);
+  --theme-lavender-header: linear-gradient(135deg, rgba(250, 245, 255, 0.4) 0%, rgba(216, 180, 254, 0.4) 100%);
+
+  /* 3. Sky */
+  --theme-sky: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 33%, #bae6fd 66%, #7dd3fc 100%);
+  --theme-sky-header: linear-gradient(135deg, rgba(240, 249, 255, 0.4) 0%, rgba(125, 211, 252, 0.4) 100%);
+
+  /* 4. Fire */
+  --theme-fire: linear-gradient(135deg, #fef2f2 0%, #fee2e2 33%, #fecaca 66%, #fca5a5 100%);
+  --theme-fire-header: linear-gradient(135deg, rgba(254, 242, 242, 0.4) 0%, rgba(252, 165, 165, 0.4) 100%);
+
+  /* 5. Leaf */
+  --theme-leaf: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 33%, #bbf7d0 66%, #86efac 100%);
+  --theme-leaf-header: linear-gradient(135deg, rgba(240, 253, 244, 0.4) 0%, rgba(134, 239, 172, 0.4) 100%);
+
+  /* 6. Sunlight */
+  --theme-sunlight: linear-gradient(135deg, #fffbeb 0%, #fef3c7 33%, #fde68a 66%, #fcd34d 100%);
+  --theme-sunlight-header: linear-gradient(135deg, rgba(255, 251, 235, 0.4) 0%, rgba(252, 211, 77, 0.4) 100%);
+
+  /* DARK MODE THEMES (6) - Dark backgrounds + dark cards + white text */
+
+  /* 1. Classic Dark */
+  --theme-classic-dark: linear-gradient(135deg, #000000 0%, #0a0a0a 33%, #1a1a1a 66%, #2a2a2a 100%);
+  --theme-classic-dark-header: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(42, 42, 42, 0.4) 100%);
+
+  /* 2. Midnight Purple */
+  --theme-midnight-purple: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 33%, #3e2a5f 66%, #4c3575 100%);
+  --theme-midnight-purple-header: linear-gradient(135deg, rgba(26, 10, 46, 0.4) 0%, rgba(76, 53, 117, 0.4) 100%);
+
+  /* 3. Deep Ocean */
+  --theme-deep-ocean: linear-gradient(135deg, #001a33 0%, #002b4d 33%, #003d66 66%, #004e7a 100%);
+  --theme-deep-ocean-header: linear-gradient(135deg, rgba(0, 26, 51, 0.4) 0%, rgba(0, 78, 122, 0.4) 100%);
+
+  /* 4. Embers */
+  --theme-embers: linear-gradient(135deg, #2d0a0a 0%, #4d1414 33%, #661a1a 66%, #7a2020 100%);
+  --theme-embers-header: linear-gradient(135deg, rgba(45, 10, 10, 0.4) 0%, rgba(122, 32, 32, 0.4) 100%);
+
+  /* 5. Forest */
+  --theme-forest: linear-gradient(135deg, #0a1f0a 0%, #143314 33%, #1a4d1a 66%, #206620 100%);
+  --theme-forest-header: linear-gradient(135deg, rgba(10, 31, 10, 0.4) 0%, rgba(32, 102, 32, 0.4) 100%);
+
+  /* 6. Sundown */
+  --theme-sundown: linear-gradient(135deg, #2d1f0a 0%, #4d330a 33%, #664d14 66%, #7a6620 100%);
+  --theme-sundown-header: linear-gradient(135deg, rgba(45, 31, 10, 0.4) 0%, rgba(122, 102, 32, 0.4) 100%);
+
   /* Semantic Colors */
   --color-success: #4caf50;
   --color-success-light: rgba(76, 175, 80, 0.3);
@@ -109,7 +168,7 @@
   --z-tooltip: 1200;
 
   /* === LAYOUT === */
-  --popup-width: 500px;
+  --popup-width: 550px; /* Increased to fit navigation menu (was 500px) */
   --popup-height: 600px;
   --popup-width-minimal: 400px;
   --popup-height-minimal: 80px;
@@ -152,6 +211,23 @@
   --glass-shadow-md: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
   --glass-shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
   --glass-shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
+
+  /* === DYNAMIC THEME-AWARE VARIABLES === */
+  /* These change based on theme mode (dark/light) */
+
+  /* Card backgrounds (default: light mode values - white cards) */
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-bg-medium: rgba(255, 255, 255, 0.7);
+  --card-bg-light: rgba(255, 255, 255, 0.5);
+
+  /* Text colors (default: light mode values - black text on white cards) */
+  --text-primary: rgba(0, 0, 0, 0.87);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-tertiary: rgba(0, 0, 0, 0.38);
+
+  /* Neutral colors (same for both modes) */
+  --icon-neutral: rgba(100, 116, 139, 0.8);
+  --border-neutral: rgba(148, 163, 184, 0.3);
 
   /* Gradient backgrounds (behind glass) */
   --gradient-primary-glass: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
@@ -240,4 +316,16 @@
 .glass-interactive:active {
   transform: translateY(0);
   box-shadow: var(--glass-shadow-sm);
+}
+
+/* === DARK MODE THEME OVERRIDES === */
+/* When body has data-theme-mode="dark", use dark cards + white text */
+body[data-theme-mode="dark"] {
+  --card-bg: rgba(0, 0, 0, 0.7);
+  --card-bg-medium: rgba(0, 0, 0, 0.5);
+  --card-bg-light: rgba(0, 0, 0, 0.3);
+
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.75);
+  --text-tertiary: rgba(255, 255, 255, 0.55);
 }

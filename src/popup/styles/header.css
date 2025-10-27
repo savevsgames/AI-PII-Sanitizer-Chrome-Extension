@@ -5,18 +5,15 @@
 
 .header {
   padding: var(--space-lg) var(--space-xl);
-  
-  /* Glass header with modern gradient tint */
-  background: linear-gradient(135deg, 
-    rgba(91, 95, 230, 0.3) 0%, 
-    rgba(139, 92, 246, 0.3) 100%
-  );
+
+  /* Glass header with theme-aware gradient overlay (TODO: Auto-update with theme picker) */
+  background: var(--theme-header-gradient);
   backdrop-filter: var(--blur-medium);
   -webkit-backdrop-filter: var(--blur-medium);
-  
+
   border-bottom: var(--glass-border);
   box-shadow: var(--glass-shadow-md);
-  
+
   color: white;
 }
 
