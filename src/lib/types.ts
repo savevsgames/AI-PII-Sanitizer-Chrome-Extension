@@ -127,6 +127,7 @@ export interface UserConfig {
     defaultMode: 'auto-replace' | 'warn-first';
     showNotifications: boolean;
     decodeResponses: boolean;    // If true, converts aliases back to real names in responses (default: false)
+    theme: 'neutral' | 'dark' | 'blue' | 'green' | 'purple' | 'amber'; // Background gradient theme
     protectedDomains: string[];
     excludedDomains: string[];
     strictMode: boolean;

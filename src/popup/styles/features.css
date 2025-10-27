@@ -65,8 +65,12 @@
 /* ========== FEATURE CARDS ========== */
 
 .feature-card {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
+  /* Glassmorphism card - more visible on neutral background */
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
@@ -96,6 +100,15 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 12px;
+  position: relative;
+}
+
+/* Tier badge in header - position absolute top-right */
+.feature-card-header .tier-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 2;
 }
 
 .feature-card-icon {
@@ -184,12 +197,12 @@
   background: var(--color-border);
 }
 
-/* Coming Soon Badge - MODERNIZED */
+/* Coming Soon Badge - MODERNIZED (stacks below tier badge) */
 .feature-card.coming-soon::after {
   content: 'Coming Soon';
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 42px;
+  right: -8px;
   background: linear-gradient(135deg, rgba(251, 146, 60, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%);
   color: #d97706;
   border: 1px solid rgba(217, 119, 6, 0.2);
@@ -200,6 +213,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+  z-index: 1;
 }
 
 /* ========== FEATURE DETAIL VIEW (SLIDE-IN) ========== */
