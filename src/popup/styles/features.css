@@ -197,22 +197,22 @@
   background: var(--color-border);
 }
 
-/* Coming Soon Badge - MODERNIZED (stacks below tier badge) */
+/* Coming Soon Badge - MODERNIZED (left of tier badge on same line) */
 .feature-card.coming-soon::after {
   content: 'Coming Soon';
   position: absolute;
-  top: 42px;
-  right: -8px;
+  top: 12px; /* Align with tier badge which is at header level (20px padding - 8px offset) */
+  right: 72px; /* Position to the left of tier badge (which is at right: -8px) */
   background: linear-gradient(135deg, rgba(251, 146, 60, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%);
   color: #d97706;
   border: 1px solid rgba(217, 119, 6, 0.2);
-  padding: 5px 10px;
-  border-radius: 12px;
-  font-size: 10px;
+  padding: 5px 12px; /* Match tier-badge padding exactly */
+  border-radius: 14px; /* Match tier-badge border-radius exactly */
+  font-size: 11px; /* Match tier-badge font-size exactly */
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08); /* Match tier-badge shadow */
   z-index: 1;
 }
 
