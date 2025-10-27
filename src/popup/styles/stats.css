@@ -10,7 +10,7 @@
 
 /* Individual Stat Card */
 .stat-card-glass {
-  background: var(--glass-white-heavy);
+  background: var(--card-bg);
   backdrop-filter: var(--blur-medium);
   -webkit-backdrop-filter: var(--blur-medium);
   border-radius: var(--radius-xl);
@@ -24,8 +24,8 @@
 }
 
 .stat-card-glass:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--glass-shadow-lg);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 /* Stat Icon */
@@ -54,13 +54,13 @@
 /* Stat Label */
 .stat-label {
   font-size: var(--font-size-sm);
-  color: var(--text-on-glass-secondary);
+  color: var(--text-secondary);
   font-weight: var(--font-weight-medium);
 }
 
 /* Most Active Profile Section */
 .most-active-profile {
-  background: var(--glass-white-medium);
+  background: var(--card-bg-medium);
   backdrop-filter: var(--blur-medium);
   -webkit-backdrop-filter: var(--blur-medium);
   border-radius: var(--radius-xl);
@@ -73,7 +73,7 @@
 .most-active-profile h3 {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
-  color: var(--text-on-glass);
+  color: var(--text-primary);
   margin-bottom: var(--space-md);
   display: flex;
   align-items: center;
@@ -85,7 +85,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-md);
-  background: var(--glass-white-light);
+  background: var(--card-bg-light);
   border-radius: var(--radius-lg);
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
@@ -98,13 +98,13 @@
 
 .profile-stats {
   font-size: var(--font-size-sm);
-  color: var(--text-on-glass-secondary);
+  color: var(--text-secondary);
 }
 
 /* Service Breakdown Section */
 .service-breakdown,
 .pii-breakdown {
-  background: var(--glass-white-medium);
+  background: var(--card-bg-medium);
   backdrop-filter: var(--blur-medium);
   -webkit-backdrop-filter: var(--blur-medium);
   border-radius: var(--radius-xl);
@@ -118,7 +118,7 @@
 .pii-breakdown h3 {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
-  color: var(--text-on-glass);
+  color: var(--text-primary);
   margin-bottom: var(--space-lg);
   display: flex;
   align-items: center;
@@ -137,7 +137,8 @@
 }
 
 .breakdown-item:hover {
-  background: var(--glass-white-light);
+  background: var(--card-bg-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .breakdown-item:last-child {
@@ -157,7 +158,7 @@
 .breakdown-item .item-label {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--text-on-glass);
+  color: var(--text-primary);
   min-width: 80px;
 }
 
@@ -165,11 +166,11 @@
 .breakdown-item .progress-bar {
   flex: 1;
   height: 24px;
-  background: var(--glass-white-light);
+  background: var(--card-bg-light);
   border-radius: var(--radius-md);
   overflow: hidden;
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border-neutral);
 }
 
 /* Progress Fill */
@@ -197,7 +198,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.3),
+    var(--border-neutral),
     transparent
   );
   animation: shimmer 2s infinite;
@@ -225,7 +226,7 @@
 .stats-empty {
   text-align: center;
   padding: var(--space-2xl) var(--space-lg);
-  color: var(--text-on-glass-secondary);
+  color: var(--text-secondary);
   font-size: var(--font-size-base);
 }
 

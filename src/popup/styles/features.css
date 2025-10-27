@@ -66,10 +66,10 @@
 
 .feature-card {
   /* Glassmorphism card - more visible on neutral background */
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--border-neutral);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
   border-radius: 12px;
   padding: 20px;
@@ -82,7 +82,7 @@
 .feature-card:hover {
   border-color: var(--color-primary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .feature-card.locked {
@@ -119,13 +119,13 @@
 .feature-card-title {
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .feature-card-description {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
   line-height: 1.5;
   margin-bottom: 16px;
 }
@@ -135,10 +135,10 @@
   align-items: center;
   gap: 12px;
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
   margin-bottom: 16px;
   padding: 10px 0;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--border-neutral);
 }
 
 .feature-card-stat {
@@ -177,24 +177,24 @@
 
 .feature-card-action.secondary {
   background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-secondary);
+  border: 1px solid var(--border-neutral);
+  color: var(--text-secondary);
 }
 
 .feature-card-action.secondary:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
-  background: transparent;
+  background: var(--card-bg-light);
 }
 
 .feature-card-action.locked {
-  background: var(--color-border);
-  color: var(--color-text-secondary);
+  background: var(--card-bg-light);
+  color: var(--text-secondary);
   cursor: not-allowed;
 }
 
 .feature-card-action.locked:hover {
-  background: var(--color-border);
+  background: var(--card-bg-light);
 }
 
 /* Coming Soon Badge - MODERNIZED (left of tier badge on same line) */
@@ -243,9 +243,10 @@
 .feature-detail-header {
   position: sticky;
   top: 0;
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--card-bg);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--color-border);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-neutral);
   padding: 16px;
   margin-bottom: 20px;
   z-index: 100;
@@ -258,7 +259,7 @@
   gap: 8px;
   background: transparent;
   border: none;
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -269,8 +270,9 @@
 }
 
 .back-button:hover {
-  background: var(--color-bg-secondary);
+  background: var(--card-bg-light);
   color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .back-icon {
@@ -287,7 +289,7 @@
 .feature-detail-title h2 {
   font-size: 24px;
   margin: 0;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 }
 
 .feature-detail-content {

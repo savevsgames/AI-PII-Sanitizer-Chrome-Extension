@@ -496,7 +496,7 @@ export class StorageManager {
         defaultMode: 'auto-replace',
         showNotifications: true,
         decodeResponses: false,        // Don't convert aliases back to real names by default
-        theme: 'neutral',              // Default background theme
+        theme: 'classic-dark',         // Default background theme (dark mode)
         protectedDomains: [
           'chat.openai.com',
           'chatgpt.com',
@@ -651,7 +651,7 @@ export class StorageManager {
           defaultMode: 'auto-replace',
           showNotifications: oldConfig.settings.showNotifications,
           decodeResponses: false,        // Default to false for migrated configs
-          theme: 'neutral',              // Default theme for migrated configs
+          theme: 'classic-dark',         // Default theme for migrated configs
           protectedDomains: oldConfig.settings.protectedDomains,
           excludedDomains: oldConfig.settings.excludedDomains,
           strictMode: oldConfig.settings.strictMode,
