@@ -634,7 +634,7 @@ export class StorageManager {
       version: 2,
       account: {
         emailOptIn: false,
-        tier: 'free',
+        tier: 'pro',
         syncEnabled: false,
       },
       settings: {
