@@ -78,6 +78,51 @@
   overflow: hidden;
 }
 
+/* Chrome Theme (Dynamic) */
+.theme-card-special .theme-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.theme-preview-chrome {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-preview-chrome::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.chrome-icon {
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.chrome-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  letter-spacing: 0.02em;
+}
+
 /* Theme-specific gradients - LIGHT MODES */
 .theme-preview-classic-light {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 33%, #e2e8f0 66%, #cbd5e1 100%);

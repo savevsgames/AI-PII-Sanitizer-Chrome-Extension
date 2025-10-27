@@ -128,6 +128,8 @@ export interface UserConfig {
     showNotifications: boolean;
     decodeResponses: boolean;    // If true, converts aliases back to real names in responses (default: false)
     theme:
+      // Dynamic theme
+      | 'chrome-theme'
       // Light mode themes (light backgrounds + white cards + black text)
       | 'classic-light' | 'lavender' | 'sky' | 'fire' | 'leaf' | 'sunlight'
       // Dark mode themes (dark backgrounds + dark cards + white text)
