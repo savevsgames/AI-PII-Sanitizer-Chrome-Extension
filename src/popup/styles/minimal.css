@@ -5,11 +5,36 @@
 .minimal-container {
   width: var(--popup-width-minimal);
   min-height: var(--popup-height-minimal);
-  background: var(--color-gradient);
+  position: relative;
+  overflow: hidden;
+
+  /* Background gradient with glassmorphism overlay */
+  background: var(--theme-bg-gradient);
   color: white;
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-lg);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Subtle glassmorphism overlay on minimal container */
+.minimal-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content is above the glass overlay */
+.minimal-container > * {
+  position: relative;
+  z-index: 1;
 }
 
 .minimal-header {
