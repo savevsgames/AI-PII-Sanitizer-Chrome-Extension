@@ -221,52 +221,38 @@ function renderAPIKeyCard(key: APIKey): string {
   return `
     <div class="api-key-card ${key.enabled ? '' : 'disabled'}" data-key-id="${key.id}">
       <div class="api-key-header">
-        <div class="api-key-info">
-          <div class="api-key-name-row">
-            <span class="api-key-format-badge">${key.format.toUpperCase()}</span>
-            <h4 class="api-key-name">${escapeHtml(key.name || 'Unnamed Key')}</h4>
-          </div>
-          <div class="api-key-value-row">
-            <code class="api-key-value" data-hidden="true">${maskedKey}</code>
-            <div class="api-key-value-actions">
-              <button class="api-key-show icon-button" title="Show/Hide key">
-                <span class="show-icon">👁️</span>
-              </button>
-              <button class="api-key-copy icon-button" title="Copy to clipboard">
-                <span class="copy-icon">📋</span>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="api-key-actions">
-          <label class="api-key-toggle-label">
-            <input type="checkbox" class="api-key-toggle" ${key.enabled ? 'checked' : ''}>
-            <span class="toggle-slider"></span>
-          </label>
-          <button class="api-key-delete icon-button" title="Delete key">🗑️</button>
-        </div>
+        <span class="api-key-format-badge">${key.format.toUpperCase()}</span>
+        <h4 class="api-key-name">${escapeHtml(key.name || 'Unnamed Key')}</h4>
+        <label class="api-key-toggle-label">
+          <input type="checkbox" class="api-key-toggle" ${key.enabled ? 'checked' : ''}>
+          <span class="toggle-slider"></span>
+        </label>
+        <button class="api-key-delete icon-button" title="Delete key">🗑️</button>
+      </div>
+      <div class="api-key-value-row">
+        <code class="api-key-value" data-hidden="true">${maskedKey}</code>
+        <button class="api-key-show icon-button" title="Show/Hide key">
+          <span class="show-icon">👁️</span>
+        </button>
+        <button class="api-key-copy icon-button" title="Copy to clipboard">
+          <span class="copy-icon">📋</span>
+        </button>
       </div>
       <div class="api-key-stats">
         <div class="api-key-stat">
           <span class="api-key-stat-icon">🛡️</span>
-          <div class="api-key-stat-content">
-            <span class="api-key-stat-value">${key.protectionCount}</span>
-            <span class="api-key-stat-label">protected</span>
-          </div>
+          <span class="api-key-stat-value">${key.protectionCount}</span>
+          <span class="api-key-stat-label">protected</span>
         </div>
         <div class="api-key-stat">
           <span class="api-key-stat-icon">🕐</span>
-          <div class="api-key-stat-content">
-            <span class="api-key-stat-value">${lastUsedText}</span>
-            <span class="api-key-stat-label">last used</span>
-          </div>
+          <span class="api-key-stat-value">${lastUsedText}</span>
+          <span class="api-key-stat-label">last used</span>
         </div>
         <div class="api-key-stat">
           <span class="api-key-stat-icon">📅</span>
-          <div class="api-key-stat-content">
-            <span class="api-key-stat-value">${formatDate(key.createdAt)}</span>
-            <span class="api-key-stat-label">created</span>
-          </div>
+          <span class="api-key-stat-value">${formatDate(key.createdAt)}</span>
+          <span class="api-key-stat-label">created</span>
         </div>
       </div>
     </div>

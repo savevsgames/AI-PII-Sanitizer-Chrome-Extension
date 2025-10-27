@@ -390,10 +390,17 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
 
           console.log('✅ API keys auto-redacted:', allowedDetections.map(k => k.format));
         } else if (config.apiKeyVault.mode === 'warn-first') {
-          // TODO: Send message to content script to show warning dialog
-          // For now, auto-redact (will implement dialog in Phase 3)
-          console.log('⚠️  Warn-first mode not yet implemented, auto-redacting...');
-          modifiedText = APIKeyDetector.redact(modifiedText, allowedDetections, 'placeholder');
+          // Return to inject.js with warning - let user decide
+          console.log('⚠️  Warn-first mode: Returning warning to user');
+          return {
+            success: true,
+            needsWarning: true,
+            keysDetected: allowedDetections.length,
+            keyTypes: allowedDetections.map((k) => k.format),
+            originalBody: body, // Send original back for user choice
+            modifiedBody: body,
+            substitutions: substituted.substitutions.length,
+          };
         } else if (config.apiKeyVault.mode === 'log-only') {
           // Just log, don't redact
           console.log('📋 Log-only mode: Keys detected but not redacted');

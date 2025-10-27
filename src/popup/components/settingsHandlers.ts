@@ -6,9 +6,11 @@
 import { useAppStore } from '../../lib/store';
 import { UserConfig } from '../../lib/types';
 import { isValidEmail } from './utils';
+import { applyChromeTheme } from '../../lib/chromeTheme';
 
 // Theme name type
 type ThemeName =
+  | 'chrome-theme'
   | 'classic-light' | 'lavender' | 'sky' | 'fire' | 'leaf' | 'sunlight'
   | 'classic-dark' | 'midnight-purple' | 'deep-ocean' | 'embers' | 'forest' | 'sundown';
 
@@ -242,26 +244,37 @@ const LEGACY_THEME_MAP: Record<string, ThemeName> = {
 /**
  * Apply theme to CSS variables and set theme mode
  */
-export function applyTheme(themeInput: ThemeName | string) {
+export async function applyTheme(themeInput: ThemeName | string) {
   const root = document.documentElement;
   const body = document.body;
 
   // Migrate legacy theme names to new names
   const theme = (LEGACY_THEME_MAP[themeInput] || themeInput) as ThemeName;
 
-  // Get theme mode (dark or light)
-  const themeMode = THEME_MODES[theme] || 'dark';
+  // Handle Chrome theme dynamically
+  if (theme === 'chrome-theme') {
+    const success = await applyChromeTheme();
+    if (!success) {
+      console.warn('[Theme] Chrome theme not available, falling back to classic-dark');
+      // Fallback to classic-dark if Chrome theme fails
+      await applyTheme('classic-dark');
+      return;
+    }
+  } else {
+    // Get theme mode (dark or light)
+    const themeMode = THEME_MODES[theme] || 'dark';
 
-  // Set data attribute for light mode CSS variable overrides
-  body.setAttribute('data-theme-mode', themeMode);
+    // Set data attribute for light mode CSS variable overrides
+    body.setAttribute('data-theme-mode', themeMode);
 
-  // Convert theme name to CSS variable format (e.g., 'midnight-blue' -> '--theme-midnight-blue')
-  const themeBgVar = `var(--theme-${theme})`;
-  const themeHeaderVar = `var(--theme-${theme}-header)`;
+    // Convert theme name to CSS variable format (e.g., 'midnight-blue' -> '--theme-midnight-blue')
+    const themeBgVar = `var(--theme-${theme})`;
+    const themeHeaderVar = `var(--theme-${theme}-header)`;
 
-  // Update CSS variables
-  root.style.setProperty('--theme-bg-gradient', themeBgVar);
-  root.style.setProperty('--theme-header-gradient', themeHeaderVar);
+    // Update CSS variables
+    root.style.setProperty('--theme-bg-gradient', themeBgVar);
+    root.style.setProperty('--theme-header-gradient', themeHeaderVar);
+  }
 
   // Update active state on theme swatches (supports both old and new selectors)
   document.querySelectorAll('.theme-swatch, .theme-card').forEach((swatch) => {
@@ -274,7 +287,7 @@ export function applyTheme(themeInput: ThemeName | string) {
     }
   });
 
-  console.log(`[Theme] Applied ${theme} (${themeMode} mode)${themeInput !== theme ? ` [migrated from ${themeInput}]` : ''}`);
+  console.log(`[Theme] Applied ${theme}${themeInput !== theme ? ` [migrated from ${themeInput}]` : ''}`);
 }
 
 /**

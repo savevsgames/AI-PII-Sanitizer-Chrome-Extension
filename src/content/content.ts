@@ -94,7 +94,7 @@ if (document.readyState === 'loading') {
   showActivationToast();
 }
 
-// Listen for PING messages from popup (for status check)
+// Listen for messages from background (PING, WARN_API_KEY)
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.type === 'PING') {
     // Verify we can actually communicate with background script
@@ -109,6 +109,19 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       });
     return true; // Will respond asynchronously
   }
+
+  if (request.type === 'WARN_API_KEY') {
+    // Show warning modal to user
+    showAPIKeyWarning(request.payload)
+      .then((userChoice) => {
+        sendResponse({ allow: userChoice });
+      })
+      .catch(() => {
+        sendResponse({ allow: 'block' }); // Block by default on error
+      });
+    return true; // Will respond asynchronously
+  }
+
   return false; // Not handling this message
 });
 
@@ -116,6 +129,24 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 window.addEventListener('message', async (event) => {
   // Only accept messages from our own page
   if (event.source !== window) return;
+
+  // Handle API key warning requests from inject.js
+  if (event.data?.source === 'ai-pii-inject-warning') {
+    const { messageId, keysDetected, keyTypes } = event.data;
+
+    console.log('⚠️ Showing API key warning modal');
+
+    const allow = await showAPIKeyWarning({ keysDetected, keyTypes });
+
+    // Send response back to inject.js
+    window.postMessage({
+      source: 'ai-pii-content-warning',
+      messageId,
+      allow
+    }, '*');
+
+    return;
+  }
 
   // Check if message is from our inject script
   if (event.data?.source !== 'ai-pii-inject') return;
@@ -157,3 +188,229 @@ window.addEventListener('message', async (event) => {
     }, '*');
   }
 });
+
+/**
+ * Show API Key Warning Modal
+ * Returns Promise<string> - 'block', 'allow-key-only', or 'allow-all'
+ */
+function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }): Promise<'block' | 'allow-key-only' | 'allow-all'> {
+  return new Promise((resolve) => {
+    // Remove existing modal if any
+    const existing = document.getElementById('api-key-warning-modal');
+    if (existing) existing.remove();
+
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.id = 'api-key-warning-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      animation: fadeIn 0.2s ease-out;
+    `;
+
+    // Create modal content with glassmorphism
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 16px;
+      padding: 0;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      animation: slideUp 0.3s ease-out;
+    `;
+
+    content.innerHTML = `
+      <style>
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      </style>
+      <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 24px; border-radius: 16px 16px 0 0; color: white;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <h3 style="margin: 0; font-size: 20px; font-weight: 600;">API Key Detected!</h3>
+        </div>
+      </div>
+      <div style="padding: 24px; color: #1f2937; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px);">
+        <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #111827;">
+          <strong>You're about to send ${payload.keysDetected} API key${payload.keysDetected > 1 ? 's' : ''} to an AI service:</strong>
+        </p>
+        <div style="
+          background: rgba(254, 243, 199, 0.8);
+          backdrop-filter: blur(10px);
+          border-left: 4px solid #f59e0b;
+          padding: 12px 16px;
+          margin-bottom: 20px;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+        ">
+          <div style="font-size: 13px; color: #92400e; font-weight: 600;">
+            ${payload.keyTypes.map(type => `• ${type.toUpperCase()} API Key`).join('<br>')}
+          </div>
+        </div>
+        <p style="margin: 0 0 12px 0; font-size: 14px; color: #374151; line-height: 1.5;">
+          Sending API keys to AI services is <strong style="color: #dc2626;">not recommended</strong> as they could be logged or misused.
+        </p>
+        <div style="
+          background: rgba(239, 68, 68, 0.1);
+          backdrop-filter: blur(10px);
+          border-left: 4px solid #ef4444;
+          padding: 12px 16px;
+          border-radius: 8px;
+          margin-top: 12px;
+        ">
+          <p style="margin: 0; font-size: 13px; color: #7f1d1d; font-weight: 600; line-height: 1.5;">
+            ⚠️ <strong>Important:</strong> If you choose "Send Everything Unprotected", <strong>ALL protection will be disabled</strong> for this message (including PII aliases).
+          </p>
+        </div>
+      </div>
+      <div style="padding: 0 24px 24px 24px; display: flex; flex-direction: column; gap: 10px;">
+        <button id="api-key-block" style="
+          width: 100%;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          color: white;
+          border: none;
+          padding: 14px 24px;
+          border-radius: 8px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        ">
+          <span style="font-size: 18px;">🛡️</span>
+          <span>Block Everything</span>
+        </button>
+        <button id="api-key-allow-pii-protected" style="
+          width: 100%;
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          color: white;
+          border: none;
+          padding: 14px 24px;
+          border-radius: 8px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        ">
+          <span style="font-size: 18px;">🔑</span>
+          <span>Send API Key Only (PII Protected)</span>
+        </button>
+        <button id="api-key-allow-all" style="
+          width: 100%;
+          background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+          color: white;
+          border: none;
+          padding: 14px 24px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        ">
+          <span style="font-size: 18px;">⚠️</span>
+          <span>Send Everything Unprotected</span>
+        </button>
+      </div>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // Add hover effects
+    const blockBtn = content.querySelector('#api-key-block') as HTMLButtonElement;
+    const allowPiiProtectedBtn = content.querySelector('#api-key-allow-pii-protected') as HTMLButtonElement;
+    const allowAllBtn = content.querySelector('#api-key-allow-all') as HTMLButtonElement;
+
+    // Hover effect for block button
+    blockBtn.addEventListener('mouseenter', () => {
+      blockBtn.style.transform = 'translateY(-2px)';
+      blockBtn.style.boxShadow = '0 4px 16px rgba(239, 68, 68, 0.4)';
+    });
+    blockBtn.addEventListener('mouseleave', () => {
+      blockBtn.style.transform = 'translateY(0)';
+      blockBtn.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.3)';
+    });
+
+    // Hover effect for allow PII protected button
+    allowPiiProtectedBtn.addEventListener('mouseenter', () => {
+      allowPiiProtectedBtn.style.transform = 'translateY(-2px)';
+      allowPiiProtectedBtn.style.boxShadow = '0 4px 16px rgba(245, 158, 11, 0.4)';
+    });
+    allowPiiProtectedBtn.addEventListener('mouseleave', () => {
+      allowPiiProtectedBtn.style.transform = 'translateY(0)';
+      allowPiiProtectedBtn.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.3)';
+    });
+
+    // Hover effect for allow all button
+    allowAllBtn.addEventListener('mouseenter', () => {
+      allowAllBtn.style.transform = 'translateY(-2px)';
+      allowAllBtn.style.boxShadow = '0 4px 12px rgba(107, 114, 128, 0.4)';
+    });
+    allowAllBtn.addEventListener('mouseleave', () => {
+      allowAllBtn.style.transform = 'translateY(0)';
+      allowAllBtn.style.boxShadow = 'none';
+    });
+
+    // Handle button clicks
+    blockBtn.addEventListener('click', () => {
+      modal.remove();
+      resolve('block'); // Block everything
+    });
+
+    allowPiiProtectedBtn.addEventListener('click', () => {
+      modal.remove();
+      resolve('allow-key-only'); // Allow API key, protect PII
+    });
+
+    allowAllBtn.addEventListener('click', () => {
+      modal.remove();
+      resolve('allow-all'); // Allow everything unprotected
+    });
+
+    // Block on escape key
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        modal.remove();
+        document.removeEventListener('keydown', handleEscape);
+        resolve('block'); // Block by default
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+  });
+}
