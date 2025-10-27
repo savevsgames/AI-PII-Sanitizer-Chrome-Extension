@@ -38,8 +38,8 @@ const FEATURES: Feature[] = [
     name: 'Custom Redaction Rules',
     icon: '🎯',
     description: 'Create custom patterns to detect and replace domain-specific PII',
-    tier: 'pro',
-    status: 'active', // PRO-only feature
+    tier: 'free', // TODO: Change back to 'pro' after testing
+    status: 'active',
   },
   {
     id: 'prompt-templates',
@@ -310,15 +310,88 @@ function renderFeatureContent(featureId: string): string {
     case 'custom-rules':
       return `
         <div class="custom-rules-detail">
-          <div id="customRulesUpgradeWarning">
+          <div id="customRulesUpgradeWarning" style="display: none;">
             <h3>🚀 PRO Feature</h3>
             <p>Custom Redaction Rules are available on the PRO plan. Create unlimited patterns to protect domain-specific data.</p>
-            <button class="btn" onclick="alert('Upgrade functionality coming soon!')">Upgrade to PRO</button>
+            <button class="btn" id="customRulesUpgradeBtn">Upgrade to PRO</button>
           </div>
 
-          <div class="tab-header">
-            <h3>Custom Redaction Rules</h3>
-            <button class="btn btn-primary" id="addCustomRuleBtn">+ Add Rule</button>
+          <!-- Add Rule Dropdown Header -->
+          <div class="add-rule-header" id="addRuleHeader">
+            <div class="add-rule-header-content">
+              <span class="add-rule-icon">✏️</span>
+              <h3>Add New Rule</h3>
+              <button class="add-rule-toggle" id="addRuleToggle">
+                <span class="toggle-icon">▼</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Add Rule Form (Initially Hidden) -->
+          <div class="add-rule-form" id="addRuleForm" style="display: none;">
+            <div class="form-tabs">
+              <button class="form-tab active" data-tab="custom">✏️ Custom</button>
+              <button class="form-tab" data-tab="templates">📋 Templates</button>
+            </div>
+
+            <!-- Custom Tab -->
+            <div class="form-tab-content active" id="customTab">
+              <div class="form-group">
+                <label for="ruleName">Rule Name <span class="required">*</span></label>
+                <input type="text" id="ruleName" placeholder="e.g., Social Security Number" />
+              </div>
+
+              <div class="form-group">
+                <label for="rulePattern">Pattern (Regex) <span class="required">*</span></label>
+                <input type="text" id="rulePattern" placeholder="e.g., \\b\\d{3}-\\d{2}-\\d{4}\\b" />
+              </div>
+
+              <div class="form-group">
+                <label for="ruleReplacement">Replacement <span class="required">*</span></label>
+                <input type="text" id="ruleReplacement" placeholder="e.g., [SSN-REDACTED]" />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="ruleCategory">Category</label>
+                  <select id="ruleCategory">
+                    <option value="pii">PII</option>
+                    <option value="financial">Financial</option>
+                    <option value="medical">Medical</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="rulePriority">Priority (0-100)</label>
+                  <input type="number" id="rulePriority" min="0" max="100" value="50" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="ruleDescription">Description (Optional)</label>
+                <textarea id="ruleDescription" rows="2" placeholder="Describe what this rule does..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="ruleTestInput">Test Pattern</label>
+                <input type="text" id="ruleTestInput" placeholder="Enter text to test pattern..." />
+                <button class="btn btn-secondary" id="testPatternBtn" style="margin-top: 8px;">🧪 Test Pattern</button>
+                <div id="testPatternResult" style="margin-top: 8px;"></div>
+              </div>
+
+              <div class="form-actions">
+                <button class="btn btn-secondary" id="cancelAddRule">Cancel</button>
+                <button class="btn btn-primary" id="saveCustomRule">Save Rule</button>
+              </div>
+            </div>
+
+            <!-- Templates Tab -->
+            <div class="form-tab-content" id="templatesTab" style="display: none;">
+              <div class="templates-grid" id="templatesGrid">
+                <!-- Templates will be rendered here -->
+              </div>
+            </div>
           </div>
 
           <div class="settings-section" style="margin-bottom: 20px;">

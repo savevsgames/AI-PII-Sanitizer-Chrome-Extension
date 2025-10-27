@@ -20,18 +20,19 @@ export function renderCustomRules(config: UserConfig) {
 
   const rules = config.customRules?.rules || [];
   const enabled = config.customRules?.enabled ?? true;
-  const userTier = config.account?.tier || 'free';
 
-  // Show tier warning for free users
-  if (userTier === 'free') {
-    rulesList.style.display = 'none';
-    emptyState.style.display = 'none';
-    const upgradeWarning = document.getElementById('customRulesUpgradeWarning');
-    if (upgradeWarning) {
-      upgradeWarning.style.display = 'block';
-    }
-    return;
-  }
+  // TODO: Re-enable tier check when feature goes back to PRO
+  // Temporarily disabled for testing
+  // const userTier = config.account?.tier || 'free';
+  // if (userTier === 'free') {
+  //   rulesList.style.display = 'none';
+  //   emptyState.style.display = 'none';
+  //   const upgradeWarning = document.getElementById('customRulesUpgradeWarning');
+  //   if (upgradeWarning) {
+  //     upgradeWarning.style.display = 'block';
+  //   }
+  //   return;
+  // }
 
   if (rules.length === 0) {
     rulesList.style.display = 'none';
@@ -587,6 +588,11 @@ export function showAddRuleModal() {
       const store = useAppStore.getState();
       await store.loadConfig();
 
+      // Re-render the rules list with updated config
+      if (store.config) {
+        renderCustomRules(store.config);
+      }
+
       modal.remove();
       console.log('[Custom Rules UI] Added new rule');
     } catch (error) {
@@ -607,16 +613,319 @@ export function showAddRuleModal() {
  * Initialize custom rules UI handlers
  */
 export function initCustomRulesUI() {
-  const addRuleBtn = document.getElementById('addCustomRuleBtn');
+  const addRuleToggle = document.getElementById('addRuleToggle');
   const addRuleBtnEmpty = document.getElementById('addCustomRuleBtnEmpty');
+  const cancelBtn = document.getElementById('cancelAddRule');
+  const saveBtn = document.getElementById('saveCustomRule');
+  const testBtn = document.getElementById('testPatternBtn');
 
-  addRuleBtn?.addEventListener('click', () => {
-    showAddRuleModal();
+  // Toggle dropdown
+  addRuleToggle?.addEventListener('click', () => {
+    toggleAddRuleForm();
   });
 
   addRuleBtnEmpty?.addEventListener('click', () => {
-    showAddRuleModal();
+    showAddRuleForm();
   });
 
+  // Cancel button
+  cancelBtn?.addEventListener('click', () => {
+    hideAddRuleForm();
+  });
+
+  // Save button
+  saveBtn?.addEventListener('click', async () => {
+    await handleSaveRule();
+  });
+
+  // Test pattern button
+  testBtn?.addEventListener('click', () => {
+    handleTestPattern();
+  });
+
+  // Tab switching
+  const formTabs = document.querySelectorAll('.form-tab');
+  formTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const tabName = target.getAttribute('data-tab');
+      if (tabName) switchTab(tabName);
+    });
+  });
+
+  // Render templates
+  renderTemplates();
+
   console.log('[Custom Rules UI] UI handlers initialized');
+}
+
+/**
+ * Toggle the add rule form dropdown
+ */
+function toggleAddRuleForm() {
+  const form = document.getElementById('addRuleForm');
+
+  if (!form) return;
+
+  if (form.style.display === 'none') {
+    showAddRuleForm();
+  } else {
+    hideAddRuleForm();
+  }
+}
+
+/**
+ * Show the add rule form
+ */
+function showAddRuleForm() {
+  const form = document.getElementById('addRuleForm');
+  const toggleIcon = document.querySelector('.toggle-icon');
+
+  if (form) {
+    form.style.display = 'block';
+    form.classList.add('expanded');
+    if (toggleIcon) toggleIcon.textContent = '▲';
+
+    // Clear form
+    clearRuleForm();
+
+    // Scroll to form
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+/**
+ * Hide the add rule form
+ */
+function hideAddRuleForm() {
+  const form = document.getElementById('addRuleForm');
+  const toggleIcon = document.querySelector('.toggle-icon');
+
+  if (form) {
+    form.style.display = 'none';
+    form.classList.remove('expanded');
+    if (toggleIcon) toggleIcon.textContent = '▼';
+
+    // Clear form
+    clearRuleForm();
+  }
+}
+
+/**
+ * Clear the rule form
+ */
+function clearRuleForm() {
+  const ruleName = document.getElementById('ruleName') as HTMLInputElement;
+  const rulePattern = document.getElementById('rulePattern') as HTMLInputElement;
+  const ruleReplacement = document.getElementById('ruleReplacement') as HTMLInputElement;
+  const ruleCategory = document.getElementById('ruleCategory') as HTMLSelectElement;
+  const rulePriority = document.getElementById('rulePriority') as HTMLInputElement;
+  const ruleDescription = document.getElementById('ruleDescription') as HTMLTextAreaElement;
+  const testInput = document.getElementById('ruleTestInput') as HTMLInputElement;
+  const testResult = document.getElementById('testPatternResult');
+
+  if (ruleName) ruleName.value = '';
+  if (rulePattern) rulePattern.value = '';
+  if (ruleReplacement) ruleReplacement.value = '';
+  if (ruleCategory) ruleCategory.value = 'pii';
+  if (rulePriority) rulePriority.value = '50';
+  if (ruleDescription) ruleDescription.value = '';
+  if (testInput) testInput.value = '';
+  if (testResult) testResult.innerHTML = '';
+}
+
+/**
+ * Handle save rule
+ */
+async function handleSaveRule() {
+  const name = (document.getElementById('ruleName') as HTMLInputElement).value;
+  const pattern = (document.getElementById('rulePattern') as HTMLInputElement).value;
+  const replacement = (document.getElementById('ruleReplacement') as HTMLInputElement).value;
+  const category = (document.getElementById('ruleCategory') as HTMLSelectElement).value as any;
+  const priority = parseInt((document.getElementById('rulePriority') as HTMLInputElement).value);
+  const description = (document.getElementById('ruleDescription') as HTMLTextAreaElement).value;
+
+  if (!name || !pattern || !replacement) {
+    alert('Please fill in all required fields');
+    return;
+  }
+
+  // Validate pattern
+  const validation = RedactionEngine.validatePattern(pattern);
+  if (!validation.valid) {
+    alert(`Invalid pattern: ${validation.error}`);
+    return;
+  }
+
+  try {
+    await chromeApi.addCustomRule({
+      name,
+      pattern,
+      replacement,
+      category,
+      priority,
+      description: description || undefined
+    });
+
+    const store = useAppStore.getState();
+    await store.loadConfig();
+
+    // Re-render the rules list with updated config
+    if (store.config) {
+      renderCustomRules(store.config);
+    }
+
+    // Hide form
+    hideAddRuleForm();
+
+    console.log('[Custom Rules UI] Added new rule');
+  } catch (error) {
+    console.error('[Custom Rules UI] Error adding rule:', error);
+    alert('Failed to add rule. Please try again.');
+  }
+}
+
+/**
+ * Handle test pattern
+ */
+function handleTestPattern() {
+  const pattern = (document.getElementById('rulePattern') as HTMLInputElement).value;
+  const replacement = (document.getElementById('ruleReplacement') as HTMLInputElement).value;
+  const testInput = (document.getElementById('ruleTestInput') as HTMLInputElement).value;
+  const resultDiv = document.getElementById('testPatternResult');
+
+  if (!resultDiv) return;
+
+  if (!pattern || !testInput) {
+    resultDiv.innerHTML = '<div class="test-result warning">Please enter both a pattern and test text</div>';
+    return;
+  }
+
+  // Validate pattern
+  const validation = RedactionEngine.validatePattern(pattern);
+  if (!validation.valid) {
+    resultDiv.innerHTML = `<div class="test-result error">Invalid pattern: ${validation.error}</div>`;
+    return;
+  }
+
+  // Test the pattern
+  const testRule: CustomRule = {
+    id: 'test',
+    name: 'Test',
+    pattern,
+    replacement: replacement || '[REDACTED]',
+    enabled: true,
+    priority: 50,
+    category: 'custom',
+    createdAt: Date.now(),
+    matchCount: 0
+  };
+
+  const result = RedactionEngine.testRule(testRule, testInput);
+
+  if (result.error) {
+    resultDiv.innerHTML = `<div class="test-result error">Error: ${result.error}</div>`;
+  } else if (result.matches.length === 0) {
+    resultDiv.innerHTML = '<div class="test-result warning">No matches found</div>';
+  } else {
+    resultDiv.innerHTML = `
+      <div class="test-result success">
+        <strong>✅ ${result.matches.length} match(es) found</strong>
+        <div style="margin-top: 8px;">
+          <strong>Result:</strong><br/>
+          <code>${result.replacements.join(', ')}</code>
+        </div>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Switch between tabs
+ */
+function switchTab(tabName: string) {
+  // Update tab buttons
+  const tabs = document.querySelectorAll('.form-tab');
+  tabs.forEach(tab => {
+    if (tab.getAttribute('data-tab') === tabName) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+
+  // Update tab content
+  const customTab = document.getElementById('customTab');
+  const templatesTab = document.getElementById('templatesTab');
+
+  if (tabName === 'custom') {
+    if (customTab) customTab.style.display = 'block';
+    if (templatesTab) templatesTab.style.display = 'none';
+  } else if (tabName === 'templates') {
+    if (customTab) customTab.style.display = 'none';
+    if (templatesTab) templatesTab.style.display = 'block';
+  }
+}
+
+/**
+ * Render template grid
+ */
+function renderTemplates() {
+  const grid = document.getElementById('templatesGrid');
+  if (!grid) return;
+
+  // Category icons
+  const categoryIcons: Record<string, string> = {
+    pii: '👤',
+    financial: '💰',
+    medical: '⚕️',
+    custom: '⚙️'
+  };
+
+  grid.innerHTML = RULE_TEMPLATES.map(template => `
+    <div class="template-card" data-template='${JSON.stringify(template)}'>
+      <div class="template-header">
+        <span class="template-icon">${categoryIcons[template.category]}</span>
+        <h4>${template.name}</h4>
+      </div>
+      <p class="template-description">${template.description}</p>
+      <div class="template-category">${template.category.toUpperCase()}</div>
+      <button class="btn btn-sm btn-primary use-template-btn">Use Template</button>
+    </div>
+  `).join('');
+
+  // Add click handlers
+  grid.querySelectorAll('.use-template-btn').forEach((btn, index) => {
+    btn.addEventListener('click', () => {
+      useTemplate(RULE_TEMPLATES[index]);
+    });
+  });
+}
+
+/**
+ * Use a template to fill the form
+ */
+function useTemplate(template: any) {
+  const ruleName = document.getElementById('ruleName') as HTMLInputElement;
+  const rulePattern = document.getElementById('rulePattern') as HTMLInputElement;
+  const ruleReplacement = document.getElementById('ruleReplacement') as HTMLInputElement;
+  const ruleCategory = document.getElementById('ruleCategory') as HTMLSelectElement;
+  const rulePriority = document.getElementById('rulePriority') as HTMLInputElement;
+  const ruleDescription = document.getElementById('ruleDescription') as HTMLTextAreaElement;
+
+  if (ruleName) ruleName.value = template.name;
+  if (rulePattern) rulePattern.value = template.pattern;
+  if (ruleReplacement) ruleReplacement.value = template.replacement;
+  if (ruleCategory) ruleCategory.value = template.category;
+  if (rulePriority) rulePriority.value = template.priority.toString();
+  if (ruleDescription) ruleDescription.value = template.description;
+
+  // Switch to custom tab
+  switchTab('custom');
+
+  // Scroll to form
+  const form = document.getElementById('addRuleForm');
+  if (form) {
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
