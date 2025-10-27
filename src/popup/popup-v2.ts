@@ -54,7 +54,7 @@ async function loadInitialData() {
     // Subscribe to store updates
     useAppStore.subscribe((state) => {
       renderProfiles(state.profiles);
-      renderStats(state.config);
+      renderStats(state.config, state.profiles);
       renderActivityLog(state.activityLog);
       updateMinimalView(state.config);
       if (state.config) {
@@ -65,7 +65,7 @@ async function loadInitialData() {
     // Initial render
     const state = useAppStore.getState();
     renderProfiles(state.profiles);
-    renderStats(state.config);
+    renderStats(state.config, state.profiles);
     renderActivityLog(state.activityLog);
     updateSettingsUI(state.config);
     updateMinimalView(state.config);

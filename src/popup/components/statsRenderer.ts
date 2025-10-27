@@ -32,9 +32,9 @@ const PII_TYPE_ICONS: Record<string, string> = {
 };
 
 /**
- * Render stats from config
+ * Render stats from config and profiles
  */
-export function renderStats(config: UserConfig | null) {
+export function renderStats(config: UserConfig | null, profiles?: AliasProfile[]) {
   if (!config) {
     showEmptyState();
     return;
@@ -45,8 +45,9 @@ export function renderStats(config: UserConfig | null) {
   // Update overview cards
   updateOverviewCards(stats);
 
-  // Render most active profile
-  renderMostActiveProfile(config.profiles);
+  // Render currently active profiles (use passed profiles or fall back to config.profiles)
+  const profilesToRender = profiles || config.profiles || [];
+  renderMostActiveProfile(profilesToRender);
 
   // Render service breakdown
   renderServiceBreakdown(stats);
@@ -118,15 +119,32 @@ function renderServiceBreakdown(stats: UserConfig['stats']) {
   const container = document.getElementById('serviceBreakdownList');
   if (!container) return;
 
-  // Count by requests (interceptions) per service
+  // Count from activity log for accuracy
+  const serviceCounts: Record<string, number> = {
+    chatgpt: 0,
+    claude: 0,
+    gemini: 0,
+    perplexity: 0,
+    poe: 0,
+    copilot: 0,
+    you: 0,
+  };
+
+  // Count unique interceptions per service from activity log
+  stats.activityLog.forEach((entry) => {
+    if (entry.service && entry.service !== 'unknown' && serviceCounts[entry.service] !== undefined) {
+      serviceCounts[entry.service]++;
+    }
+  });
+
   const servicesData = [
-    { key: 'chatgpt', label: 'ChatGPT', count: stats.byService.chatgpt.requests },
-    { key: 'claude', label: 'Claude', count: stats.byService.claude.requests },
-    { key: 'gemini', label: 'Gemini', count: stats.byService.gemini.requests },
-    { key: 'perplexity', label: 'Perplexity', count: stats.byService.perplexity.requests },
-    { key: 'poe', label: 'Poe', count: stats.byService.poe.requests },
-    { key: 'copilot', label: 'Copilot', count: stats.byService.copilot.requests },
-    { key: 'you', label: 'You.com', count: stats.byService.you.requests },
+    { key: 'chatgpt', label: 'ChatGPT', count: serviceCounts.chatgpt },
+    { key: 'claude', label: 'Claude', count: serviceCounts.claude },
+    { key: 'gemini', label: 'Gemini', count: serviceCounts.gemini },
+    { key: 'perplexity', label: 'Perplexity', count: serviceCounts.perplexity },
+    { key: 'poe', label: 'Poe', count: serviceCounts.poe },
+    { key: 'copilot', label: 'Copilot', count: serviceCounts.copilot },
+    { key: 'you', label: 'You.com', count: serviceCounts.you },
   ];
 
   const totalCount = servicesData.reduce((sum, service) => sum + service.count, 0);
@@ -165,28 +183,42 @@ function renderPIITypeBreakdown(stats: UserConfig['stats']) {
   const container = document.getElementById('piiBreakdownList');
   if (!container) return;
 
-  // Get PII type data from activity log
-  const piiData = [
-    { key: 'name', label: 'Name', count: 0 },
-    { key: 'email', label: 'Email', count: 0 },
-    { key: 'phone', label: 'Phone', count: 0 },
-    { key: 'cellPhone', label: 'Cell Phone', count: 0 },
-    { key: 'address', label: 'Address', count: 0 },
-    { key: 'company', label: 'Company', count: 0 },
-    { key: 'custom', label: 'Custom', count: 0 },
-  ];
-
   // Count PII types from activity log
+  const piiCounts: Record<string, number> = {
+    name: 0,
+    email: 0,
+    phone: 0,
+    cellPhone: 0,
+    address: 0,
+    company: 0,
+    custom: 0,
+  };
+
+  // Count from activity log - check both piiTypesFound and profilesUsed
   stats.activityLog.forEach((entry) => {
-    if (entry.details.piiTypesFound) {
+    // If we have explicit PII types found, use those
+    if (entry.details.piiTypesFound && entry.details.piiTypesFound.length > 0) {
       entry.details.piiTypesFound.forEach((type) => {
-        const piiType = piiData.find((p) => p.key === type);
-        if (piiType) {
-          piiType.count += entry.details.substitutionCount || 0;
+        if (piiCounts[type] !== undefined) {
+          piiCounts[type] += entry.details.substitutionCount || 1;
         }
       });
+    } else if (entry.type === 'substitution' && entry.details.substitutionCount > 0) {
+      // Fallback: if we know substitutions happened but don't have specific types,
+      // count as "name" (most common)
+      piiCounts.name += entry.details.substitutionCount;
     }
   });
+
+  const piiData = [
+    { key: 'name', label: 'Name', count: piiCounts.name },
+    { key: 'email', label: 'Email', count: piiCounts.email },
+    { key: 'phone', label: 'Phone', count: piiCounts.phone },
+    { key: 'cellPhone', label: 'Cell Phone', count: piiCounts.cellPhone },
+    { key: 'address', label: 'Address', count: piiCounts.address },
+    { key: 'company', label: 'Company', count: piiCounts.company },
+    { key: 'custom', label: 'Custom', count: piiCounts.custom },
+  ];
 
   const totalCount = piiData.reduce((sum, pii) => sum + pii.count, 0);
 
