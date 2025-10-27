@@ -8,6 +8,7 @@ import { StorageManager } from '../lib/storage';
 import { Message } from '../lib/types';
 import { APIKeyDetector } from '../lib/apiKeyDetector';
 import { extractAllText, replaceAllText } from '../lib/textProcessor';
+import { redactionEngine } from '../lib/redactionEngine';
 
 
 // ========== BADGE MANAGEMENT ==========
@@ -190,6 +191,21 @@ async function handleMessage(message: Message): Promise<any> {
     case 'UPDATE_API_KEY_VAULT_SETTINGS':
       return handleUpdateAPIKeyVaultSettings(message.payload);
 
+    case 'ADD_CUSTOM_RULE':
+      return handleAddCustomRule(message.payload);
+
+    case 'REMOVE_CUSTOM_RULE':
+      return handleRemoveCustomRule(message.payload);
+
+    case 'UPDATE_CUSTOM_RULE':
+      return handleUpdateCustomRule(message.payload);
+
+    case 'TOGGLE_CUSTOM_RULE':
+      return handleToggleCustomRule(message.payload);
+
+    case 'UPDATE_CUSTOM_RULES_SETTINGS':
+      return handleUpdateCustomRulesSettings(message.payload);
+
     default:
       throw new Error(`Unknown message type: ${message.type}`);
   }
@@ -317,9 +333,28 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
     // Reconstruct request body with substituted text
     let modifiedText = substituted.text;
 
-    // ========== API KEY DETECTION ==========
+    // ========== CUSTOM REDACTION RULES ==========
     const storage = StorageManager.getInstance();
     const config = await storage.loadConfig();
+
+    if (config?.customRules?.enabled && config.customRules.rules.length > 0) {
+      console.log('🎯 Custom rules enabled, applying redaction rules...');
+
+      // Apply custom redaction rules
+      const rulesResult = redactionEngine.applyRules(modifiedText, config.customRules.rules);
+
+      if (rulesResult.matches.length > 0) {
+        console.log(`🎯 Applied ${rulesResult.rulesApplied.length} custom rules, ${rulesResult.matches.length} matches`);
+        modifiedText = rulesResult.modifiedText;
+
+        // Update match counts for rules
+        for (const ruleId of rulesResult.rulesApplied) {
+          await storage.incrementRuleMatchCount(ruleId);
+        }
+      }
+    }
+
+    // ========== API KEY DETECTION ==========
 
     // Service name mapping for activity log
     const serviceName = service === 'chatgpt' ? 'ChatGPT' :
@@ -716,6 +751,78 @@ async function handleUpdateAPIKeyVaultSettings(payload: Partial<import('../lib/t
     return { success: true };
   } catch (error: any) {
     console.error('[Background] Failed to update API Key Vault settings:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ========== CUSTOM REDACTION RULES HANDLERS ==========
+
+/**
+ * Add custom redaction rule
+ */
+async function handleAddCustomRule(payload: any) {
+  try {
+    const storage = StorageManager.getInstance();
+    const ruleId = await storage.addCustomRule(payload);
+    return { success: true, data: { ruleId } };
+  } catch (error: any) {
+    console.error('[Background] Failed to add custom rule:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Remove custom redaction rule
+ */
+async function handleRemoveCustomRule(payload: { ruleId: string }) {
+  try {
+    const storage = StorageManager.getInstance();
+    await storage.removeCustomRule(payload.ruleId);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Background] Failed to remove custom rule:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Update custom redaction rule
+ */
+async function handleUpdateCustomRule(payload: { ruleId: string; updates: any }) {
+  try {
+    const storage = StorageManager.getInstance();
+    await storage.updateCustomRule(payload.ruleId, payload.updates);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Background] Failed to update custom rule:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Toggle custom rule enabled state
+ */
+async function handleToggleCustomRule(payload: { ruleId: string }) {
+  try {
+    const storage = StorageManager.getInstance();
+    await storage.toggleCustomRule(payload.ruleId);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Background] Failed to toggle custom rule:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Update custom rules settings
+ */
+async function handleUpdateCustomRulesSettings(payload: Partial<import('../lib/types').CustomRulesConfig>) {
+  try {
+    const storage = StorageManager.getInstance();
+    await storage.updateCustomRulesSettings(payload);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[Background] Failed to update custom rules settings:', error);
     return { success: false, error: error.message };
   }
 }

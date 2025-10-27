@@ -5,6 +5,7 @@
 
 import { UserConfig } from '../../lib/types';
 import { initAPIKeyVaultUI, renderAPIKeys } from './apiKeyVault';
+import { initCustomRulesUI, renderCustomRules } from './customRulesUI';
 import { useAppStore } from '../../lib/store';
 
 // Feature definition
@@ -38,7 +39,7 @@ const FEATURES: Feature[] = [
     icon: '🎯',
     description: 'Create custom patterns to detect and replace domain-specific PII',
     tier: 'pro',
-    status: 'coming-soon', // Will be PRO-only when released
+    status: 'active', // PRO-only feature
   },
   {
     id: 'prompt-templates',
@@ -170,6 +171,13 @@ function getFeatureStats(featureId: string, config: UserConfig): Array<{ icon: s
         { icon: '🔑', value: keyCount, label: keyCount === 1 ? 'key' : 'keys' },
         { icon: '🛡️', value: protectionCount, label: 'blocks' }
       ] : [];
+    case 'custom-rules':
+      const ruleCount = config.customRules?.rules?.length || 0;
+      const totalMatches = config.customRules?.rules?.reduce((sum, rule) => sum + rule.matchCount, 0) || 0;
+      return ruleCount > 0 ? [
+        { icon: '🎯', value: ruleCount, label: ruleCount === 1 ? 'rule' : 'rules' },
+        { icon: '✅', value: totalMatches, label: 'matches' }
+      ] : [];
     default:
       return [];
   }
@@ -299,6 +307,40 @@ function renderFeatureContent(featureId: string): string {
           </div>
         </div>
       `;
+    case 'custom-rules':
+      return `
+        <div class="custom-rules-detail">
+          <div id="customRulesUpgradeWarning">
+            <h3>🚀 PRO Feature</h3>
+            <p>Custom Redaction Rules are available on the PRO plan. Create unlimited patterns to protect domain-specific data.</p>
+            <button class="btn" onclick="alert('Upgrade functionality coming soon!')">Upgrade to PRO</button>
+          </div>
+
+          <div class="tab-header">
+            <h3>Custom Redaction Rules</h3>
+            <button class="btn btn-primary" id="addCustomRuleBtn">+ Add Rule</button>
+          </div>
+
+          <div class="settings-section" style="margin-bottom: 20px;">
+            <label class="toggle-label">
+              <span class="setting-label-text">Enable Custom Rules</span>
+              <input type="checkbox" id="customRulesEnabledToggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="custom-rules-list" id="customRulesList">
+            <!-- Rules will be rendered here -->
+          </div>
+
+          <div class="empty-state" id="customRulesEmptyState">
+            <div class="empty-state-icon">🎯</div>
+            <p class="empty-state-title">No custom rules yet</p>
+            <p class="empty-state-hint">Create custom redaction patterns to protect domain-specific sensitive data</p>
+            <button class="btn btn-primary" id="addCustomRuleBtnEmpty">Create Your First Rule</button>
+          </div>
+        </div>
+      `;
     default:
       return `<p>Feature content coming soon...</p>`;
   }
@@ -317,6 +359,15 @@ function initFeatureHandlers(featureId: string) {
         renderAPIKeys(state.config);
       }
       console.log('[Features Tab] API Key Vault handlers ready');
+      break;
+    case 'custom-rules':
+      initCustomRulesUI();
+      // Render rules from current config
+      const customRulesState = useAppStore.getState();
+      if (customRulesState.config) {
+        renderCustomRules(customRulesState.config);
+      }
+      console.log('[Features Tab] Custom Rules handlers ready');
       break;
     default:
       break;
