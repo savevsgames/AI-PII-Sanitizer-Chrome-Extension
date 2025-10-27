@@ -553,10 +553,16 @@
         <div class="form-section hidden" id="variationsManagementSection">
           <div class="variations-header">
             <h4>🔄 Manage Variations</h4>
-            <button type="button" class="btn-text" id="toggleVariationsList">
-              <span id="variationsToggleIcon">▼</span>
-              <span id="variationsToggleText">Show variations</span>
-            </button>
+            <div class="variations-header-actions">
+              <button type="button" class="btn-secondary btn-sm" id="generateVariationsBtn" title="Regenerate auto variations from current profile data">
+                <span>⚡</span>
+                <span>Generate Variations</span>
+              </button>
+              <button type="button" class="btn-text" id="toggleVariationsList">
+                <span id="variationsToggleIcon">▼</span>
+                <span id="variationsToggleText">Show variations</span>
+              </button>
+            </div>
           </div>
           <p class="form-hint">Auto-generated variations plus any custom variations you add</p>
 

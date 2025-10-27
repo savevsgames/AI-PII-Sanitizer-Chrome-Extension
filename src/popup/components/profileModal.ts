@@ -6,6 +6,7 @@
 import { useAppStore } from '../../lib/store';
 import { AliasProfile } from '../../lib/types';
 import { isValidEmail } from './utils';
+import { generateIdentityVariations } from '../../lib/aliasVariations';
 
 // Track currently editing profile ID
 let currentEditingProfileId: string | null = null;
@@ -59,6 +60,10 @@ export function initProfileModal() {
   // Variations list toggle
   const toggleVariationsBtn = document.getElementById('toggleVariationsList');
   toggleVariationsBtn?.addEventListener('click', toggleVariationsList);
+
+  // Generate variations button
+  const generateVariationsBtn = document.getElementById('generateVariationsBtn');
+  generateVariationsBtn?.addEventListener('click', regenerateVariations);
 
   // Enable variations toggle - show/hide management section
   const enableVariationsCheckbox = document.getElementById('enableVariations') as HTMLInputElement;
@@ -162,12 +167,10 @@ function populateForm(profile: AliasProfile) {
   const variationsManagementSection = document.getElementById('variationsManagementSection');
   if (profile.settings?.enableVariations ?? true) {
     variationsManagementSection?.classList.remove('hidden');
-    // Populate variations list
-    if (profile.variations || profile.customVariations) {
-      renderVariationsManagement(profile);
-    }
-    // Update hint text with actual variations examples
-    updateVariationsHintText(profile);
+    // Always render variations management (even if empty, user can generate)
+    renderVariationsManagement(profile);
+    // Update hint text
+    updateVariationsHintText();
   } else {
     variationsManagementSection?.classList.add('hidden');
   }
@@ -403,7 +406,17 @@ function toggleVariationsList() {
  */
 function renderVariationsManagement(profile: AliasProfile) {
   const container = document.getElementById('variationsByField');
-  if (!container) return;
+  if (!container) {
+    console.warn('[Profile Modal] variationsByField container not found');
+    return;
+  }
+
+  console.log('[Profile Modal] Rendering variations for profile:', {
+    profileId: profile.id,
+    hasVariations: !!profile.variations,
+    variationsReal: profile.variations?.real,
+    variationsAlias: profile.variations?.alias,
+  });
 
   // Clear existing content
   container.innerHTML = '';
@@ -423,6 +436,20 @@ function renderVariationsManagement(profile: AliasProfile) {
     ...Object.keys(profile.variations?.real || {}),
     ...Object.keys(profile.customVariations?.real || {}),
   ]);
+
+  console.log('[Profile Modal] Fields with variations:', Array.from(allFields));
+
+  // Show empty state if no variations
+  if (allFields.size === 0) {
+    const emptyState = document.createElement('div');
+    emptyState.style.cssText = 'padding: var(--space-lg); text-align: center; color: var(--text-secondary);';
+    emptyState.innerHTML = `
+      <p style="margin: 0 0 var(--space-sm) 0;">No variations generated yet.</p>
+      <p style="margin: 0; font-size: var(--font-size-sm);">Click "Generate Variations" to create variations from your profile data.</p>
+    `;
+    container.appendChild(emptyState);
+    return;
+  }
 
   allFields.forEach((field) => {
     const autoVariations = profile.variations?.real[field] || [];
@@ -758,19 +785,74 @@ function deleteCustomVariation(field: string, value: string) {
 /**
  * Update the variations hint text with actual examples from the profile
  */
-function updateVariationsHintText(profile: AliasProfile) {
+function updateVariationsHintText() {
   const hintElement = document.getElementById('variationsHintText');
   if (!hintElement) return;
 
-  // Get name variations if they exist
-  const nameVariations = profile.variations?.real['name'];
+  // Always use generic text - don't expose user data in hint
+  hintElement.textContent = 'Automatically detect different name formats and variations';
+}
 
-  if (nameVariations && nameVariations.length > 3) {
-    // Show first 3 variations as examples
-    const examples = nameVariations.slice(0, 3).map(v => `"${v}"`).join(', ');
-    hintElement.textContent = `Match different formats like ${examples}, etc.`;
-  } else {
-    // Fallback to generic text
-    hintElement.textContent = 'Automatically detect different name formats and variations';
+/**
+ * Regenerate auto-generated variations based on current profile data
+ */
+async function regenerateVariations() {
+  if (!currentEditingProfileId) return;
+
+  const store = useAppStore.getState();
+  const profile = store.profiles.find((p) => p.id === currentEditingProfileId);
+  if (!profile) return;
+
+  // Get current form data to use latest values
+  const formData = getFormData();
+
+  // Generate new variations from current real and alias data
+  const realVariations = generateIdentityVariations(formData.real);
+  const aliasVariations = generateIdentityVariations(formData.alias);
+
+  // Update profile with new variations
+  await store.updateProfile(currentEditingProfileId, {
+    real: formData.real,
+    alias: formData.alias,
+    variations: {
+      real: realVariations,
+      alias: aliasVariations,
+    },
+  } as any);
+
+  // Reload profile from store
+  const updatedProfile = store.profiles.find((p) => p.id === currentEditingProfileId);
+  if (updatedProfile) {
+    // Re-render variations list
+    renderVariationsManagement(updatedProfile);
+    updateVariationsHintText();
+
+    console.log('[Profile Modal] Regenerated variations:', {
+      real: Object.keys(realVariations).length,
+      alias: Object.keys(aliasVariations).length,
+    });
+
+    // Ensure variations list is visible
+    const listContainer = document.getElementById('variationsListContainer');
+    const toggleIcon = document.getElementById('variationsToggleIcon');
+    const toggleText = document.getElementById('variationsToggleText');
+
+    if (listContainer && listContainer.classList.contains('hidden')) {
+      listContainer.classList.remove('hidden');
+      toggleIcon?.classList.add('expanded');
+      if (toggleText) toggleText.textContent = 'Hide variations';
+    }
+
+    // Show success feedback
+    const btn = document.getElementById('generateVariationsBtn');
+    if (btn) {
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span>✓</span><span>Generated!</span>';
+      btn.classList.add('success');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('success');
+      }, 2000);
+    }
   }
 }
