@@ -480,6 +480,152 @@ export class StorageManager {
     return 'generic';
   }
 
+  // ========== CUSTOM REDACTION RULES METHODS ==========
+
+  /**
+   * Ensure custom rules config exists
+   */
+  private async ensureCustomRulesConfig(config: import('./types').UserConfig): Promise<void> {
+    if (!config.customRules) {
+      config.customRules = {
+        enabled: true,
+        rules: []
+      };
+    }
+  }
+
+  /**
+   * Add a custom redaction rule
+   */
+  async addCustomRule(ruleData: {
+    name: string;
+    pattern: string;
+    replacement: string;
+    category: 'pii' | 'financial' | 'medical' | 'custom';
+    description?: string;
+    priority?: number;
+    testCases?: { input: string; expected: string }[];
+  }): Promise<string> {
+    const config = await this.loadConfig();
+    if (!config) {
+      throw new Error('Failed to load config');
+    }
+
+    await this.ensureCustomRulesConfig(config);
+
+    const ruleId = crypto.randomUUID();
+    const newRule: import('./types').CustomRule = {
+      id: ruleId,
+      name: ruleData.name,
+      pattern: ruleData.pattern,
+      replacement: ruleData.replacement,
+      enabled: true,
+      priority: ruleData.priority ?? 50,
+      category: ruleData.category,
+      description: ruleData.description,
+      createdAt: Date.now(),
+      matchCount: 0,
+      testCases: ruleData.testCases
+    };
+
+    config.customRules!.rules.push(newRule);
+    await this.saveConfig(config);
+
+    console.log('[StorageManager] Added custom rule:', ruleId);
+    return ruleId;
+  }
+
+  /**
+   * Remove a custom rule
+   */
+  async removeCustomRule(ruleId: string): Promise<void> {
+    const config = await this.loadConfig();
+    if (!config?.customRules) {
+      return;
+    }
+
+    config.customRules.rules = config.customRules.rules.filter(r => r.id !== ruleId);
+    await this.saveConfig(config);
+
+    console.log('[StorageManager] Removed custom rule:', ruleId);
+  }
+
+  /**
+   * Update a custom rule
+   */
+  async updateCustomRule(ruleId: string, updates: Partial<import('./types').CustomRule>): Promise<void> {
+    const config = await this.loadConfig();
+    if (!config?.customRules) {
+      return;
+    }
+
+    const ruleIndex = config.customRules.rules.findIndex(r => r.id === ruleId);
+    if (ruleIndex === -1) {
+      throw new Error(`Rule not found: ${ruleId}`);
+    }
+
+    config.customRules.rules[ruleIndex] = {
+      ...config.customRules.rules[ruleIndex],
+      ...updates
+    };
+
+    await this.saveConfig(config);
+    console.log('[StorageManager] Updated custom rule:', ruleId);
+  }
+
+  /**
+   * Toggle custom rule enabled state
+   */
+  async toggleCustomRule(ruleId: string): Promise<void> {
+    const config = await this.loadConfig();
+    if (!config?.customRules) {
+      return;
+    }
+
+    const rule = config.customRules.rules.find(r => r.id === ruleId);
+    if (rule) {
+      rule.enabled = !rule.enabled;
+      await this.saveConfig(config);
+      console.log('[StorageManager] Toggled custom rule:', ruleId, 'enabled:', rule.enabled);
+    }
+  }
+
+  /**
+   * Update custom rules match count
+   */
+  async incrementRuleMatchCount(ruleId: string): Promise<void> {
+    const config = await this.loadConfig();
+    if (!config?.customRules) {
+      return;
+    }
+
+    const rule = config.customRules.rules.find(r => r.id === ruleId);
+    if (rule) {
+      rule.matchCount++;
+      rule.lastUsed = Date.now();
+      await this.saveConfig(config);
+    }
+  }
+
+  /**
+   * Update custom rules settings
+   */
+  async updateCustomRulesSettings(settings: Partial<import('./types').CustomRulesConfig>): Promise<void> {
+    const config = await this.loadConfig();
+    if (!config) {
+      return;
+    }
+
+    await this.ensureCustomRulesConfig(config);
+    config.customRules = {
+      ...config.customRules!,
+      ...settings
+    };
+
+    await this.saveConfig(config);
+    console.log('[StorageManager] Updated custom rules settings');
+  }
+
   /**
    * Get default configuration (v2)
    */

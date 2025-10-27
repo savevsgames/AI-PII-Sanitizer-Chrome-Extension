@@ -125,6 +125,51 @@ export const chromeApi = {
     return sendMessage('UPDATE_API_KEY_VAULT_SETTINGS', settings);
   },
 
+  // ========== CUSTOM REDACTION RULES ==========
+
+  /**
+   * Add a custom redaction rule
+   */
+  async addCustomRule(ruleData: {
+    name: string;
+    pattern: string;
+    replacement: string;
+    category: 'pii' | 'financial' | 'medical' | 'custom';
+    description?: string;
+    priority?: number;
+    testCases?: { input: string; expected: string }[];
+  }): Promise<{ success: boolean; data: any }> {
+    return sendMessage('ADD_CUSTOM_RULE', ruleData);
+  },
+
+  /**
+   * Remove a custom rule
+   */
+  async removeCustomRule(ruleId: string): Promise<{ success: boolean }> {
+    return sendMessage('REMOVE_CUSTOM_RULE', { ruleId });
+  },
+
+  /**
+   * Update a custom rule
+   */
+  async updateCustomRule(ruleId: string, updates: any): Promise<{ success: boolean }> {
+    return sendMessage('UPDATE_CUSTOM_RULE', { ruleId, updates });
+  },
+
+  /**
+   * Toggle custom rule enabled state
+   */
+  async toggleCustomRule(ruleId: string): Promise<{ success: boolean }> {
+    return sendMessage('TOGGLE_CUSTOM_RULE', { ruleId });
+  },
+
+  /**
+   * Update custom rules settings
+   */
+  async updateCustomRulesSettings(settings: any): Promise<{ success: boolean }> {
+    return sendMessage('UPDATE_CUSTOM_RULES_SETTINGS', settings);
+  },
+
   // ========== CONTENT SCRIPTS ==========
 
   /**
