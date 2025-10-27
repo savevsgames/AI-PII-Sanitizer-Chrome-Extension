@@ -1,11 +1,15 @@
-.stats-grid {
+/* Stats Tab Styles - Glassmorphism Design */
+
+/* Overview Cards Grid */
+.stats-overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-lg);
   margin-bottom: var(--space-2xl);
 }
 
-.stat-card {
+/* Individual Stat Card */
+.stat-card-glass {
   background: var(--glass-white-heavy);
   backdrop-filter: var(--blur-medium);
   -webkit-backdrop-filter: var(--blur-medium);
@@ -14,21 +18,244 @@
   border: var(--glass-border);
   box-shadow: var(--glass-shadow-md);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
 }
 
-.stat-card:hover {
+.stat-card-glass:hover {
   transform: translateY(-4px);
   box-shadow: var(--glass-shadow-lg);
 }
 
-.stat-value {
+/* Stat Icon */
+.stat-icon {
   font-size: 32px;
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
-  margin-bottom: var(--space-sm);
+  line-height: 1;
+  opacity: 0.9;
 }
 
+/* Stat Info Container */
+.stat-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+/* Stat Value */
+.stat-value {
+  font-size: 28px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+/* Stat Label */
 .stat-label {
   font-size: var(--font-size-sm);
   color: var(--text-on-glass-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Most Active Profile Section */
+.most-active-profile {
+  background: var(--glass-white-medium);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow-md);
+  margin-bottom: var(--space-2xl);
+}
+
+.most-active-profile h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-on-glass);
+  margin-bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.profile-highlight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md);
+  background: var(--glass-white-light);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.profile-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.profile-stats {
+  font-size: var(--font-size-sm);
+  color: var(--text-on-glass-secondary);
+}
+
+/* Service Breakdown Section */
+.service-breakdown,
+.pii-breakdown {
+  background: var(--glass-white-medium);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow-md);
+  margin-bottom: var(--space-2xl);
+}
+
+.service-breakdown h3,
+.pii-breakdown h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-on-glass);
+  margin-bottom: var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Breakdown Item (Bar Chart) */
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  transition: background 0.2s ease;
+}
+
+.breakdown-item:hover {
+  background: var(--glass-white-light);
+}
+
+.breakdown-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Item Icon */
+.breakdown-item .item-icon {
+  font-size: 20px;
+  line-height: 1;
+  opacity: 0.9;
+  width: 24px;
+  text-align: center;
+}
+
+/* Item Label */
+.breakdown-item .item-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-on-glass);
+  min-width: 80px;
+}
+
+/* Progress Bar Container */
+.breakdown-item .progress-bar {
+  flex: 1;
+  height: 24px;
+  background: var(--glass-white-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Progress Fill */
+.breakdown-item .progress-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.6),
+    rgba(59, 130, 246, 0.8)
+  );
+  border-radius: var(--radius-md);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer effect on progress bars */
+.breakdown-item .progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Item Value */
+.breakdown-item .item-value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  min-width: 50px;
+  text-align: right;
+}
+
+/* Empty State */
+.stats-empty {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-lg);
+  color: var(--text-on-glass-secondary);
+  font-size: var(--font-size-base);
+}
+
+.stats-empty-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-md);
+  opacity: 0.6;
+}
+
+.stats-empty p {
+  margin: var(--space-sm) 0;
+  line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .breakdown-item .item-label {
+    min-width: 60px;
+    font-size: var(--font-size-xs);
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .stat-icon {
+    font-size: 28px;
+  }
 }
