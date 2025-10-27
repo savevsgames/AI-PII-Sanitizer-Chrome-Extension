@@ -33,6 +33,25 @@ export interface AliasProfile {
   // Alias identity
   alias: IdentityData;
 
+  // Auto-generated variations for fuzzy matching
+  variations?: {
+    real: Record<string, string[]>;  // e.g., { name: ["Greg Barker", "GregBarker", "gregbarker", ...] }
+    alias: Record<string, string[]>; // e.g., { name: ["John Doe", "JohnDoe", "johndoe", ...] }
+  };
+
+  // User-added custom variations (not auto-generated)
+  // Each variation can be enabled/disabled individually
+  customVariations?: {
+    real: Record<string, Array<{ value: string; enabled: boolean }>>;
+    alias: Record<string, Array<{ value: string; enabled: boolean }>>;
+  };
+
+  // Track which auto-generated variations are disabled
+  disabledVariations?: {
+    real: Record<string, string[]>;  // List of disabled auto-generated variations for real identity
+    alias: Record<string, string[]>; // List of disabled auto-generated variations for alias identity
+  };
+
   // Metadata
   metadata: {
     createdAt: number;
@@ -67,6 +86,7 @@ export interface AliasProfile {
     autoReplace: boolean;         // Auto-replace or warn first
     highlightInUI: boolean;       // Show visual highlights
     activeServices: string[];     // Which AI services to protect
+    enableVariations: boolean;    // Use fuzzy matching with variations
   };
 }
 

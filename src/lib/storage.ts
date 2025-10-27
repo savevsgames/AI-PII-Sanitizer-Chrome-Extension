@@ -2,6 +2,7 @@
  * Storage Manager for persisting aliases and configuration
  * Uses Chrome Storage API with encryption for sensitive data
  * Version 2.0 - Profile-based architecture with backward compatibility
+ * Version 2.1 - Added alias variations support
  */
 
 import {
@@ -11,6 +12,7 @@ import {
   UserConfigV1,
   IdentityData
 } from './types';
+import { generateIdentityVariations } from './aliasVariations';
 
 export class StorageManager {
   private static instance: StorageManager;
@@ -165,6 +167,10 @@ export class StorageManager {
   }): Promise<AliasProfile> {
     const profiles = await this.loadProfiles();
 
+    // Generate variations for both real and alias identities
+    const realVariations = generateIdentityVariations(profileData.real);
+    const aliasVariations = generateIdentityVariations(profileData.alias);
+
     const newProfile: AliasProfile = {
       id: this.generateId(),
       profileName: profileData.profileName,
@@ -172,6 +178,10 @@ export class StorageManager {
       enabled: profileData.enabled ?? true,
       real: profileData.real,
       alias: profileData.alias,
+      variations: {
+        real: realVariations,
+        alias: aliasVariations,
+      },
       metadata: {
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -203,12 +213,13 @@ export class StorageManager {
         autoReplace: true,
         highlightInUI: true,
         activeServices: ['chatgpt', 'claude', 'gemini'],
+        enableVariations: true, // Enable by default
       },
     };
 
     profiles.push(newProfile);
     await this.saveProfiles(profiles);
-    console.log('[StorageManager] Created profile:', newProfile.profileName);
+    console.log('[StorageManager] Created profile:', newProfile.profileName, 'with variations');
     return newProfile;
   }
 
@@ -220,14 +231,32 @@ export class StorageManager {
     const index = profiles.findIndex(p => p.id === id);
 
     if (index !== -1) {
-      profiles[index] = {
+      const updatedProfile = {
         ...profiles[index],
         ...updates,
         metadata: {
           ...profiles[index].metadata,
           updatedAt: Date.now(),
         },
+        // Merge settings properly
+        settings: {
+          ...profiles[index].settings,
+          ...(updates.settings || {}),
+        },
       };
+
+      // Regenerate variations if real or alias identity changed
+      if (updates.real || updates.alias) {
+        const realVariations = generateIdentityVariations(updatedProfile.real);
+        const aliasVariations = generateIdentityVariations(updatedProfile.alias);
+        updatedProfile.variations = {
+          real: realVariations,
+          alias: aliasVariations,
+        };
+        console.log('[StorageManager] Regenerated variations for profile:', updatedProfile.profileName);
+      }
+
+      profiles[index] = updatedProfile;
       await this.saveProfiles(profiles);
       console.log('[StorageManager] Updated profile:', profiles[index].profileName);
     }
@@ -773,6 +802,7 @@ export class StorageManager {
           autoReplace: true,
           highlightInUI: true,
           activeServices: ['chatgpt', 'claude', 'gemini'],
+          enableVariations: true,
         },
       };
 

@@ -539,6 +539,33 @@
             </label>
             <span class="form-hint">Disabled profiles won't be used for substitution</span>
           </div>
+          <div class="form-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="enableVariations" name="enableVariations" checked>
+              <span class="toggle-slider"></span>
+              <span class="setting-label-text">Enable name variations</span>
+            </label>
+            <span class="form-hint" id="variationsHintText">Automatically detect different name formats and variations</span>
+          </div>
+        </div>
+
+        <!-- Variations Management (shown in edit mode when variations enabled) -->
+        <div class="form-section hidden" id="variationsManagementSection">
+          <div class="variations-header">
+            <h4>🔄 Manage Variations</h4>
+            <button type="button" class="btn-text" id="toggleVariationsList">
+              <span id="variationsToggleIcon">▼</span>
+              <span id="variationsToggleText">Show variations</span>
+            </button>
+          </div>
+          <p class="form-hint">Auto-generated variations plus any custom variations you add</p>
+
+          <!-- Collapsible variations list -->
+          <div class="variations-list-container hidden" id="variationsListContainer">
+            <div id="variationsByField" class="variations-by-field">
+              <!-- Will be populated dynamically -->
+            </div>
+          </div>
         </div>
       </form>
 
