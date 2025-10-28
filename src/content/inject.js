@@ -16,11 +16,13 @@
   const nativeFetch = window.fetch;
   window.__nativeFetch = nativeFetch;
 
+  // Extension disable flag - when true, stops all interception
+  let extensionDisabled = false;
+
   // Health check system - fail safe approach with exponential backoff
   let isProtected = false;
   let healthCheckAttempts = 0;
   let healthCheckInterval = 1000; // Start at 1 second
-  let userAllowedUnprotected = false; // User override flag
   const MAX_HEALTH_CHECK_ATTEMPTS = 3;
   const MIN_HEALTH_CHECK_INTERVAL = 1000; // 1 second
   const MAX_HEALTH_CHECK_INTERVAL = 300000; // 5 minutes
@@ -99,6 +101,62 @@
   // Start health monitoring
   monitorHealth();
 
+  // Track if we've already shown the modal for this page load
+  let hasShownNotProtectedModal = false;
+
+  // Listen for tab visibility changes - show modal when tab becomes visible if not protected
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+      console.log('👁️ Tab became visible, checking protection status...');
+
+      // Perform immediate health check
+      const isCurrentlyProtected = await performHealthCheck();
+
+      if (!isCurrentlyProtected && !hasShownNotProtectedModal) {
+        console.warn('⚠️ Tab focused but NOT PROTECTED - showing modal');
+
+        // Request modal from content script
+        const userAction = await new Promise((resolve) => {
+          const messageId = Math.random().toString(36);
+
+          const timeout = setTimeout(() => {
+            window.removeEventListener('message', handleResponse);
+            resolve(null); // No action on timeout
+          }, 30000); // 30 second timeout
+
+          const handleResponse = (event) => {
+            if (event.data?.source === 'ai-pii-content-not-protected' &&
+                event.data?.messageId === messageId) {
+              clearTimeout(timeout);
+              window.removeEventListener('message', handleResponse);
+              resolve(event.data.action); // 'disable' | 'reload'
+            }
+          };
+
+          window.addEventListener('message', handleResponse);
+
+          window.postMessage({
+            source: 'ai-pii-inject-not-protected',
+            messageId
+          }, '*');
+        });
+
+        hasShownNotProtectedModal = true; // Only show once per page load
+
+        if (userAction === 'reload') {
+          console.log('🔄 User chose reload from tab focus modal');
+          // Page will reload, no need to do anything
+        } else if (userAction === 'disable') {
+          console.log('⚠️ User chose disable - stopping all interception');
+          extensionDisabled = true;
+          // Restore original fetch to stop all interception
+          window.fetch = nativeFetch;
+          console.log('✅ Extension disabled - fetch restored to native');
+        }
+      }
+    }
+  });
+
   const aiDomains = [
     // ChatGPT
     'api.openai.com',
@@ -131,6 +189,12 @@
   }
 
   window.fetch = async function(...args) {
+    // If extension was disabled, this override should never run
+    // But if it does (race condition), pass through immediately
+    if (extensionDisabled) {
+      return nativeFetch.apply(this, args);
+    }
+
     const [url, options] = args;
     const urlStr = typeof url === 'string' ? url : url.toString();
 
@@ -142,17 +206,16 @@
     console.log('🔒 AI PII Sanitizer: Intercepting', urlStr);
 
     // SECURITY: Check if protection is active before allowing request
-    // Skip check if user already allowed this request
-    if (!isProtected && !userAllowedUnprotected) {
+    if (!isProtected) {
       console.error('🛑 BLOCKING REQUEST - Extension not protected');
 
       // Show modal to user asking what to do
-      const userChoice = await new Promise((resolve) => {
+      const userAction = await new Promise((resolve) => {
         const messageId = Math.random().toString(36);
 
         const timeout = setTimeout(() => {
           window.removeEventListener('message', handleResponse);
-          resolve(false); // Block by default on timeout
+          resolve(null); // Block by default on timeout
         }, 30000); // 30 second timeout
 
         const handleResponse = (event) => {
@@ -160,7 +223,7 @@
               event.data?.messageId === messageId) {
             clearTimeout(timeout);
             window.removeEventListener('message', handleResponse);
-            resolve(event.data.allow === true);
+            resolve(event.data.action); // 'reload' | 'disable'
           }
         };
 
@@ -173,25 +236,23 @@
         }, '*');
       });
 
-      if (!userChoice) {
-        // User chose to refresh or modal timed out
+      if (userAction === 'reload') {
+        // Page will reload, request will be cancelled
+        console.log('🔄 Page reloading to restore protection...');
+        throw new Error('AI PII Sanitizer: Page reloading to restore protection');
+      } else if (userAction === 'disable') {
+        // Extension disabled - restore native fetch and allow this request through
+        console.log('⚠️ User chose disable - stopping all interception');
+        extensionDisabled = true;
+        window.fetch = nativeFetch;
+        console.log('✅ Extension disabled - passing through original request');
+
+        // Allow this request to go through using native fetch
+        return nativeFetch.apply(this, args);
+      } else {
+        // Timeout or unknown action - block for safety
+        console.error('🛑 No valid user action - blocking request');
         throw new Error('AI PII Sanitizer: Request blocked - not protected');
-      }
-
-      // User chose "Allow Anyway" - set flag and log warning
-      userAllowedUnprotected = true;
-      console.warn('⚠️ USER OVERRIDE: Allowing unprotected request');
-    }
-
-    // If user allowed unprotected request, pass through original request without any protection
-    if (userAllowedUnprotected) {
-      console.warn('🚨 PASSING THROUGH ORIGINAL UNPROTECTED REQUEST - User override active');
-      try {
-        return await nativeFetch.apply(this, args);
-      } finally {
-        // Reset flag after request
-        console.log('🔄 Resetting user override flag');
-        userAllowedUnprotected = false;
       }
     }
 

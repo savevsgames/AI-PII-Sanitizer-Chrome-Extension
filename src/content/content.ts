@@ -145,6 +145,22 @@ window.addEventListener('message', async (event) => {
         isAlive: true
       }, '*');
     } catch (error) {
+      // Extension context invalidated - notify background to update badge
+      console.error('❌ Health check failed - extension context lost');
+
+      // Try to notify background (might fail if context lost)
+      try {
+        const tab = await chrome.tabs.getCurrent();
+        if (tab?.id) {
+          await chrome.runtime.sendMessage({
+            type: 'PROTECTION_LOST',
+            tabId: tab.id
+          });
+        }
+      } catch (e) {
+        console.error('Cannot notify background - context lost');
+      }
+
       // Extension context invalidated or background not responding
       window.postMessage({
         source: 'ai-pii-content-health',
@@ -162,13 +178,13 @@ window.addEventListener('message', async (event) => {
 
     console.log('🛑 Showing NOT PROTECTED modal');
 
-    const userChoice = await showNotProtectedModal();
+    const userAction = await showNotProtectedModal();
 
     // Send response back to inject.js
     window.postMessage({
       source: 'ai-pii-content-not-protected',
       messageId,
-      allow: userChoice === 'allow-anyway'
+      action: userAction // 'reload' | 'disable'
     }, '*');
 
     return;
@@ -461,9 +477,9 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
 
 /**
  * Show Extension Not Protected Modal
- * Returns Promise<string> - 'refresh' or 'allow-anyway'
+ * Returns Promise<string> - 'reload' or 'disable'
  */
-function showNotProtectedModal(): Promise<'refresh' | 'allow-anyway'> {
+function showNotProtectedModal(): Promise<'reload' | 'disable'> {
   return new Promise((resolve) => {
     // Remove existing modal if any
     const existing = document.getElementById('not-protected-modal');
@@ -516,12 +532,11 @@ function showNotProtectedModal(): Promise<'refresh' | 'allow-anyway'> {
         <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 15px; line-height: 1.6;">
           The extension has lost connection and <strong style="color: #ef4444;">cannot protect your data</strong>.
           <br><br>
-          This typically happens when the extension is reloaded. Please refresh this page to restore full protection.
+          <strong>Choose an option:</strong>
         </p>
 
-        <div style="display: flex; gap: 12px; margin-top: 24px;">
-          <button id="not-protected-refresh" style="
-            flex: 1;
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+          <button id="not-protected-reload" style="
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
@@ -536,10 +551,9 @@ function showNotProtectedModal(): Promise<'refresh' | 'allow-anyway'> {
             user-select: none;
             -webkit-user-select: none;
           ">
-            🔄 Refresh Page
+            🔄 Reload Page (Recommended)
           </button>
-          <button id="not-protected-allow" style="
-            flex: 1;
+          <button id="not-protected-disable" style="
             background: rgba(0, 0, 0, 0.05);
             color: #718096;
             border: 1px solid rgba(0, 0, 0, 0.1);
@@ -553,7 +567,7 @@ function showNotProtectedModal(): Promise<'refresh' | 'allow-anyway'> {
             user-select: none;
             -webkit-user-select: none;
           ">
-            ⚠️ Allow Anyway
+            ⚠️ Disable Extension
           </button>
         </div>
 
@@ -569,75 +583,74 @@ function showNotProtectedModal(): Promise<'refresh' | 'allow-anyway'> {
     console.log('🛑 NOT PROTECTED modal displayed');
 
     // Button handlers
-    const refreshBtn = content.querySelector('#not-protected-refresh') as HTMLButtonElement;
-    const allowBtn = content.querySelector('#not-protected-allow') as HTMLButtonElement;
+    const reloadBtn = content.querySelector('#not-protected-reload') as HTMLButtonElement;
+    const disableBtn = content.querySelector('#not-protected-disable') as HTMLButtonElement;
 
-    if (!refreshBtn || !allowBtn) {
+    if (!reloadBtn || !disableBtn) {
       console.error('❌ Modal buttons not found!');
       return;
     }
 
-    console.log('✅ Modal buttons attached:', refreshBtn, allowBtn);
-
-    // Test: expose buttons to window for debugging
-    (window as any).__notProtectedRefreshBtn = refreshBtn;
-    (window as any).__notProtectedAllowBtn = allowBtn;
+    console.log('✅ Modal buttons attached:', reloadBtn, disableBtn);
 
     // Use both addEventListener AND onclick for maximum compatibility
-    const handleRefresh = (e?: Event) => {
-      console.log('🔄 User clicked Refresh - reloading page', e);
+    const handleReload = (e?: Event) => {
+      console.log('🔄 User clicked Reload - reloading page', e);
       if (e) e.stopPropagation();
       modal.remove();
       location.reload();
-      resolve('refresh');
+      resolve('reload');
     };
 
-    const handleAllow = (e?: Event) => {
-      console.log('⚠️ User clicked Allow Anyway - allowing unprotected request', e);
+    const handleDisable = async (e?: Event) => {
+      console.log('⚠️ User clicked Disable Extension', e);
       if (e) e.stopPropagation();
+
+      // Send message to background to disable extension
+      try {
+        await chrome.runtime.sendMessage({
+          type: 'DISABLE_EXTENSION'
+        });
+        console.log('✅ Extension disabled');
+      } catch (error) {
+        console.error('❌ Failed to disable extension:', error);
+      }
+
       modal.remove();
-      resolve('allow-anyway');
+      resolve('disable');
     };
 
     // Try multiple event binding methods
-    refreshBtn.addEventListener('click', handleRefresh, true); // Use capture phase
-    refreshBtn.onclick = handleRefresh;
+    reloadBtn.addEventListener('click', handleReload, true); // Use capture phase
+    reloadBtn.onclick = handleReload;
 
-    allowBtn.addEventListener('click', handleAllow, true); // Use capture phase
-    allowBtn.onclick = handleAllow;
-
-    // Also try mousedown as fallback
-    allowBtn.addEventListener('mousedown', (e) => {
-      console.log('⚠️ Mousedown detected on Allow button');
-      handleAllow(e);
-    });
+    disableBtn.addEventListener('click', handleDisable, true); // Use capture phase
+    disableBtn.onclick = handleDisable;
 
     // Hover effects
-    refreshBtn.addEventListener('mouseenter', () => {
-      refreshBtn.style.transform = 'translateY(-2px)';
-      refreshBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
+    reloadBtn.addEventListener('mouseenter', () => {
+      reloadBtn.style.transform = 'translateY(-2px)';
+      reloadBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
     });
-    refreshBtn.addEventListener('mouseleave', () => {
-      refreshBtn.style.transform = 'translateY(0)';
-      refreshBtn.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
-    });
-
-    allowBtn.addEventListener('mouseenter', () => {
-      allowBtn.style.transform = 'translateY(-2px)';
-      allowBtn.style.background = 'rgba(0, 0, 0, 0.08)';
-    });
-    allowBtn.addEventListener('mouseleave', () => {
-      allowBtn.style.transform = 'translateY(0)';
-      allowBtn.style.background = 'rgba(0, 0, 0, 0.05)';
+    reloadBtn.addEventListener('mouseleave', () => {
+      reloadBtn.style.transform = 'translateY(0)';
+      reloadBtn.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
     });
 
-    // ESC key to default to refresh
+    disableBtn.addEventListener('mouseenter', () => {
+      disableBtn.style.transform = 'translateY(-2px)';
+      disableBtn.style.background = 'rgba(0, 0, 0, 0.08)';
+    });
+    disableBtn.addEventListener('mouseleave', () => {
+      disableBtn.style.transform = 'translateY(0)';
+      disableBtn.style.background = 'rgba(0, 0, 0, 0.05)';
+    });
+
+    // ESC key to default to reload (safer default)
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        modal.remove();
         document.removeEventListener('keydown', handleEscape);
-        location.reload();
-        resolve('refresh');
+        handleReload();
       }
     };
 

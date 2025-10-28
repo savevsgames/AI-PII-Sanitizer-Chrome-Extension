@@ -149,6 +149,43 @@ async function handleMessage(message: Message): Promise<any> {
       // Simple health check for page status detection
       return { success: true, status: 'ok' };
 
+    case 'PROTECTION_LOST':
+      const tabId = message.tabId;
+      if (tabId) {
+        console.log(`[Badge] Protection lost for tab ${tabId}`);
+        await updateBadge(tabId, 'unprotected');
+      }
+      return { success: true };
+
+    case 'DISABLE_EXTENSION':
+      console.log('[Background] User requested extension disable');
+
+      // Update config to disable extension
+      const storage = StorageManager.getInstance();
+      const currentConfig = await storage.loadConfig();
+
+      if (currentConfig) {
+        await storage.saveConfig({
+          ...currentConfig,
+          settings: {
+            ...currentConfig.settings,
+            enabled: false
+          }
+        });
+
+        console.log('[Background] ✅ Extension disabled');
+
+        // Update all badges to show disabled state
+        const tabs = await chrome.tabs.query({});
+        for (const tab of tabs) {
+          if (tab.id) {
+            await checkAndUpdateBadge(tab.id, tab.url);
+          }
+        }
+      }
+
+      return { success: true };
+
     case 'SUBSTITUTE_REQUEST':
       return handleSubstituteRequest(message.payload);
 

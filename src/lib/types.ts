@@ -339,6 +339,8 @@ export type MessageType =
   // Health & Status
   | 'PING'
   | 'HEALTH_CHECK'
+  | 'PROTECTION_LOST'
+  | 'DISABLE_EXTENSION'
   | 'REINJECT_CONTENT_SCRIPTS';
 
 /**
@@ -346,7 +348,8 @@ export type MessageType =
  */
 export interface Message {
   type: MessageType;
-  payload: any;
+  payload?: any;
+  tabId?: number; // For PROTECTION_LOST message
 }
 
 /**
