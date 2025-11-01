@@ -1,9 +1,10 @@
-# PromptBlocker - Product Roadmap
+# PromptBlocker - Product Roadmap (REVISED)
 
 **Last Updated:** 2025-11-01
-**Current Version:** 1.0.0 (Pre-Launch)
+**Current Version:** 0.9.0 (Pre-Alpha - Not Production Ready)
+**Status:** 🚨 **SECURITY AUDIT COMPLETE - CRITICAL ISSUES IDENTIFIED**
 
-This roadmap outlines PromptBlocker's development journey, launch plan, and future vision.
+⚠️ **IMPORTANT:** This roadmap has been revised based on comprehensive security audit findings. See [SECURITY_AUDIT.md](./docs/SECURITY_AUDIT.md) for full details.
 
 ---
 
@@ -14,20 +15,39 @@ This roadmap outlines PromptBlocker's development journey, launch plan, and futu
 **Mission:** Provide robust, transparent PII protection that requires zero technical knowledge while offering advanced features for power users.
 
 **Core Values:**
-- 🔒 **Privacy First:** Local-only processing, no data collection
+- 🔒 **Security First:** No launch until vulnerabilities are fixed
 - 🎯 **User-Centric:** Intuitive design, fail-safe defaults
 - 🚀 **Open Source:** Transparent code, community-driven
 - 💎 **Quality:** 98-100% test coverage on core logic
 
 ---
 
-## 📅 Release Timeline
+## 🚨 Critical Security Findings
 
-### ✅ Development Phase (Complete)
+**Security Audit Date:** 2025-11-01
+**Risk Level:** 🔴 HIGH - Not production-ready
+
+### Blocking Issues (Must Fix Before Launch):
+1. ❌ **XSS Vulnerabilities** - 52 innerHTML assignments without consistent escaping
+2. ❌ **localStorage Usage** - Should use chrome.storage.local exclusively
+3. ❌ **No Authentication** - Users can fake PRO tier locally
+4. ❌ **No Payment System** - Cannot monetize or enforce PRO features
+5. ❌ **Weak Encryption Key** - Uses predictable extension ID
+6. ❌ **No External Testing** - Only tested on developer's machine
+7. ❌ **No Community Infrastructure** - No Discord, support, or feedback system
+8. ❌ **No CI/CD Pipeline** - Manual deployments, no automation
+
+**Full Report:** See [docs/SECURITY_AUDIT.md](./docs/SECURITY_AUDIT.md)
+
+---
+
+## 📅 REVISED Release Timeline
+
+### ✅ Phase 0: Development Phase (Complete)
 **Timeline:** October - November 2024
 **Status:** ✅ Complete
 
-**Major Milestones:**
+**Achievements:**
 - [x] Chrome Extension Manifest V3 architecture
 - [x] Three-context security model (page/isolated/background)
 - [x] Identity aliasing with bidirectional substitution
@@ -41,54 +61,293 @@ This roadmap outlines PromptBlocker's development journey, launch plan, and futu
 
 ---
 
-### 🚀 v1.0.0 - Initial Launch (Current Focus)
-**Target Date:** November 2024
-**Status:** 🔄 In Progress
+### 🔒 Phase 1: Security Hardening (NEW - Week 1)
+**Target Date:** November 8-15, 2024
+**Status:** 🚧 **CURRENT PRIORITY**
+**Estimated Time:** 5-7 days
 
-**Launch Checklist:**
+**Critical Security Fixes:**
+- [ ] **Fix XSS Vulnerabilities** (P0 - 1-2 days)
+  - Audit all 52 innerHTML assignments
+  - Apply escapeHtml() consistently
+  - Add XSS prevention tests
+  - Create ESLint rule to prevent raw innerHTML
 
-#### Pre-Launch (Week 1)
-- [x] Core features complete and tested
-- [x] Documentation refactored (production-ready)
-- [ ] Chrome Web Store listing prepared
-- [ ] Screenshots taken (5 minimum)
-- [ ] Promotional images created (3 sizes)
-- [ ] Privacy policy finalized
-- [ ] README polished
+- [ ] **Replace localStorage** (P0 - 2 hours)
+  - Replace all localStorage with chrome.storage.local
+  - Add ESLint rule to ban localStorage usage
 
-#### Launch (Week 2)
-- [ ] Submit to Chrome Web Store
-- [ ] Create launch announcement
-- [ ] Set up GitHub Discussions
-- [ ] Create product page (optional)
-- [ ] Social media presence (optional)
+- [ ] **Improve Encryption** (P1 - 4 hours)
+  - Generate per-user random encryption keys
+  - Store keys in chrome.storage.local
+  - Update key derivation to use user-specific data
 
-#### Post-Launch (Week 3-4)
-- [ ] Monitor initial user feedback
-- [ ] Fix critical bugs (if any)
-- [ ] Respond to reviews
-- [ ] Create FAQ based on user questions
-- [ ] Plan v1.1 features
+- [ ] **Add Input Validation** (P2 - 4 hours)
+  - Validate email, phone, address formats
+  - Prevent ReDoS attacks in custom patterns
+  - Add max length limits
 
-**Free Tier Features (v1.0.0):**
-- ✅ Identity aliasing (name, email, phone, address)
-- ✅ Multiple profiles (unlimited)
-- ✅ Multi-service support (ChatGPT, Claude, Gemini, Perplexity, Poe, Copilot, You.com)
-- ✅ Local AES-256-GCM encryption
-- ✅ Usage statistics and activity log
-- ✅ Protection status badge
-- ✅ Dark mode UI
+- [ ] **Sanitize Debug Logs** (P3 - 2 hours)
+  - Remove PII from console.log statements
+  - Use DEBUG_MODE flag consistently
 
-**Success Metrics:**
-- 100+ installs in first month
-- 4+ star average rating
-- <1% crash rate
-- <5% uninstall rate
+**Deliverable:** Security-hardened codebase ready for beta testing
+
+**Success Criteria:**
+- ✅ No XSS vulnerabilities in audit
+- ✅ No localStorage usage in codebase
+- ✅ All security tests passing
+- ✅ External security review (optional but recommended)
 
 ---
 
-### 🎁 v1.1.0 - Pro Features Launch
-**Target Date:** December 2024
+### 🔐 Phase 2: Authentication & User Management (NEW - Week 2-3)
+**Target Date:** November 15-30, 2024
+**Status:** 📋 Planned
+**Estimated Time:** 7-10 days
+
+**Infrastructure Decision:** Firebase Authentication (Recommended)
+
+**Why Firebase:**
+- Fast implementation (5-7 days vs 10-14 days self-hosted)
+- Scales automatically
+- $0 infrastructure cost initially (free tier: 50k MAU)
+- Built-in OAuth (Google, GitHub, Email)
+- Secure by default
+
+**Implementation Tasks:**
+- [ ] **Set Up Firebase Project** (Day 1)
+  - Create Firebase project
+  - Configure authentication providers (Google, Email)
+  - Set up Firestore database
+  - Configure security rules
+
+- [ ] **Implement Auth Flow** (Day 2-4)
+  - Add login/signup UI in popup
+  - Integrate Firebase Auth SDK
+  - Handle OAuth flows (Google sign-in)
+  - Store auth state in chrome.storage.local
+  - Add logout functionality
+
+- [ ] **Tier Verification** (Day 5-6)
+  - Create users collection in Firestore
+  - Store tier info (free/pro) per user
+  - Implement checkPROFeature() function
+  - Add upgrade prompts for PRO features
+
+- [ ] **User Profile Management** (Day 7)
+  - Display user email/name in popup
+  - Show current tier (free/pro)
+  - Add account settings page
+
+- [ ] **Testing** (Day 8-9)
+  - Test login/logout flows
+  - Test tier verification
+  - Test offline behavior
+  - Handle auth errors gracefully
+
+**Deliverable:** Working authentication system with free/PRO tier enforcement
+
+**Success Criteria:**
+- ✅ Users can sign up and log in
+- ✅ Tier info synced from Firestore
+- ✅ PRO features properly gated
+- ✅ Auth persists across browser restarts
+
+**Cost:** $0/month (free tier sufficient for first 1,000 users)
+
+---
+
+### 💳 Phase 3: Payment Integration (NEW - Week 3-4)
+**Target Date:** November 30 - December 7, 2024
+**Status:** 📋 Planned
+**Estimated Time:** 5-7 days
+
+**Payment Provider:** Stripe
+
+**Pricing:**
+- PRO: $4.99/month or $49/year (save 17%)
+- Free trial: 7 days
+- Cancel anytime
+
+**Implementation Tasks:**
+- [ ] **Set Up Stripe** (Day 1)
+  - Create Stripe account
+  - Create products and prices
+  - Configure test mode
+  - Get API keys
+
+- [ ] **Checkout Flow** (Day 2-3)
+  - Add "Upgrade to PRO" button in popup
+  - Implement Stripe Checkout integration
+  - Open checkout in new tab
+  - Handle success/cancel redirects
+
+- [ ] **Webhook Handler** (Day 4)
+  - Create Firebase Cloud Function for webhook
+  - Handle checkout.session.completed event
+  - Update user tier in Firestore
+  - Send confirmation email (optional)
+
+- [ ] **Subscription Management** (Day 5)
+  - Add "Manage Subscription" link
+  - Open Stripe Customer Portal
+  - Allow users to cancel/update payment
+
+- [ ] **Testing** (Day 6-7)
+  - Test checkout flow (test mode)
+  - Test webhook handler
+  - Test tier updates
+  - Test subscription cancellation
+
+**Deliverable:** Complete payment system with subscription management
+
+**Success Criteria:**
+- ✅ Users can purchase PRO subscription
+- ✅ Tier updates automatically after payment
+- ✅ Users can manage subscriptions
+- ✅ Stripe webhooks processed correctly
+
+**Cost:**
+- Stripe fees: 2.9% + $0.30 per transaction
+- Firebase Cloud Functions: $0 (free tier: 2M invocations/month)
+
+---
+
+### 🧪 Phase 4: Beta Testing (NEW - Week 4-5)
+**Target Date:** December 7-21, 2024
+**Status:** 📋 Planned
+**Estimated Time:** 7-14 days
+
+**Beta Program Setup:**
+- [ ] **Community Infrastructure** (Day 1-2)
+  - Create Discord server (channels: #announcements, #support, #bugs, #features)
+  - Configure GitHub Issues with templates
+  - Enable GitHub Discussions
+  - Set up support email (support@promptblocker.com)
+
+- [ ] **Recruit Beta Testers** (Day 3-4)
+  - Post on Reddit (r/privacy, r/ChatGPT, r/chrome_extensions)
+  - Post on Twitter/X
+  - Post on Indie Hackers
+  - Target: 10-20 beta testers
+
+- [ ] **Beta Testing Period** (Day 5-14)
+  - Distribute extension (private Chrome Web Store link)
+  - Monitor Discord for bug reports
+  - Track issues in GitHub
+  - Fix critical bugs within 24 hours
+  - Weekly check-ins with testers
+
+- [ ] **Feedback Collection**
+  - Create feedback form (Google Forms or Typeform)
+  - Add in-app feedback button
+  - Conduct user interviews (optional)
+
+- [ ] **Compatibility Testing**
+  - Test on Windows 10, 11
+  - Test on macOS (Intel and Apple Silicon)
+  - Test on Linux (Ubuntu)
+  - Test on Chrome 120, 121, 122
+
+**Deliverable:** Beta-tested extension with real-world validation
+
+**Success Criteria:**
+- ✅ 10+ beta testers actively using extension
+- ✅ <5 critical bugs reported
+- ✅ Works on all major OS (Windows, macOS, Linux)
+- ✅ 80%+ positive feedback
+
+---
+
+### 🚀 Phase 5: CI/CD & Automation (NEW - Week 5-6)
+**Target Date:** December 14-21, 2024
+**Status:** 📋 Planned
+**Estimated Time:** 3-5 days
+
+**Automation Tasks:**
+- [ ] **GitHub Actions Workflow** (Day 1-2)
+  - Create test.yml workflow (run tests on push/PR)
+  - Create build.yml workflow (build on tag)
+  - Create deploy.yml workflow (upload to Chrome Web Store)
+  - Add test coverage reporting (Codecov)
+
+- [ ] **Chrome Web Store Automation** (Day 3)
+  - Install chrome-webstore-upload package
+  - Get Chrome Web Store API credentials
+  - Configure automatic upload on tagged releases
+  - Test deployment to test channel
+
+- [ ] **Version Management** (Day 4)
+  - Set up semantic versioning
+  - Create CHANGELOG.md automation
+  - Tag releases properly (v1.0.0, v1.1.0, etc.)
+
+- [ ] **Documentation** (Day 5)
+  - Document deployment process
+  - Create release checklist
+  - Update CONTRIBUTING.md with CI/CD info
+
+**Deliverable:** Fully automated deployment pipeline
+
+**Success Criteria:**
+- ✅ Tests run automatically on every commit
+- ✅ Builds deploy automatically on tagged releases
+- ✅ No manual steps in deployment process
+
+---
+
+### 🎉 Phase 6: Chrome Web Store Launch (REVISED - Week 6-7)
+**Target Date:** December 21-31, 2024
+**Status:** 📋 Planned
+**Estimated Time:** 5-7 days (includes review wait time)
+
+**Pre-Launch Checklist:**
+- [ ] **Chrome Web Store Developer Account** ($5 one-time fee)
+
+- [ ] **Prepare Listing Assets** (Day 1-2)
+  - Take 5 screenshots (1280x800 or 640x400)
+    - Screenshot 1: Main popup with profile
+    - Screenshot 2: Protection status badge (green)
+    - Screenshot 3: Stats tab showing substitutions
+    - Screenshot 4: Features hub (PRO features)
+    - Screenshot 5: Settings tab
+  - Create 3 promotional images:
+    - Small: 440x280
+    - Medium: 920x680
+    - Large: 1400x560
+  - Write compelling description (132 char summary + full description)
+  - Add privacy policy link
+  - Add support email
+
+- [ ] **Final Testing** (Day 3)
+  - Run full test suite
+  - Manual testing on all supported services
+  - Check for console errors
+  - Verify PRO features properly gated
+
+- [ ] **Submit for Review** (Day 4)
+  - Upload extension package
+  - Fill out store listing
+  - Submit for review
+  - Estimated review time: 1-5 days
+
+- [ ] **Address Feedback** (Day 5-7)
+  - Respond to any rejection feedback
+  - Fix issues and resubmit if needed
+  - Monitor review status
+
+**Deliverable:** Live extension on Chrome Web Store 🎉
+
+**Success Criteria:**
+- ✅ Extension approved and published
+- ✅ No critical bugs in first 48 hours
+- ✅ 10+ installs in first week
+
+---
+
+## 🎁 v1.1.0 - Feature Expansion (REVISED)
+**Target Date:** January 2025
 **Status:** 📋 Planned
 
 **Focus:** Unlock PRO tier features for paying users
