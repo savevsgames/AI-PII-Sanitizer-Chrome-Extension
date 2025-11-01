@@ -5,7 +5,7 @@
 
 import { useAppStore } from '../../lib/store';
 import { AliasProfile } from '../../lib/types';
-import { escapeHtml, formatRelativeTime } from './utils';
+import { escapeHtml } from './utils';
 import { openProfileModal, showDeleteConfirmation } from './profileModal';
 
 /**
@@ -68,9 +68,25 @@ export function renderProfiles(profiles: AliasProfile[]) {
         `);
       }
 
-      const lastUsed = profile.metadata.usageStats.lastUsed
-        ? formatRelativeTime(profile.metadata.usageStats.lastUsed)
-        : 'Never';
+      // Calculate total enabled variations
+      let totalVariations = 0;
+      if (profile.variations?.real) {
+        Object.keys(profile.variations.real).forEach((field) => {
+          const autoVariations = profile.variations?.real[field] || [];
+          const disabledVariations = profile.disabledVariations?.real?.[field] || [];
+          totalVariations += autoVariations.filter(v => !disabledVariations.includes(v)).length;
+        });
+      }
+      if (profile.customVariations?.real) {
+        Object.keys(profile.customVariations.real).forEach((field) => {
+          const customVars = profile.customVariations?.real[field] || [];
+          totalVariations += customVars.filter(v => v.enabled).length;
+        });
+      }
+
+      const variationsText = profile.settings?.enableVariations
+        ? `🔄 ${totalVariations} variation${totalVariations !== 1 ? 's' : ''} active`
+        : '🔄 Variations disabled';
 
       return `
         <div class="profile-card ${!profile.enabled ? 'disabled' : ''}">
@@ -93,7 +109,7 @@ export function renderProfiles(profiles: AliasProfile[]) {
             ${mappings.join('')}
           </div>
           <div class="profile-meta">
-            Used: ${profile.metadata.usageStats.totalSubstitutions} times | Last: ${lastUsed}
+            ${variationsText}
           </div>
         </div>
       `;
