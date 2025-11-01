@@ -217,12 +217,28 @@ For detailed browser compatibility information, see [Launch Roadmap](docs/curren
 - [x] Live pattern testing
 - [x] Usage stats and match tracking
 
-### 🚧 Phase 4: Service Testing & Polish (Current)
+### 🚧 Phase 4: Final Polish & Production Ready (Current)
+**Goal:** Fix critical UX issues and polish protection status system
+**Document:** [FINAL_DEV_PHASE.md](FINAL_DEV_PHASE.md)
+
+**Critical Fixes:**
+- [ ] Fix badge accuracy with HEALTH_CHECK updates
+- [ ] Fix PROTECTION_LOST notification with proper tab ID
+- [ ] Fix disabled extension modal bug
+
+**UX Improvements:**
+- [ ] Prominent hard refresh notification in modal
+- [ ] Auto-reload AI service tabs on extension update
+- [ ] Visual protection indicator with badge color alignment
+
+**Service Testing:**
 - [ ] Verify all 7 AI services (ChatGPT ✅, Claude ✅, Gemini, Perplexity, Poe, Copilot, You.com)
 - [ ] Edge case testing
 - [ ] Performance optimization
 - [ ] Remove debug logs (production mode)
 - [ ] Chrome Web Store submission prep
+
+**Timeline:** 2-3 days (fixes) + 1-2 weeks (service testing)
 
 ### 🔜 Phase 5-7: Enhanced Features (Planned)
 - [ ] **Alias Variations**: Auto-detect GregBarker, gregbarker, gbarker
@@ -233,9 +249,10 @@ For detailed browser compatibility information, see [Launch Roadmap](docs/curren
 
 ### 📅 Timeline
 - **Phase 1-3:** Complete ✅
-- **Phase 4:** 1-2 weeks
+- **Phase 4 (Critical Fixes):** 2-3 days (Current)
+- **Phase 4 (Service Testing):** 1-2 weeks
 - **Phase 5-7:** 3-4 weeks
-- **Total to Chrome Web Store launch:** ~2 weeks
+- **Total to Chrome Web Store launch:** ~2-3 weeks
 
 For detailed roadmap and browser compatibility plans, see [Launch Roadmap](docs/current/launch_roadmap.md).
 

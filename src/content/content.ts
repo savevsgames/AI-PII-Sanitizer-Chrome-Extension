@@ -6,14 +6,21 @@
  * inject.js (page) → window.postMessage → content.ts → chrome.runtime.sendMessage → background.ts
  */
 
-// Inject the fetch interceptor script into page context
-const script = document.createElement('script');
-script.src = chrome.runtime.getURL('inject.js');
-script.onload = () => {
-  script.remove();
-  console.log('🛡️ AI PII Sanitizer: Injector loaded');
-};
-(document.head || document.documentElement).appendChild(script);
+// Guard against multiple injections (happens when extension is reloaded)
+if ((window as any).__AI_PII_CONTENT_INJECTED__) {
+  console.warn('⚠️ AI PII Sanitizer content script already injected - skipping duplicate injection');
+} else {
+  (window as any).__AI_PII_CONTENT_INJECTED__ = true;
+
+  // Inject the fetch interceptor script into page context
+  const script = document.createElement('script');
+  script.src = chrome.runtime.getURL('inject.js');
+  script.onload = () => {
+    script.remove();
+    console.log('🛡️ AI PII Sanitizer: Injector loaded');
+  };
+  (document.head || document.documentElement).appendChild(script);
+}
 
 /**
  * Show auto-activation toast when visiting protected pages
@@ -145,20 +152,24 @@ window.addEventListener('message', async (event) => {
         isAlive: true
       }, '*');
     } catch (error) {
-      // Extension context invalidated - notify background to update badge
-      console.error('❌ Health check failed - extension context lost');
+      // Extension context invalidated - page will be auto-reloaded by background
+      // Suppress error logging during reload to avoid console spam
+      const errorMsg = error instanceof Error ? error.message : String(error);
+
+      // Only log if this is NOT a context invalidation (which is expected during reload)
+      if (!errorMsg.includes('Extension context invalidated')) {
+        console.warn('⚠️ Health check failed:', errorMsg);
+      }
 
       // Try to notify background (might fail if context lost)
+      // Note: Background will get tabId from message sender
       try {
-        const tab = await chrome.tabs.getCurrent();
-        if (tab?.id) {
-          await chrome.runtime.sendMessage({
-            type: 'PROTECTION_LOST',
-            tabId: tab.id
-          });
-        }
+        await chrome.runtime.sendMessage({
+          type: 'PROTECTION_LOST'
+          // No tabId - background will extract from sender.tab.id
+        });
       } catch (e) {
-        console.error('Cannot notify background - context lost');
+        // Silently fail - page will auto-reload anyway
       }
 
       // Extension context invalidated or background not responding
