@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabNavigation();
   initKeyboardShortcuts();
   initTheme();
-  initUI();
+  await initUI(); // Wait for auth redirect check
   await loadInitialData();
 
   // TEMPORARY: Test Firebase connection
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 /**
  * Initialize UI components
  */
-function initUI() {
+async function initUI() {
   initProfileModal();
   initActivityLog();
   initSettingsHandlers();
@@ -50,7 +50,7 @@ function initUI() {
   initPageStatus();
   initFeaturesTab();
   initAPIKeyModal();
-  initAuthModal();
+  await initAuthModal(); // Check for Google Sign-In redirect
   initUserProfile();
 
   console.log('[Popup V2] UI initialized');

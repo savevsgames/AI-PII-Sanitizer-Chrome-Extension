@@ -6,7 +6,8 @@
 
 import { auth } from '../../lib/firebase';
 import {
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -22,7 +23,7 @@ let currentMode: 'signin' | 'signup' | 'reset' = 'signin';
 /**
  * Initialize authentication modal
  */
-export function initAuthModal() {
+export async function initAuthModal() {
   const modal = document.getElementById('authModal');
   if (!modal) {
     console.error('[Auth Modal] Modal not found');
@@ -30,6 +31,9 @@ export function initAuthModal() {
   }
 
   currentModal = modal;
+
+  // Check for redirect result from Google Sign-In
+  await checkRedirectResult();
 
   // Modal close handlers
   const closeBtn = document.getElementById('authModalClose');
@@ -145,34 +149,28 @@ function switchMode(mode: 'signin' | 'signup' | 'reset') {
 }
 
 /**
- * Handle Google Sign-In
+ * Handle Google Sign-In (using redirect for Chrome extension compatibility)
  */
 async function handleGoogleSignIn() {
   const googleSignInBtn = document.getElementById('googleSignInBtn') as HTMLButtonElement;
 
   try {
-    console.log('[Auth] Starting Google Sign-In...');
-    setLoading(googleSignInBtn, true, 'Signing in...');
+    console.log('[Auth] Starting Google Sign-In with redirect...');
+    setLoading(googleSignInBtn, true, 'Redirecting...');
     clearErrorMessages();
 
     const provider = new GoogleAuthProvider();
-    console.log('[Auth] Opening Google OAuth popup...');
 
-    const result = await signInWithPopup(auth, provider);
+    // Use redirect instead of popup (Chrome extension CSP compatible)
+    await signInWithRedirect(auth, provider);
 
-    console.log('[Auth] Google sign-in successful:', result.user.uid);
-    console.log('[Auth] User email:', result.user.email);
-
-    // Update store with user info
-    await onAuthSuccess(result.user);
-
-    closeAuthModal();
+    // The page will redirect and come back, handled by checkRedirectResult()
+    console.log('[Auth] Redirect initiated');
   } catch (error: any) {
     console.error('[Auth] Google sign-in error:', error);
     console.error('[Auth] Error code:', error.code);
     console.error('[Auth] Error message:', error.message);
     showError('googleSignInError', getAuthErrorMessage(error));
-  } finally {
     setLoading(googleSignInBtn, false, 'Continue with Google');
   }
 }
@@ -483,4 +481,35 @@ function getAuthErrorMessage(error: any): string {
   };
 
   return errorMessages[code] || 'Authentication error. Please try again.';
+}
+
+/**
+ * Check for redirect result after Google Sign-In
+ */
+async function checkRedirectResult() {
+  try {
+    console.log('[Auth] Checking for redirect result...');
+    const result = await getRedirectResult(auth);
+
+    if (result) {
+      console.log('[Auth] Google sign-in successful via redirect:', result.user.uid);
+      console.log('[Auth] User email:', result.user.email);
+
+      // Update store with user info
+      await onAuthSuccess(result.user);
+
+      console.log('[Auth] User authenticated and synced');
+    } else {
+      console.log('[Auth] No redirect result found');
+    }
+  } catch (error: any) {
+    console.error('[Auth] Redirect result error:', error);
+    console.error('[Auth] Error code:', error.code);
+    console.error('[Auth] Error message:', error.message);
+
+    // Show error in modal if it's open
+    if (currentModal && !currentModal.classList.contains('hidden')) {
+      showError('googleSignInError', getAuthErrorMessage(error));
+    }
+  }
 }
