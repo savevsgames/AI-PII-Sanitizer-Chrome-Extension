@@ -8,6 +8,7 @@ import { useAppStore } from '../../lib/store';
 import { chromeApi } from '../api/chromeApi';
 import { RULE_TEMPLATES } from '../../lib/ruleTemplates';
 import { RedactionEngine } from '../../lib/redactionEngine';
+import { escapeHtml } from './utils';
 
 /**
  * Render custom rules list
