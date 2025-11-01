@@ -212,7 +212,7 @@ chrome.runtime.onMessage.addListener(
  */
 async function handleMessage(message: Message, sender: chrome.runtime.MessageSender): Promise<any> {
   switch (message.type) {
-    case 'HEALTH_CHECK':
+    case 'HEALTH_CHECK': {
       // Health check also reports protection status back to tab
       const senderTabId = message.tabId || sender?.tab?.id;
 
@@ -231,8 +231,9 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
       }
 
       return { success: true, status: 'ok' };
+    }
 
-    case 'PROTECTION_LOST':
+    case 'PROTECTION_LOST': {
       // Get tabId from message sender (content.ts doesn't have access to chrome.tabs.getCurrent)
       const tabId = message.tabId || sender?.tab?.id;
       if (tabId) {
@@ -242,8 +243,9 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
         console.warn('[Badge] PROTECTION_LOST received but no tabId available');
       }
       return { success: true };
+    }
 
-    case 'DISABLE_EXTENSION':
+    case 'DISABLE_EXTENSION': {
       console.log('[Background] User requested extension disable');
 
       // Update config to disable extension
@@ -271,6 +273,7 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
       }
 
       return { success: true };
+    }
 
     case 'SUBSTITUTE_REQUEST':
       return handleSubstituteRequest(message.payload);

@@ -164,20 +164,22 @@ function renderFeatureAction(isLocked: boolean, isComingSoon: boolean, isAccessi
  */
 function getFeatureStats(featureId: string, config: UserConfig): Array<{ icon: string; value: string | number; label: string }> {
   switch (featureId) {
-    case 'api-key-vault':
+    case 'api-key-vault': {
       const keyCount = config.apiKeyVault?.keys?.length || 0;
       const protectionCount = config.apiKeyVault?.keys?.reduce((sum, key) => sum + key.protectionCount, 0) || 0;
       return keyCount > 0 ? [
         { icon: '🔑', value: keyCount, label: keyCount === 1 ? 'key' : 'keys' },
         { icon: '🛡️', value: protectionCount, label: 'blocks' }
       ] : [];
-    case 'custom-rules':
+    }
+    case 'custom-rules': {
       const ruleCount = config.customRules?.rules?.length || 0;
       const totalMatches = config.customRules?.rules?.reduce((sum, rule) => sum + rule.matchCount, 0) || 0;
       return ruleCount > 0 ? [
         { icon: '🎯', value: ruleCount, label: ruleCount === 1 ? 'rule' : 'rules' },
         { icon: '✅', value: totalMatches, label: 'matches' }
       ] : [];
+    }
     default:
       return [];
   }
@@ -424,7 +426,7 @@ function renderFeatureContent(featureId: string): string {
  */
 function initFeatureHandlers(featureId: string) {
   switch (featureId) {
-    case 'api-key-vault':
+    case 'api-key-vault': {
       initAPIKeyVaultUI();
       // Render keys from current config
       const state = useAppStore.getState();
@@ -433,7 +435,8 @@ function initFeatureHandlers(featureId: string) {
       }
       console.log('[Features Tab] API Key Vault handlers ready');
       break;
-    case 'custom-rules':
+    }
+    case 'custom-rules': {
       initCustomRulesUI();
       // Render rules from current config
       const customRulesState = useAppStore.getState();
@@ -442,6 +445,7 @@ function initFeatureHandlers(featureId: string) {
       }
       console.log('[Features Tab] Custom Rules handlers ready');
       break;
+    }
     default:
       break;
   }
