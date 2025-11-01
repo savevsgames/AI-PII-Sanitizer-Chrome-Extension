@@ -4,6 +4,7 @@
  */
 
 import { UserConfig, AliasProfile } from '../../lib/types';
+import { escapeHtml } from './utils';
 
 /**
  * Service icon mapping
@@ -272,11 +273,4 @@ function formatNumber(num: number): string {
   return num.toLocaleString();
 }
 
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+// escapeHtml now imported from './utils'
