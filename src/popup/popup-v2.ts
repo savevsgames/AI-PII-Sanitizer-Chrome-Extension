@@ -15,6 +15,7 @@ import { initPageStatus } from './components/pageStatus';
 import { initFeaturesTab, renderFeaturesHub } from './components/featuresTab';
 import { initAPIKeyModal } from './components/apiKeyModal';
 import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/initUI';
+import { testFirebaseConnection } from './test-firebase-popup';
 
 // ========== INITIALIZATION ==========
 
@@ -24,6 +25,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
   initUI();
   await loadInitialData();
+
+  // TEMPORARY: Test Firebase connection
+  // TODO: Remove after verification
+  if (process.env.NODE_ENV === 'development') {
+    setTimeout(() => {
+      console.log('\n🔥 Running Firebase connection test...\n');
+      testFirebaseConnection();
+    }, 2000); // Wait 2 seconds for popup to fully load
+  }
 });
 
 /**
