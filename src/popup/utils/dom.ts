@@ -7,9 +7,65 @@
  * Use this whenever inserting user-generated content into innerHTML
  */
 export function escapeHtml(text: string): string {
+  if (text === null || text === undefined) return '';
   const div = document.createElement('div');
-  div.textContent = text;
+  div.textContent = String(text);
   return div.innerHTML;
+}
+
+/**
+ * Safely render HTML template with escaped user data
+ * @param template - Template literal string
+ * @param data - Object with values to escape
+ * @returns Safe HTML string with escaped values
+ *
+ * @example
+ * const html = safeHTML('<div>${name}</div>', { name: userInput });
+ */
+export function safeHTML(
+  template: string,
+  data: Record<string, string | number | boolean | null | undefined>
+): string {
+  let result = template;
+  for (const [key, value] of Object.entries(data)) {
+    const escaped = value === null || value === undefined
+      ? ''
+      : typeof value === 'string'
+        ? escapeHtml(value)
+        : String(value);
+    result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), escaped);
+  }
+  return result;
+}
+
+/**
+ * Safely map array items to HTML with automatic escaping
+ * @param items - Array of items to render
+ * @param renderFn - Function that returns HTML template for each item
+ * @param escapeFields - Fields to escape (user-controlled data)
+ * @returns Safe HTML string
+ *
+ * @example
+ * const html = safeMap(
+ *   profiles,
+ *   (p) => `<div>${p.name}</div>`,
+ *   ['name'] // Escape 'name' field
+ * );
+ */
+export function safeMap<T extends Record<string, any>>(
+  items: T[],
+  renderFn: (item: T) => string,
+  escapeFields: (keyof T)[]
+): string {
+  return items.map(item => {
+    const escaped = { ...item };
+    escapeFields.forEach(field => {
+      if (typeof escaped[field] === 'string') {
+        escaped[field] = escapeHtml(escaped[field]);
+      }
+    });
+    return renderFn(escaped);
+  }).join('');
 }
 
 /**
