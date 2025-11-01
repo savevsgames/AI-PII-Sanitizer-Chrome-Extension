@@ -8,6 +8,7 @@ import { useAppStore } from '../../lib/store';
 import { chromeApi } from '../api/chromeApi';
 import { RULE_TEMPLATES } from '../../lib/ruleTemplates';
 import { RedactionEngine } from '../../lib/redactionEngine';
+import { escapeHtml } from './utils';
 
 /**
  * Render custom rules list
@@ -229,14 +230,7 @@ function formatDate(timestamp: number): string {
   return date.toLocaleDateString();
 }
 
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+// escapeHtml now imported from './utils'
 
 /**
  * Attach event listeners to rule cards

@@ -114,13 +114,14 @@ export class APIKeyDetector {
         case 'full':
           replacement = '[REDACTED_API_KEY]';
           break;
-        case 'partial':
+        case 'partial': {
           // Show first 4 and last 4 chars
           const visible = 4;
           const start = key.value.substring(0, visible);
           const end = key.value.substring(key.value.length - visible);
           replacement = `${start}${'•'.repeat(Math.max(0, key.value.length - visible * 2))}${end}`;
           break;
+        }
         case 'placeholder':
           replacement = `[${key.format.toUpperCase()}_KEY]`;
           break;
