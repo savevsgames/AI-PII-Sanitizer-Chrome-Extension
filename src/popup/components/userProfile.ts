@@ -103,7 +103,7 @@ function showAuthenticatedUI(user: User) {
 
   // Update user info
   const userEmail = document.getElementById('userEmail');
-  const userAvatar = document.getElementById('userAvatar');
+  const userAvatar = document.getElementById('userAvatar') as HTMLImageElement;
   const userInitials = document.getElementById('userInitials');
 
   if (userEmail) userEmail.textContent = user.email || 'Unknown';
