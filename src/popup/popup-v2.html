@@ -6,6 +6,7 @@
   <title>PromptBlocker.com</title>
   <link rel="stylesheet" href="popup-v2.css">
   <link rel="stylesheet" href="styles/custom-rules.css">
+  <link rel="stylesheet" href="styles/auth.css">
 </head>
 <body>
   <!-- Minimal Mode -->
@@ -33,6 +34,52 @@
       <div class="header-content">
         <h1>🛡️ PromptBlocker.com</h1>
         <div class="header-actions">
+          <!-- Sign-In Button (shown when not authenticated) -->
+          <div class="header-signin-container" id="headerSignInContainer">
+            <button class="btn btn-sm btn-primary" id="headerSignInBtn">
+              <span class="btn-icon">👤</span>
+              Sign In
+            </button>
+          </div>
+
+          <!-- User Profile (shown when authenticated) -->
+          <div class="header-user-container hidden" id="headerUserProfileContainer">
+            <div class="user-profile-dropdown">
+              <button class="user-profile-btn" id="userMenuBtn">
+                <img class="user-avatar hidden" id="userAvatar" alt="User avatar">
+                <div class="user-initials" id="userInitials">U</div>
+                <span class="user-tier-badge" id="headerTierBadge">FREE</span>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div class="user-dropdown hidden" id="userDropdown">
+                <div class="user-dropdown-header">
+                  <div class="user-dropdown-email" id="userEmail">user@example.com</div>
+                  <span class="user-tier-badge" id="dropdownTierBadge">FREE</span>
+                </div>
+
+                <div class="user-dropdown-divider"></div>
+
+                <button class="user-dropdown-item" id="accountSettingsBtn">
+                  <span class="dropdown-icon">⚙️</span>
+                  Account Settings
+                </button>
+
+                <button class="user-dropdown-item" id="manageBillingBtn">
+                  <span class="dropdown-icon">💳</span>
+                  Manage Billing
+                </button>
+
+                <div class="user-dropdown-divider"></div>
+
+                <button class="user-dropdown-item user-dropdown-signout" id="signOutBtn">
+                  <span class="dropdown-icon">🚪</span>
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="status-indicator" id="statusIndicator">
             <span class="status-dot active"></span>
             <span class="status-text">Active</span>
@@ -744,6 +791,121 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="deleteCancel">Cancel</button>
         <button type="button" class="btn btn-danger" id="deleteConfirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authentication Modal -->
+  <div class="modal hidden" id="authModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content modal-medium">
+      <div class="modal-header">
+        <h3 id="authModalTitle">Sign In</h3>
+        <button class="modal-close" id="authModalClose">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Sign-In View -->
+        <div class="auth-view" id="signInView">
+          <!-- Google Sign-In -->
+          <button class="btn btn-google btn-block" id="googleSignInBtn">
+            <span class="btn-icon">🔐</span>
+            Continue with Google
+          </button>
+
+          <div class="auth-divider">
+            <span>or</span>
+          </div>
+
+          <!-- Email/Password Sign-In -->
+          <div class="form-section">
+            <div class="form-group">
+              <label for="authEmail">Email</label>
+              <input type="email" id="authEmail" placeholder="your@email.com" autocomplete="email">
+            </div>
+
+            <div class="form-group">
+              <label for="authPassword">Password</label>
+              <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
+            </div>
+
+            <div class="form-error hidden" id="emailSignInError"></div>
+            <div class="form-error hidden" id="googleSignInError"></div>
+
+            <button class="btn btn-primary btn-block" id="emailSignInBtn">Sign In</button>
+
+            <div class="auth-links">
+              <button class="btn-link" id="showPasswordReset">Forgot password?</button>
+              <span class="auth-separator">•</span>
+              <button class="btn-link" id="showSignUp">Create account</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sign-Up View -->
+        <div class="auth-view hidden" id="signUpView">
+          <!-- Google Sign-In -->
+          <button class="btn btn-google btn-block" id="googleSignUpBtn">
+            <span class="btn-icon">🔐</span>
+            Continue with Google
+          </button>
+
+          <div class="auth-divider">
+            <span>or</span>
+          </div>
+
+          <!-- Email/Password Sign-Up -->
+          <div class="form-section">
+            <div class="form-group">
+              <label for="signUpEmail">Email</label>
+              <input type="email" id="signUpEmail" placeholder="your@email.com" autocomplete="email">
+            </div>
+
+            <div class="form-group">
+              <label for="signUpPassword">Password</label>
+              <input type="password" id="signUpPassword" placeholder="At least 6 characters" autocomplete="new-password">
+            </div>
+
+            <div class="form-group">
+              <label for="signUpConfirmPassword">Confirm Password</label>
+              <input type="password" id="signUpConfirmPassword" placeholder="••••••••" autocomplete="new-password">
+            </div>
+
+            <div class="form-error hidden" id="emailSignUpError"></div>
+
+            <button class="btn btn-primary btn-block" id="emailSignUpBtn">Create Account</button>
+
+            <div class="auth-links">
+              <span>Already have an account?</span>
+              <button class="btn-link" id="showSignIn">Sign in</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Password Reset View -->
+        <div class="auth-view hidden" id="passwordResetView">
+          <p class="auth-hint">Enter your email address and we'll send you a link to reset your password.</p>
+
+          <div class="form-section">
+            <div class="form-group">
+              <label for="resetEmail">Email</label>
+              <input type="email" id="resetEmail" placeholder="your@email.com" autocomplete="email">
+            </div>
+
+            <div class="form-error hidden" id="resetEmailError"></div>
+            <div class="form-success hidden" id="resetEmailSuccess"></div>
+
+            <button class="btn btn-primary btn-block" id="sendResetEmailBtn">Send Reset Email</button>
+
+            <div class="auth-links">
+              <button class="btn-link" id="backToSignIn">Back to sign in</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="authModalCancel">Cancel</button>
       </div>
     </div>
   </div>

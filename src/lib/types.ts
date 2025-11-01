@@ -139,6 +139,10 @@ export interface UserConfig {
     tier: 'free' | 'pro' | 'enterprise';
     syncEnabled: boolean;        // Cloud sync (Pro feature, v3.0)
     discordId?: string;          // Optional Discord link for community
+    // Firebase Auth fields
+    firebaseUid?: string;        // Firebase user ID
+    displayName?: string;        // User's display name from Firebase
+    photoURL?: string;           // User's photo URL from Firebase/Google
   };
 
   // Global settings

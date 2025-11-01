@@ -14,6 +14,8 @@ import { initMinimalMode, loadModePreference, updateMinimalView } from './compon
 import { initPageStatus } from './components/pageStatus';
 import { initFeaturesTab, renderFeaturesHub } from './components/featuresTab';
 import { initAPIKeyModal } from './components/apiKeyModal';
+import { initAuthModal } from './components/authModal';
+import { initUserProfile } from './components/userProfile';
 import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/initUI';
 import { testFirebaseConnection } from './test-firebase-popup';
 
@@ -47,6 +49,8 @@ function initUI() {
   initPageStatus();
   initFeaturesTab();
   initAPIKeyModal();
+  initAuthModal();
+  initUserProfile();
 
   console.log('[Popup V2] UI initialized');
 }
