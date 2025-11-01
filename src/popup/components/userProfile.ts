@@ -68,12 +68,21 @@ async function onUserSignedIn(user: User) {
   // Update UI to show user info
   showAuthenticatedUI(user);
 
-  // Load user's tier from Firestore
+  // Sync user to Firestore and load tier
   const store = useAppStore.getState();
-  await store.loadUserTier();
 
-  // Update tier badge
-  updateTierBadge();
+  try {
+    // First sync user to Firestore (creates document if doesn't exist)
+    await store.syncUserToFirestore(user);
+
+    // Then load tier (now Firebase UID will be set)
+    await store.loadUserTier();
+
+    // Update tier badge
+    updateTierBadge();
+  } catch (error) {
+    console.error('[User Profile] Error syncing user:', error);
+  }
 }
 
 /**

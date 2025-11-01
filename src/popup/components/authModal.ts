@@ -151,12 +151,17 @@ async function handleGoogleSignIn() {
   const googleSignInBtn = document.getElementById('googleSignInBtn') as HTMLButtonElement;
 
   try {
+    console.log('[Auth] Starting Google Sign-In...');
     setLoading(googleSignInBtn, true, 'Signing in...');
+    clearErrorMessages();
 
     const provider = new GoogleAuthProvider();
+    console.log('[Auth] Opening Google OAuth popup...');
+
     const result = await signInWithPopup(auth, provider);
 
     console.log('[Auth] Google sign-in successful:', result.user.uid);
+    console.log('[Auth] User email:', result.user.email);
 
     // Update store with user info
     await onAuthSuccess(result.user);
@@ -164,6 +169,8 @@ async function handleGoogleSignIn() {
     closeAuthModal();
   } catch (error: any) {
     console.error('[Auth] Google sign-in error:', error);
+    console.error('[Auth] Error code:', error.code);
+    console.error('[Auth] Error message:', error.message);
     showError('googleSignInError', getAuthErrorMessage(error));
   } finally {
     setLoading(googleSignInBtn, false, 'Continue with Google');
