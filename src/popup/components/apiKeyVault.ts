@@ -6,6 +6,7 @@
 import { APIKey, APIKeyVaultConfig, UserConfig } from '../../lib/types';
 import { useAppStore } from '../../lib/store';
 import { chromeApi } from '../api/chromeApi';
+import { escapeHtml } from './utils';
 
 /**
  * Render API keys list with project grouping
@@ -300,14 +301,7 @@ function formatDate(timestamp: number): string {
   return date.toLocaleDateString();
 }
 
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+// escapeHtml now imported from './utils'
 
 /**
  * Toggle API key enabled state

@@ -7,6 +7,7 @@ import { useAppStore } from '../../lib/store';
 import { renderAPIKeys } from './apiKeyVault';
 import { chromeApi } from '../api/chromeApi';
 import { APIKeyDetector } from '../../lib/apiKeyDetector';
+import { escapeHtml } from './utils';
 
 interface ParsedEnvKey {
   name: string;
@@ -431,11 +432,4 @@ function maskKey(key: string): string {
   return key.slice(0, 8) + '...' + key.slice(-6);
 }
 
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+// escapeHtml now imported from './utils'
