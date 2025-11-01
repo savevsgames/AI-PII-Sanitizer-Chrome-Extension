@@ -230,14 +230,7 @@ function formatDate(timestamp: number): string {
   return date.toLocaleDateString();
 }
 
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+// escapeHtml now imported from './utils'
 
 /**
  * Attach event listeners to rule cards
