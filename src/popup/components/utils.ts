@@ -3,22 +3,15 @@
  * Helper functions used across popup components
  */
 
+// Re-export escapeHtml from centralized DOM utilities
+export { escapeHtml, safeHTML, safeMap } from '../utils/dom';
+
 /**
  * Validate email format
  */
 export function isValidEmail(email: string): boolean {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email);
-}
-
-/**
- * Escape HTML to prevent XSS
- * IMPORTANT: Use this on all user-generated content before innerHTML
- */
-export function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 /**
