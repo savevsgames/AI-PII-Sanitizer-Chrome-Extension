@@ -115,6 +115,42 @@ const fn = (a: number, b: number) => a + b;
 
 **See:** Rule #4 above for examples
 
+### 6. `no-restricted-properties` - localStorage Protection
+
+**Rule:** Prevents use of `localStorage.getItem()`, `setItem()`, `removeItem()`, and `clear()`
+
+**Why:** localStorage is not sandboxed and stores data unencrypted. In Chrome extensions, this can leak sensitive data to malicious websites or other extensions.
+
+**Error Messages:**
+```
+⚠️ SECURITY: localStorage is not sandboxed and unencrypted.
+Use chrome.storage.local instead for Chrome extensions.
+```
+
+**Correct Usage:**
+```typescript
+// ❌ WRONG - localStorage in Chrome extension
+localStorage.setItem('userData', JSON.stringify(profile));
+const data = localStorage.getItem('userData');
+
+// ✅ CORRECT - Use chrome.storage.local
+await chrome.storage.local.set({ userData: profile });
+const { userData } = await chrome.storage.local.get('userData');
+
+// ✅ BETTER - Use StorageManager (provides encryption)
+import { StorageManager } from './lib/storage';
+const storage = StorageManager.getInstance();
+await storage.saveConfig(config);
+const config = await storage.loadConfig();
+```
+
+**Why chrome.storage is better:**
+1. **Sandboxed** - Isolated per extension, no cross-extension leaks
+2. **Encrypted** - Can use AES-256-GCM encryption (StorageManager does this)
+3. **Type-safe** - Works with objects directly, no JSON.parse needed
+4. **No quota issues** - localStorage is limited to ~5MB, chrome.storage.local is ~5MB per item
+5. **Async** - Non-blocking, won't freeze UI
+
 ## Helper Functions
 
 ### `escapeHtml(text: string): string`
@@ -273,16 +309,27 @@ All 46 test cases validate these attacks are neutralized.
 }
 ```
 
-## Phase 1.5 Completion ✅
+## Phase 1.5 & 1.6 Completion ✅
 
-- ✅ ESLint configured with security rules
-- ✅ innerHTML protection active
-- ✅ No security rule violations in codebase
+### Phase 1.5: ESLint Security Rules
+- ✅ ESLint configured with XSS prevention rules
+- ✅ innerHTML protection active (catches unsafe assignments)
+- ✅ document.write/eval/Function constructor blocked
+- ✅ No XSS-related violations in codebase
+
+### Phase 1.6: Chrome Storage Migration
+- ✅ Verified NO localStorage usage in codebase
+- ✅ All storage uses chrome.storage.local (via StorageManager)
+- ✅ Added ESLint rule to prevent future localStorage usage
+- ✅ StorageManager provides AES-256-GCM encryption
+
+### Test Results
 - ✅ All 151 tests passing
 - ✅ TypeScript compiles cleanly
-- ✅ Documentation complete
+- ✅ ESLint: 0 errors, 70 warnings (only 'any' type warnings)
+- ✅ No security rule violations
 
-**Next Steps:** Phase 1.6 - Replace localStorage with chrome.storage
+**Next Steps:** Phase 1.7 - Improve encryption key derivation
 
 ---
 

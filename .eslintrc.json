@@ -35,6 +35,26 @@
         "object": "document",
         "property": "writeln",
         "message": "⚠️ SECURITY: document.writeln() can cause XSS vulnerabilities. Use createElement() and textContent instead."
+      },
+      {
+        "object": "localStorage",
+        "property": "getItem",
+        "message": "⚠️ SECURITY: localStorage is not sandboxed and unencrypted. Use chrome.storage.local instead for Chrome extensions."
+      },
+      {
+        "object": "localStorage",
+        "property": "setItem",
+        "message": "⚠️ SECURITY: localStorage is not sandboxed and unencrypted. Use chrome.storage.local instead for Chrome extensions."
+      },
+      {
+        "object": "localStorage",
+        "property": "removeItem",
+        "message": "⚠️ SECURITY: localStorage is not sandboxed and unencrypted. Use chrome.storage.local instead for Chrome extensions."
+      },
+      {
+        "object": "localStorage",
+        "property": "clear",
+        "message": "⚠️ SECURITY: localStorage is not sandboxed and unencrypted. Use chrome.storage.local instead for Chrome extensions."
       }
     ],
     "no-eval": "error",
