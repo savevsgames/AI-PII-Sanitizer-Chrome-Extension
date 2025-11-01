@@ -909,28 +909,33 @@ export class StorageManager {
 
   /**
    * Get or generate encryption key
+   * Uses randomly generated per-user key material stored in chrome.storage
+   * This is more secure than using chrome.runtime.id (which is public/predictable)
    */
   private async getEncryptionKey(): Promise<CryptoKey> {
-    // Use extension ID as key material
-    const keyMaterial = chrome.runtime.id;
     const encoder = new TextEncoder();
-    const keyData = encoder.encode(keyMaterial);
+
+    // Get or generate unique key material for this user
+    const keyMaterial = await this.getOrGenerateKeyMaterial();
 
     // Import raw key material
     const importedKey = await crypto.subtle.importKey(
       'raw',
-      keyData,
+      encoder.encode(keyMaterial),
       'PBKDF2',
       false,
       ['deriveKey']
     );
 
-    // Derive AES key
+    // Get or generate unique salt for this user
+    const salt = await this.getOrGenerateSalt();
+
+    // Derive AES key with strong parameters
     return crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt: encoder.encode('ai-pii-sanitizer-salt'),
-        iterations: 100000,
+        salt: encoder.encode(salt),
+        iterations: 210000, // Increased from 100k (OWASP 2023 recommendation)
         hash: 'SHA-256',
       },
       importedKey,
@@ -938,6 +943,55 @@ export class StorageManager {
       false,
       ['encrypt', 'decrypt']
     );
+  }
+
+  /**
+   * Get or generate random key material unique to this user
+   * Stored in chrome.storage (not encrypted, as it's used for encryption)
+   */
+  private async getOrGenerateKeyMaterial(): Promise<string> {
+    const STORAGE_KEY = '_encryptionKeyMaterial';
+
+    // Try to load existing key material
+    const data = await chrome.storage.local.get(STORAGE_KEY);
+
+    if (data[STORAGE_KEY]) {
+      return data[STORAGE_KEY];
+    }
+
+    // Generate new random key material (256 bits = 32 bytes)
+    const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+    const keyMaterial = this.arrayBufferToBase64(randomBytes);
+
+    // Store for future use
+    await chrome.storage.local.set({ [STORAGE_KEY]: keyMaterial });
+
+    console.log('[StorageManager] Generated new encryption key material');
+    return keyMaterial;
+  }
+
+  /**
+   * Get or generate random salt unique to this user
+   */
+  private async getOrGenerateSalt(): Promise<string> {
+    const STORAGE_KEY = '_encryptionSalt';
+
+    // Try to load existing salt
+    const data = await chrome.storage.local.get(STORAGE_KEY);
+
+    if (data[STORAGE_KEY]) {
+      return data[STORAGE_KEY];
+    }
+
+    // Generate new random salt (128 bits = 16 bytes)
+    const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+    const salt = this.arrayBufferToBase64(randomBytes);
+
+    // Store for future use
+    await chrome.storage.local.set({ [STORAGE_KEY]: salt });
+
+    console.log('[StorageManager] Generated new encryption salt');
+    return salt;
   }
 
   /**
