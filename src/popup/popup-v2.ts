@@ -17,7 +17,7 @@ import { initAPIKeyModal } from './components/apiKeyModal';
 import { initAuthModal } from './components/authModal';
 import { initUserProfile } from './components/userProfile';
 import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/initUI';
-import { testFirebaseConnection } from './test-firebase-popup';
+// import { testFirebaseConnection } from './test-firebase-popup'; // Disabled - interferes with auth
 
 // ========== INITIALIZATION ==========
 
@@ -30,12 +30,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // TEMPORARY: Test Firebase connection
   // TODO: Remove after verification
-  if (process.env.NODE_ENV === 'development') {
-    setTimeout(() => {
-      console.log('\n🔥 Running Firebase connection test...\n');
-      testFirebaseConnection();
-    }, 2000); // Wait 2 seconds for popup to fully load
-  }
+  // DISABLED: Interferes with authentication flow
+  // if (process.env.NODE_ENV === 'development') {
+  //   setTimeout(() => {
+  //     console.log('\n🔥 Running Firebase connection test...\n');
+  //     testFirebaseConnection();
+  //   }, 2000); // Wait 2 seconds for popup to fully load
+  // }
 });
 
 /**
