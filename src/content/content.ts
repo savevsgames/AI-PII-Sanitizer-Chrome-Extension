@@ -582,9 +582,39 @@ function showNotProtectedModal(): Promise<'reload' | 'disable'> {
           </button>
         </div>
 
-        <p style="margin: 16px 0 0 0; color: #a0aec0; font-size: 12px;">
-          Press Ctrl+Shift+R for hard refresh
-        </p>
+        <div style="
+          margin: 20px 0 0 0;
+          padding: 14px 18px;
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+          border-radius: 10px;
+          border: 1.5px solid rgba(102, 126, 234, 0.35);
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        ">
+          <p style="
+            margin: 0;
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.6;
+          ">
+            💡 <strong>Pro Tip:</strong> Press
+            <kbd style="
+              display: inline-block;
+              background: rgba(102, 126, 234, 0.25);
+              padding: 4px 10px;
+              margin: 0 4px;
+              border-radius: 6px;
+              font-family: 'Courier New', Consolas, monospace;
+              font-size: 13px;
+              font-weight: 700;
+              border: 1px solid rgba(102, 126, 234, 0.4);
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+              color: #5a67d8;
+            ">Ctrl+Shift+R</kbd>
+            for a hard refresh to restore protection
+          </p>
+        </div>
       </div>
     `;
 
@@ -660,11 +690,29 @@ function showNotProtectedModal(): Promise<'reload' | 'disable'> {
     // ESC key to default to reload (safer default)
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        document.removeEventListener('keydown', handleEscape);
+        cleanup();
         handleReload();
       }
     };
 
+    // Ctrl+Shift+R for hard refresh (as mentioned in the hint)
+    const handleCtrlShiftR = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === 'R' || e.key === 'r')) {
+        console.log('⌨️ User pressed Ctrl+Shift+R - triggering hard reload');
+        e.preventDefault(); // Prevent default browser hard refresh
+        cleanup();
+        // Use location.reload(true) for hard refresh (bypasses cache)
+        window.location.reload();
+      }
+    };
+
+    // Cleanup function to remove event listeners
+    const cleanup = () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleCtrlShiftR);
+    };
+
     document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleCtrlShiftR);
   });
 }
