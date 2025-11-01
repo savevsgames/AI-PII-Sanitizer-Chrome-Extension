@@ -58,13 +58,13 @@ export function safeMap<T extends Record<string, any>>(
   escapeFields: (keyof T)[]
 ): string {
   return items.map(item => {
-    const escaped = { ...item };
+    const escaped = { ...item } as any;
     escapeFields.forEach(field => {
       if (typeof escaped[field] === 'string') {
-        escaped[field] = escapeHtml(escaped[field]);
+        escaped[field] = escapeHtml(escaped[field] as string);
       }
     });
-    return renderFn(escaped);
+    return renderFn(escaped as T);
   }).join('');
 }
 
