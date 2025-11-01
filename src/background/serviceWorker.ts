@@ -10,6 +10,8 @@ import { APIKeyDetector } from '../lib/apiKeyDetector';
 import { extractAllText, replaceAllText } from '../lib/textProcessor';
 import { redactionEngine } from '../lib/redactionEngine';
 
+// Debug mode - set to false for production to reduce log spam
+const DEBUG_MODE = false;
 
 // ========== BADGE MANAGEMENT ==========
 
@@ -43,28 +45,45 @@ function isAIServiceURL(url: string | undefined): boolean {
 /**
  * Update extension badge based on protection state
  */
+// Track last badge state per tab to avoid log spam
+const badgeStateCache = new Map<number, ProtectionState>();
+
 async function updateBadge(tabId: number, state: ProtectionState): Promise<void> {
   try {
+    // Check if state changed (only log changes, not every health check)
+    const lastState = badgeStateCache.get(tabId);
+    const stateChanged = lastState !== state;
+
+    if (stateChanged) {
+      badgeStateCache.set(tabId, state);
+    }
+
     switch (state) {
       case 'protected':
         await chrome.action.setBadgeText({ tabId, text: '✓' });
         await chrome.action.setBadgeBackgroundColor({ tabId, color: '#10B981' }); // Green
         await chrome.action.setTitle({ tabId, title: 'AI PII Sanitizer - Protected ✓' });
-        console.log(`[Badge] Tab ${tabId}: PROTECTED (Green)`);
+        if (DEBUG_MODE || stateChanged) {
+          console.log(`[Badge] Tab ${tabId}: PROTECTED (Green)`);
+        }
         break;
 
       case 'unprotected':
         await chrome.action.setBadgeText({ tabId, text: '!' });
         await chrome.action.setBadgeBackgroundColor({ tabId, color: '#EF4444' }); // Red
         await chrome.action.setTitle({ tabId, title: 'AI PII Sanitizer - NOT PROTECTED! Click to reload page' });
-        console.log(`[Badge] Tab ${tabId}: UNPROTECTED (Red)`);
+        if (DEBUG_MODE || stateChanged) {
+          console.log(`[Badge] Tab ${tabId}: UNPROTECTED (Red)`);
+        }
         break;
 
       case 'disabled':
         await chrome.action.setBadgeText({ tabId, text: '' });
         await chrome.action.setBadgeBackgroundColor({ tabId, color: '#6B7280' }); // Grey
         await chrome.action.setTitle({ tabId, title: 'AI PII Sanitizer - Disabled' });
-        console.log(`[Badge] Tab ${tabId}: DISABLED (No badge)`);
+        if (DEBUG_MODE || stateChanged) {
+          console.log(`[Badge] Tab ${tabId}: DISABLED (No badge)`);
+        }
         break;
     }
   } catch (error) {
@@ -80,7 +99,9 @@ async function checkAndUpdateBadge(tabId: number, url?: string): Promise<void> {
     // Clear badge for non-AI service pages
     if (!isAIServiceURL(url)) {
       await chrome.action.setBadgeText({ tabId, text: '' });
-      console.log(`[Badge] Tab ${tabId}: Not an AI service, badge cleared`);
+      if (DEBUG_MODE) {
+        console.log(`[Badge] Tab ${tabId}: Not an AI service, badge cleared`);
+      }
       return;
     }
 
@@ -88,11 +109,13 @@ async function checkAndUpdateBadge(tabId: number, url?: string): Promise<void> {
     const storage = StorageManager.getInstance();
     const config = await storage.loadConfig();
 
-    console.log(`[Badge] Config check for tab ${tabId}:`, {
-      hasConfig: !!config,
-      hasSettings: !!config?.settings,
-      enabled: config?.settings?.enabled
-    });
+    if (DEBUG_MODE) {
+      console.log(`[Badge] Config check for tab ${tabId}:`, {
+        hasConfig: !!config,
+        hasSettings: !!config?.settings,
+        enabled: config?.settings?.enabled
+      });
+    }
 
     if (!config?.settings?.enabled) {
       await updateBadge(tabId, 'disabled');
@@ -194,7 +217,9 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
       const senderTabId = message.tabId || sender?.tab?.id;
 
       if (senderTabId) {
-        console.log(`[Badge] Health check passed for tab ${senderTabId}`);
+        if (DEBUG_MODE) {
+          console.log(`[Badge] Health check passed for tab ${senderTabId}`);
+        }
 
         // Update badge to protected (health checks are passing)
         const storage = StorageManager.getInstance();
