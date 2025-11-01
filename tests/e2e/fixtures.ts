@@ -5,11 +5,14 @@
 
 import { test as base, chromium, BrowserContext } from '@playwright/test';
 import path from 'path';
+import fs from 'fs';
+import os from 'os';
 
 // Type definition for our custom fixtures
 type ExtensionFixtures = {
   context: BrowserContext;
   extensionId: string;
+  page: any; // Override default page fixture
 };
 
 /**
@@ -22,17 +25,35 @@ export const test = base.extend<ExtensionFixtures>({
     // Path to the built extension (dist folder)
     const pathToExtension = path.join(__dirname, '../../dist');
 
-    const context = await chromium.launchPersistentContext('', {
+    // Create a temporary directory for user data
+    const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playwright-'));
+
+    const context = await chromium.launchPersistentContext(userDataDir, {
       headless: false,
       args: [
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
         '--no-sandbox',
+        '--disable-dev-shm-usage',
       ],
     });
 
     await use(context);
     await context.close();
+
+    // Clean up temporary directory
+    try {
+      fs.rmSync(userDataDir, { recursive: true, force: true });
+    } catch (error) {
+      // Ignore cleanup errors
+    }
+  },
+
+  // Provide a page from our custom context
+  page: async ({ context }, use) => {
+    const page = await context.newPage();
+    await use(page);
+    await page.close();
   },
 
   // Extract extension ID from background page

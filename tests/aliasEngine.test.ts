@@ -39,9 +39,16 @@ describe('AliasEngine', () => {
 
   describe('substitute', () => {
     test('substitutes single name', () => {
-      // Manually add aliases for testing
-      (engine as any).realToAliasMap.set('joe smith', 'John Doe');
-      (engine as any).aliasToRealMap.set('john doe', 'Joe Smith');
+      // Manually add aliases for testing - need PIIMapping objects, not simple strings
+      const mapping = {
+        real: 'Joe Smith',
+        alias: 'John Doe',
+        profileId: 'test-profile-1',
+        profileName: 'Test Profile',
+        piiType: 'name' as const,
+      };
+      (engine as any).realToAliasMap.set('joe smith', mapping);
+      (engine as any).aliasToRealMap.set('john doe', mapping);
 
       const result = engine.substitute('Hello Joe Smith', 'encode');
       expect(result.text).toBe('Hello John Doe');
@@ -49,29 +56,57 @@ describe('AliasEngine', () => {
     });
 
     test('preserves case - uppercase', () => {
-      (engine as any).realToAliasMap.set('joe smith', 'John Doe');
+      const mapping = {
+        real: 'Joe Smith',
+        alias: 'John Doe',
+        profileId: 'test-profile-1',
+        profileName: 'Test Profile',
+        piiType: 'name' as const,
+      };
+      (engine as any).realToAliasMap.set('joe smith', mapping);
 
       const result = engine.substitute('JOE SMITH is here', 'encode');
       expect(result.text).toBe('JOHN DOE is here');
     });
 
     test('preserves case - lowercase', () => {
-      (engine as any).realToAliasMap.set('joe smith', 'John Doe');
+      const mapping = {
+        real: 'Joe Smith',
+        alias: 'John Doe',
+        profileId: 'test-profile-1',
+        profileName: 'Test Profile',
+        piiType: 'name' as const,
+      };
+      (engine as any).realToAliasMap.set('joe smith', mapping);
 
       const result = engine.substitute('joe smith is here', 'encode');
       expect(result.text).toBe('john doe is here');
     });
 
     test('handles possessives', () => {
-      (engine as any).realToAliasMap.set('joe smith', 'John Doe');
+      const mapping = {
+        real: 'Joe Smith',
+        alias: 'John Doe',
+        profileId: 'test-profile-1',
+        profileName: 'Test Profile',
+        piiType: 'name' as const,
+      };
+      (engine as any).realToAliasMap.set('joe smith', mapping);
 
       const result = engine.substitute("Joe Smith's car", 'encode');
       expect(result.text).toContain("John Doe's");
     });
 
     test('bidirectional substitution', () => {
-      (engine as any).realToAliasMap.set('joe smith', 'John Doe');
-      (engine as any).aliasToRealMap.set('john doe', 'Joe Smith');
+      const mapping = {
+        real: 'Joe Smith',
+        alias: 'John Doe',
+        profileId: 'test-profile-1',
+        profileName: 'Test Profile',
+        piiType: 'name' as const,
+      };
+      (engine as any).realToAliasMap.set('joe smith', mapping);
+      (engine as any).aliasToRealMap.set('john doe', mapping);
 
       const encoded = engine.substitute('Meet Joe Smith', 'encode');
       expect(encoded.text).toBe('Meet John Doe');
@@ -81,8 +116,22 @@ describe('AliasEngine', () => {
     });
 
     test('handles multiple names', () => {
-      (engine as any).realToAliasMap.set('joe smith', 'John Doe');
-      (engine as any).realToAliasMap.set('sarah chen', 'Emma Wilson');
+      const mapping1 = {
+        real: 'Joe Smith',
+        alias: 'John Doe',
+        profileId: 'test-profile-1',
+        profileName: 'Test Profile',
+        piiType: 'name' as const,
+      };
+      const mapping2 = {
+        real: 'Sarah Chen',
+        alias: 'Emma Wilson',
+        profileId: 'test-profile-2',
+        profileName: 'Test Profile 2',
+        piiType: 'name' as const,
+      };
+      (engine as any).realToAliasMap.set('joe smith', mapping1);
+      (engine as any).realToAliasMap.set('sarah chen', mapping2);
 
       const result = engine.substitute(
         'Joe Smith and Sarah Chen are friends',
@@ -95,7 +144,14 @@ describe('AliasEngine', () => {
     });
 
     test('does not substitute partial matches', () => {
-      (engine as any).realToAliasMap.set('joe', 'John');
+      const mapping = {
+        real: 'Joe',
+        alias: 'John',
+        profileId: 'test-profile-1',
+        profileName: 'Test Profile',
+        piiType: 'name' as const,
+      };
+      (engine as any).realToAliasMap.set('joe', mapping);
 
       const result = engine.substitute('Joelle went to see Joey', 'encode');
 
@@ -106,7 +162,14 @@ describe('AliasEngine', () => {
 
   describe('findPII', () => {
     test('finds PII in text', () => {
-      (engine as any).realToAliasMap.set('joe smith', 'John Doe');
+      const mapping = {
+        real: 'Joe Smith',
+        alias: 'John Doe',
+        profileId: 'test-profile-1',
+        profileName: 'Test Profile',
+        piiType: 'name' as const,
+      };
+      (engine as any).realToAliasMap.set('joe smith', mapping);
 
       const matches = engine.findPII('Hello Joe Smith, how are you?');
 
@@ -116,8 +179,22 @@ describe('AliasEngine', () => {
     });
 
     test('finds multiple PII instances', () => {
-      (engine as any).realToAliasMap.set('joe smith', 'John Doe');
-      (engine as any).realToAliasMap.set('sarah chen', 'Emma Wilson');
+      const mapping1 = {
+        real: 'Joe Smith',
+        alias: 'John Doe',
+        profileId: 'test-profile-1',
+        profileName: 'Test Profile',
+        piiType: 'name' as const,
+      };
+      const mapping2 = {
+        real: 'Sarah Chen',
+        alias: 'Emma Wilson',
+        profileId: 'test-profile-2',
+        profileName: 'Test Profile 2',
+        piiType: 'name' as const,
+      };
+      (engine as any).realToAliasMap.set('joe smith', mapping1);
+      (engine as any).realToAliasMap.set('sarah chen', mapping2);
 
       const matches = engine.findPII('Joe Smith met Sarah Chen yesterday');
 
