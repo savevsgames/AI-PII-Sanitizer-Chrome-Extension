@@ -6,6 +6,7 @@
 import { useAppStore } from '../../lib/store';
 import { AliasProfile } from '../../lib/types';
 import { isValidEmail } from './utils';
+import { generateIdentityVariations } from '../../lib/aliasVariations';
 
 // Track currently editing profile ID
 let currentEditingProfileId: string | null = null;
@@ -56,6 +57,26 @@ export function initProfileModal() {
   realEmailInput?.addEventListener('blur', () => validateEmailField(realEmailInput));
   aliasEmailInput?.addEventListener('blur', () => validateEmailField(aliasEmailInput));
 
+  // Variations list toggle
+  const toggleVariationsBtn = document.getElementById('toggleVariationsList');
+  toggleVariationsBtn?.addEventListener('click', toggleVariationsList);
+
+  // Generate variations button
+  const generateVariationsBtn = document.getElementById('generateVariationsBtn');
+  generateVariationsBtn?.addEventListener('click', regenerateVariations);
+
+  // Enable variations toggle - show/hide management section
+  const enableVariationsCheckbox = document.getElementById('enableVariations') as HTMLInputElement;
+  enableVariationsCheckbox?.addEventListener('change', (e) => {
+    const enabled = (e.target as HTMLInputElement).checked;
+    const managementSection = document.getElementById('variationsManagementSection');
+    if (enabled && currentEditingProfileId) {
+      managementSection?.classList.remove('hidden');
+    } else {
+      managementSection?.classList.add('hidden');
+    }
+  });
+
   console.log('[Profile Modal] Initialized');
 }
 
@@ -67,6 +88,7 @@ export function openProfileModal(mode: 'create' | 'edit', profile?: AliasProfile
   const modalTitle = document.getElementById('modalTitle');
   const modalDelete = document.getElementById('modalDelete');
   const form = document.getElementById('profileForm') as HTMLFormElement;
+  const variationsManagementSection = document.getElementById('variationsManagementSection');
 
   if (!modal || !modalTitle || !modalDelete || !form) return;
 
@@ -78,8 +100,11 @@ export function openProfileModal(mode: 'create' | 'edit', profile?: AliasProfile
     modalTitle.textContent = 'Create Profile';
     modalDelete.classList.add('hidden');
     form.reset();
-    // Default enable toggle to checked
+    // Default enable toggles to checked
     (document.getElementById('profileEnabled') as HTMLInputElement).checked = true;
+    (document.getElementById('enableVariations') as HTMLInputElement).checked = true;
+    // Hide variations management section in create mode
+    variationsManagementSection?.classList.add('hidden');
   } else {
     modalTitle.textContent = 'Edit Profile';
     modalDelete.classList.remove('hidden');
@@ -133,8 +158,22 @@ function populateForm(profile: AliasProfile) {
   (document.getElementById('aliasAddress') as HTMLInputElement).value = profile.alias.address || '';
   (document.getElementById('aliasCompany') as HTMLInputElement).value = profile.alias.company || '';
 
-  // Enable toggle
+  // Enable toggles
   (document.getElementById('profileEnabled') as HTMLInputElement).checked = profile.enabled;
+  (document.getElementById('enableVariations') as HTMLInputElement).checked =
+    profile.settings?.enableVariations ?? true;
+
+  // Show variations management section if variations enabled
+  const variationsManagementSection = document.getElementById('variationsManagementSection');
+  if (profile.settings?.enableVariations ?? true) {
+    variationsManagementSection?.classList.remove('hidden');
+    // Always render variations management (even if empty, user can generate)
+    renderVariationsManagement(profile);
+    // Update hint text
+    updateVariationsHintText();
+  } else {
+    variationsManagementSection?.classList.add('hidden');
+  }
 }
 
 /**
@@ -163,6 +202,9 @@ function getFormData() {
       custom: {},
     },
     enabled: (document.getElementById('profileEnabled') as HTMLInputElement).checked,
+    settings: {
+      enableVariations: (document.getElementById('enableVariations') as HTMLInputElement).checked,
+    },
   };
 }
 
@@ -259,8 +301,8 @@ async function saveProfile() {
     const store = useAppStore.getState();
 
     if (currentEditingProfileId) {
-      // Update existing profile
-      await store.updateProfile(currentEditingProfileId, formData);
+      // Update existing profile - cast to any to allow partial settings
+      await store.updateProfile(currentEditingProfileId, formData as any);
       console.log('[Profile Modal] Profile updated:', currentEditingProfileId);
     } else {
       // Create new profile
@@ -335,5 +377,482 @@ async function confirmDeleteProfile() {
   } catch (error) {
     console.error('[Profile Modal] Error deleting profile:', error);
     alert('Error deleting profile. Please try again.');
+  }
+}
+
+/**
+ * Toggle variations list visibility
+ */
+function toggleVariationsList() {
+  const listContainer = document.getElementById('variationsListContainer');
+  const toggleIcon = document.getElementById('variationsToggleIcon');
+  const toggleText = document.getElementById('variationsToggleText');
+
+  if (!listContainer || !toggleIcon || !toggleText) return;
+
+  if (listContainer.classList.contains('hidden')) {
+    listContainer.classList.remove('hidden');
+    toggleIcon.classList.add('expanded');
+    toggleText.textContent = 'Hide variations';
+  } else {
+    listContainer.classList.add('hidden');
+    toggleIcon.classList.remove('expanded');
+    toggleText.textContent = 'Show variations';
+  }
+}
+
+/**
+ * Render variations management UI
+ */
+function renderVariationsManagement(profile: AliasProfile) {
+  const container = document.getElementById('variationsByField');
+  if (!container) {
+    console.warn('[Profile Modal] variationsByField container not found');
+    return;
+  }
+
+  console.log('[Profile Modal] Rendering variations for profile:', {
+    profileId: profile.id,
+    hasVariations: !!profile.variations,
+    variationsReal: profile.variations?.real,
+    variationsAlias: profile.variations?.alias,
+  });
+
+  // Clear existing content
+  container.innerHTML = '';
+
+  // Map of field names to display labels
+  const fieldLabels: Record<string, string> = {
+    name: '👤 Name',
+    email: '📧 Email',
+    phone: '📞 Phone',
+    cellPhone: '📱 Cell Phone',
+    address: '🏠 Address',
+    company: '🏢 Company',
+  };
+
+  // Combine auto-generated and custom variations
+  const allFields = new Set([
+    ...Object.keys(profile.variations?.real || {}),
+    ...Object.keys(profile.customVariations?.real || {}),
+  ]);
+
+  console.log('[Profile Modal] Fields with variations:', Array.from(allFields));
+
+  // Show empty state if no variations
+  if (allFields.size === 0) {
+    const emptyState = document.createElement('div');
+    emptyState.style.cssText = 'padding: var(--space-lg); text-align: center; color: var(--text-secondary);';
+    emptyState.innerHTML = `
+      <p style="margin: 0 0 var(--space-sm) 0;">No variations generated yet.</p>
+      <p style="margin: 0; font-size: var(--font-size-sm);">Click "Generate Variations" to create variations from your profile data.</p>
+    `;
+    container.appendChild(emptyState);
+    return;
+  }
+
+  allFields.forEach((field) => {
+    const autoVariations = profile.variations?.real[field] || [];
+    const customVariations = profile.customVariations?.real[field] || [];
+    const disabledVariations = profile.disabledVariations?.real[field] || [];
+
+    if (autoVariations.length === 0 && customVariations.length === 0) return;
+
+    const fieldGroup = document.createElement('div');
+    fieldGroup.className = 'variation-field-group';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'variation-field-header';
+    const totalEnabled = autoVariations.filter(v => !disabledVariations.includes(v)).length +
+                         customVariations.filter(v => v.enabled).length;
+    const totalCount = autoVariations.length + customVariations.length;
+
+    header.innerHTML = `
+      <div class="variation-field-title">
+        ${fieldLabels[field] || field}
+        <span class="badge">${totalEnabled}/${totalCount}</span>
+      </div>
+    `;
+    fieldGroup.appendChild(header);
+
+    // Items container
+    const itemsContainer = document.createElement('div');
+    itemsContainer.className = 'variation-items';
+
+    // Render auto-generated variations
+    autoVariations.forEach((variation) => {
+      const enabled = !disabledVariations.includes(variation);
+      const item = createVariationItem(variation, 'auto', field, enabled);
+      itemsContainer.appendChild(item);
+    });
+
+    // Render custom variations (editable)
+    customVariations.forEach((varObj) => {
+      const item = createVariationItem(varObj.value, 'custom', field, varObj.enabled);
+      itemsContainer.appendChild(item);
+    });
+
+    fieldGroup.appendChild(itemsContainer);
+
+    // Add variation form
+    const addForm = createAddVariationForm(field);
+    fieldGroup.appendChild(addForm);
+
+    container.appendChild(fieldGroup);
+  });
+}
+
+/**
+ * Create a single variation item element
+ */
+function createVariationItem(text: string, type: 'auto' | 'custom', field: string, enabled: boolean = true): HTMLElement {
+  const item = document.createElement('div');
+  item.className = `variation-item ${!enabled ? 'disabled' : ''}`;
+
+  // Toggle switch
+  const toggleLabel = document.createElement('label');
+  toggleLabel.className = 'variation-toggle';
+
+  const toggleInput = document.createElement('input');
+  toggleInput.type = 'checkbox';
+  toggleInput.checked = enabled;
+  toggleInput.addEventListener('change', (e) => {
+    const isEnabled = (e.target as HTMLInputElement).checked;
+    toggleVariation(field, text, type, isEnabled);
+  });
+
+  const toggleSlider = document.createElement('span');
+  toggleSlider.className = 'variation-toggle-slider';
+
+  toggleLabel.appendChild(toggleInput);
+  toggleLabel.appendChild(toggleSlider);
+  item.appendChild(toggleLabel);
+
+  // Text content
+  const textContainer = document.createElement('div');
+  textContainer.style.display = 'flex';
+  textContainer.style.alignItems = 'center';
+  textContainer.style.flex = '1';
+
+  const textSpan = document.createElement('span');
+  textSpan.className = 'variation-item-text';
+  textSpan.textContent = text;
+  textContainer.appendChild(textSpan);
+
+  if (type === 'auto') {
+    const label = document.createElement('span');
+    label.className = 'variation-item-label';
+    label.textContent = 'auto';
+    textContainer.appendChild(label);
+  }
+
+  item.appendChild(textContainer);
+
+  // Action buttons
+  const actions = document.createElement('div');
+  actions.className = 'variation-item-actions';
+
+  if (type === 'custom') {
+    // Edit button
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-icon edit';
+    editBtn.innerHTML = '✏️';
+    editBtn.title = 'Edit variation';
+    editBtn.addEventListener('click', () => editCustomVariation(field, text));
+    actions.appendChild(editBtn);
+  }
+
+  // Delete button (available for both auto and custom, but auto just disables)
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'btn-icon delete';
+  deleteBtn.innerHTML = type === 'custom' ? '🗑️' : '✖️';
+  deleteBtn.title = type === 'custom' ? 'Delete variation' : 'Remove variation';
+  deleteBtn.addEventListener('click', () => {
+    if (type === 'custom') {
+      deleteCustomVariation(field, text);
+    } else {
+      // For auto-generated, just disable it
+      toggleVariation(field, text, type, false);
+    }
+  });
+  actions.appendChild(deleteBtn);
+
+  item.appendChild(actions);
+
+  return item;
+}
+
+/**
+ * Create add variation form
+ */
+function createAddVariationForm(field: string): HTMLElement {
+  const form = document.createElement('div');
+  form.className = 'add-variation-form';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'add-variation-input';
+  input.placeholder = `Add custom ${field} variation...`;
+  input.dataset.field = field;
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'btn-add-variation';
+  addBtn.textContent = '+ Add';
+  addBtn.addEventListener('click', () => {
+    const value = input.value.trim();
+    if (value) {
+      addCustomVariation(field, value);
+      input.value = '';
+    }
+  });
+
+  // Allow Enter key to add
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addBtn.click();
+    }
+  });
+
+  form.appendChild(input);
+  form.appendChild(addBtn);
+
+  return form;
+}
+
+/**
+ * Toggle a variation on/off
+ */
+function toggleVariation(field: string, value: string, type: 'auto' | 'custom', enabled: boolean) {
+  if (!currentEditingProfileId) return;
+
+  const store = useAppStore.getState();
+  const profile = store.profiles.find((p) => p.id === currentEditingProfileId);
+  if (!profile) return;
+
+  if (type === 'auto') {
+    // For auto-generated, add/remove from disabledVariations
+    if (!profile.disabledVariations) {
+      profile.disabledVariations = { real: {}, alias: {} };
+    }
+    if (!profile.disabledVariations.real[field]) {
+      profile.disabledVariations.real[field] = [];
+    }
+
+    if (enabled) {
+      // Remove from disabled list
+      profile.disabledVariations.real[field] = profile.disabledVariations.real[field].filter(v => v !== value);
+    } else {
+      // Add to disabled list
+      if (!profile.disabledVariations.real[field].includes(value)) {
+        profile.disabledVariations.real[field].push(value);
+      }
+    }
+
+    store.updateProfile(currentEditingProfileId, {
+      disabledVariations: profile.disabledVariations,
+    } as any);
+  } else {
+    // For custom, update the enabled flag
+    if (profile.customVariations?.real[field]) {
+      const varObj = profile.customVariations.real[field].find(v => v.value === value);
+      if (varObj) {
+        varObj.enabled = enabled;
+        store.updateProfile(currentEditingProfileId, {
+          customVariations: profile.customVariations,
+        } as any);
+      }
+    }
+  }
+
+  // Re-render
+  renderVariationsManagement(profile);
+  console.log('[Profile Modal] Toggled variation:', field, value, enabled);
+}
+
+/**
+ * Edit a custom variation
+ */
+function editCustomVariation(field: string, oldValue: string) {
+  const newValue = prompt('Edit variation:', oldValue);
+  if (!newValue || newValue.trim() === '') return;
+  if (newValue === oldValue) return;
+
+  if (!currentEditingProfileId) return;
+
+  const store = useAppStore.getState();
+  const profile = store.profiles.find((p) => p.id === currentEditingProfileId);
+  if (!profile || !profile.customVariations) return;
+
+  // Check for duplicates
+  const allVariations = [
+    ...(profile.variations?.real[field] || []),
+    ...(profile.customVariations.real[field]?.map(v => v.value) || []),
+  ];
+
+  if (allVariations.some((v) => v.toLowerCase() === newValue.toLowerCase() && v !== oldValue)) {
+    alert('This variation already exists!');
+    return;
+  }
+
+  // Update the variation
+  const varObj = profile.customVariations.real[field]?.find(v => v.value === oldValue);
+  if (varObj) {
+    varObj.value = newValue;
+    store.updateProfile(currentEditingProfileId, {
+      customVariations: profile.customVariations,
+    } as any);
+
+    // Re-render
+    renderVariationsManagement(profile);
+    console.log('[Profile Modal] Edited custom variation:', field, oldValue, '->', newValue);
+  }
+}
+
+/**
+ * Add a custom variation
+ */
+function addCustomVariation(field: string, value: string) {
+  if (!currentEditingProfileId) return;
+
+  const store = useAppStore.getState();
+  const profile = store.profiles.find((p) => p.id === currentEditingProfileId);
+  if (!profile) return;
+
+  // Initialize customVariations if not exists
+  if (!profile.customVariations) {
+    profile.customVariations = { real: {}, alias: {} };
+  }
+
+  // Initialize field array if not exists
+  if (!profile.customVariations.real[field]) {
+    profile.customVariations.real[field] = [];
+  }
+
+  // Check for duplicates
+  const allVariations = [
+    ...(profile.variations?.real[field] || []),
+    ...(profile.customVariations.real[field]?.map(v => v.value) || []),
+  ];
+
+  if (allVariations.some((v) => v.toLowerCase() === value.toLowerCase())) {
+    alert('This variation already exists!');
+    return;
+  }
+
+  // Add the variation (enabled by default)
+  profile.customVariations.real[field].push({ value, enabled: true });
+
+  // Update profile in store
+  store.updateProfile(currentEditingProfileId, {
+    customVariations: profile.customVariations,
+  } as any);
+
+  // Re-render
+  renderVariationsManagement(profile);
+  console.log('[Profile Modal] Added custom variation:', field, value);
+}
+
+/**
+ * Delete a custom variation
+ */
+function deleteCustomVariation(field: string, value: string) {
+  if (!currentEditingProfileId) return;
+
+  const store = useAppStore.getState();
+  const profile = store.profiles.find((p) => p.id === currentEditingProfileId);
+  if (!profile || !profile.customVariations) return;
+
+  // Remove the variation
+  const variations = profile.customVariations.real[field] || [];
+  const index = variations.findIndex((v) => v.value === value);
+  if (index !== -1) {
+    variations.splice(index, 1);
+
+    // Update profile in store
+    store.updateProfile(currentEditingProfileId, {
+      customVariations: profile.customVariations,
+    } as any);
+
+    // Re-render
+    renderVariationsManagement(profile);
+    console.log('[Profile Modal] Deleted custom variation:', field, value);
+  }
+}
+
+/**
+ * Update the variations hint text with actual examples from the profile
+ */
+function updateVariationsHintText() {
+  const hintElement = document.getElementById('variationsHintText');
+  if (!hintElement) return;
+
+  // Always use generic text - don't expose user data in hint
+  hintElement.textContent = 'Automatically detect different name formats and variations';
+}
+
+/**
+ * Regenerate auto-generated variations based on current profile data
+ */
+async function regenerateVariations() {
+  if (!currentEditingProfileId) return;
+
+  const store = useAppStore.getState();
+  const profile = store.profiles.find((p) => p.id === currentEditingProfileId);
+  if (!profile) return;
+
+  // Get current form data to use latest values
+  const formData = getFormData();
+
+  // Generate new variations from current real and alias data
+  const realVariations = generateIdentityVariations(formData.real);
+  const aliasVariations = generateIdentityVariations(formData.alias);
+
+  // Update profile with new variations
+  await store.updateProfile(currentEditingProfileId, {
+    real: formData.real,
+    alias: formData.alias,
+    variations: {
+      real: realVariations,
+      alias: aliasVariations,
+    },
+  } as any);
+
+  // Reload profile from store
+  const updatedProfile = store.profiles.find((p) => p.id === currentEditingProfileId);
+  if (updatedProfile) {
+    // Re-render variations list
+    renderVariationsManagement(updatedProfile);
+    updateVariationsHintText();
+
+    console.log('[Profile Modal] Regenerated variations:', {
+      real: Object.keys(realVariations).length,
+      alias: Object.keys(aliasVariations).length,
+    });
+
+    // Ensure variations list is visible
+    const listContainer = document.getElementById('variationsListContainer');
+    const toggleIcon = document.getElementById('variationsToggleIcon');
+    const toggleText = document.getElementById('variationsToggleText');
+
+    if (listContainer && listContainer.classList.contains('hidden')) {
+      listContainer.classList.remove('hidden');
+      toggleIcon?.classList.add('expanded');
+      if (toggleText) toggleText.textContent = 'Hide variations';
+    }
+
+    // Show success feedback
+    const btn = document.getElementById('generateVariationsBtn');
+    if (btn) {
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span>✓</span><span>Generated!</span>';
+      btn.classList.add('success');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('success');
+      }, 2000);
+    }
   }
 }

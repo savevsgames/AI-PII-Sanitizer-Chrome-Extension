@@ -6,14 +6,21 @@
  * inject.js (page) → window.postMessage → content.ts → chrome.runtime.sendMessage → background.ts
  */
 
-// Inject the fetch interceptor script into page context
-const script = document.createElement('script');
-script.src = chrome.runtime.getURL('inject.js');
-script.onload = () => {
-  script.remove();
-  console.log('🛡️ AI PII Sanitizer: Injector loaded');
-};
-(document.head || document.documentElement).appendChild(script);
+// Guard against multiple injections (happens when extension is reloaded)
+if ((window as any).__AI_PII_CONTENT_INJECTED__) {
+  console.warn('⚠️ AI PII Sanitizer content script already injected - skipping duplicate injection');
+} else {
+  (window as any).__AI_PII_CONTENT_INJECTED__ = true;
+
+  // Inject the fetch interceptor script into page context
+  const script = document.createElement('script');
+  script.src = chrome.runtime.getURL('inject.js');
+  script.onload = () => {
+    script.remove();
+    console.log('🛡️ AI PII Sanitizer: Injector loaded');
+  };
+  (document.head || document.documentElement).appendChild(script);
+}
 
 /**
  * Show auto-activation toast when visiting protected pages
@@ -129,6 +136,70 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 window.addEventListener('message', async (event) => {
   // Only accept messages from our own page
   if (event.source !== window) return;
+
+  // Handle health check requests from inject.js
+  if (event.data?.source === 'ai-pii-inject-health') {
+    const { messageId } = event.data;
+
+    // Verify full chain: inject -> content -> background -> content -> inject
+    try {
+      await chrome.runtime.sendMessage({ type: 'HEALTH_CHECK' });
+
+      // If we got here, the full chain is working
+      window.postMessage({
+        source: 'ai-pii-content-health',
+        messageId,
+        isAlive: true
+      }, '*');
+    } catch (error) {
+      // Extension context invalidated - page will be auto-reloaded by background
+      // Suppress error logging during reload to avoid console spam
+      const errorMsg = error instanceof Error ? error.message : String(error);
+
+      // Only log if this is NOT a context invalidation (which is expected during reload)
+      if (!errorMsg.includes('Extension context invalidated')) {
+        console.warn('⚠️ Health check failed:', errorMsg);
+      }
+
+      // Try to notify background (might fail if context lost)
+      // Note: Background will get tabId from message sender
+      try {
+        await chrome.runtime.sendMessage({
+          type: 'PROTECTION_LOST'
+          // No tabId - background will extract from sender.tab.id
+        });
+      } catch (e) {
+        // Silently fail - page will auto-reload anyway
+      }
+
+      // Extension context invalidated or background not responding
+      window.postMessage({
+        source: 'ai-pii-content-health',
+        messageId,
+        isAlive: false
+      }, '*');
+    }
+
+    return;
+  }
+
+  // Handle "not protected" modal request from inject.js
+  if (event.data?.source === 'ai-pii-inject-not-protected') {
+    const { messageId } = event.data;
+
+    console.log('🛑 Showing NOT PROTECTED modal');
+
+    const userAction = await showNotProtectedModal();
+
+    // Send response back to inject.js
+    window.postMessage({
+      source: 'ai-pii-content-not-protected',
+      messageId,
+      action: userAction // 'reload' | 'disable'
+    }, '*');
+
+    return;
+  }
 
   // Handle API key warning requests from inject.js
   if (event.data?.source === 'ai-pii-inject-warning') {
@@ -411,6 +482,189 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
         resolve('block'); // Block by default
       }
     };
+    document.addEventListener('keydown', handleEscape);
+  });
+}
+
+/**
+ * Show Extension Not Protected Modal
+ * Returns Promise<string> - 'reload' or 'disable'
+ */
+function showNotProtectedModal(): Promise<'reload' | 'disable'> {
+  return new Promise((resolve) => {
+    // Remove existing modal if any
+    const existing = document.getElementById('not-protected-modal');
+    if (existing) existing.remove();
+
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.id = 'not-protected-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      animation: fadeIn 0.2s ease-out;
+      pointer-events: auto;
+    `;
+
+    // Create modal content with glassmorphism
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      pointer-events: auto;
+      position: relative;
+      z-index: 1;
+    `;
+
+    content.innerHTML = `
+      <div style="text-align: center;">
+        <div style="font-size: 64px; margin-bottom: 16px;">🛑</div>
+        <h2 style="margin: 0 0 8px 0; color: #1a202c; font-size: 24px; font-weight: 600;">
+          PromptBlocker.com
+        </h2>
+        <h3 style="margin: 0 0 16px 0; color: #ef4444; font-size: 18px; font-weight: 600;">
+          Extension Not Protected
+        </h3>
+        <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 15px; line-height: 1.6;">
+          The extension has lost connection and <strong style="color: #ef4444;">cannot protect your data</strong>.
+          <br><br>
+          <strong>Choose an option:</strong>
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+          <button id="not-protected-reload" style="
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+          ">
+            🔄 Reload Page (Recommended)
+          </button>
+          <button id="not-protected-disable" style="
+            background: rgba(0, 0, 0, 0.05);
+            color: #718096;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+          ">
+            ⚠️ Disable Extension
+          </button>
+        </div>
+
+        <p style="margin: 16px 0 0 0; color: #a0aec0; font-size: 12px;">
+          Press Ctrl+Shift+R for hard refresh
+        </p>
+      </div>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    console.log('🛑 NOT PROTECTED modal displayed');
+
+    // Button handlers
+    const reloadBtn = content.querySelector('#not-protected-reload') as HTMLButtonElement;
+    const disableBtn = content.querySelector('#not-protected-disable') as HTMLButtonElement;
+
+    if (!reloadBtn || !disableBtn) {
+      console.error('❌ Modal buttons not found!');
+      return;
+    }
+
+    console.log('✅ Modal buttons attached:', reloadBtn, disableBtn);
+
+    // Use both addEventListener AND onclick for maximum compatibility
+    const handleReload = (e?: Event) => {
+      console.log('🔄 User clicked Reload - reloading page', e);
+      if (e) e.stopPropagation();
+      modal.remove();
+      location.reload();
+      resolve('reload');
+    };
+
+    const handleDisable = async (e?: Event) => {
+      console.log('⚠️ User clicked Disable Extension', e);
+      if (e) e.stopPropagation();
+
+      // Send message to background to disable extension
+      try {
+        await chrome.runtime.sendMessage({
+          type: 'DISABLE_EXTENSION'
+        });
+        console.log('✅ Extension disabled');
+      } catch (error) {
+        console.error('❌ Failed to disable extension:', error);
+      }
+
+      modal.remove();
+      resolve('disable');
+    };
+
+    // Try multiple event binding methods
+    reloadBtn.addEventListener('click', handleReload, true); // Use capture phase
+    reloadBtn.onclick = handleReload;
+
+    disableBtn.addEventListener('click', handleDisable, true); // Use capture phase
+    disableBtn.onclick = handleDisable;
+
+    // Hover effects
+    reloadBtn.addEventListener('mouseenter', () => {
+      reloadBtn.style.transform = 'translateY(-2px)';
+      reloadBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
+    });
+    reloadBtn.addEventListener('mouseleave', () => {
+      reloadBtn.style.transform = 'translateY(0)';
+      reloadBtn.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+    });
+
+    disableBtn.addEventListener('mouseenter', () => {
+      disableBtn.style.transform = 'translateY(-2px)';
+      disableBtn.style.background = 'rgba(0, 0, 0, 0.08)';
+    });
+    disableBtn.addEventListener('mouseleave', () => {
+      disableBtn.style.transform = 'translateY(0)';
+      disableBtn.style.background = 'rgba(0, 0, 0, 0.05)';
+    });
+
+    // ESC key to default to reload (safer default)
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', handleEscape);
+        handleReload();
+      }
+    };
+
     document.addEventListener('keydown', handleEscape);
   });
 }
