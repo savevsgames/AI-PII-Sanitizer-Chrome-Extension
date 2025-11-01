@@ -88,6 +88,12 @@ async function checkAndUpdateBadge(tabId: number, url?: string): Promise<void> {
     const storage = StorageManager.getInstance();
     const config = await storage.loadConfig();
 
+    console.log(`[Badge] Config check for tab ${tabId}:`, {
+      hasConfig: !!config,
+      hasSettings: !!config?.settings,
+      enabled: config?.settings?.enabled
+    });
+
     if (!config?.settings?.enabled) {
       await updateBadge(tabId, 'disabled');
       return;
@@ -116,19 +122,57 @@ chrome.runtime.onStartup.addListener(async () => {
 // Update badges for all tabs  const tabs = await chrome.tabs.query({});  for (const tab of tabs) {    if (tab.id) {      await checkAndUpdateBadge(tab.id, tab.url);    }  }
 });
 
-chrome.runtime.onInstalled.addListener(async () => {
-  console.log('AI PII Sanitizer installed');
+chrome.runtime.onInstalled.addListener(async (details) => {
+  console.log('AI PII Sanitizer installed:', details.reason);
   const storage = StorageManager.getInstance();
   await storage.initialize();
-  // Inject content scripts into existing tabs
+
+  // Ensure extension is enabled on install/update
+  const config = await storage.loadConfig();
+  if (config && !config.settings.enabled) {
+    console.log('[Background] Extension was disabled - enabling it now');
+    config.settings.enabled = true;
+    await storage.saveConfig(config);
+  }
+
+  // Auto-reload AI service tabs on extension update/reload (dev mode)
+  if (details.reason === 'update' || details.reason === 'install') {
+    console.log('[Background] Extension updated/installed - auto-reloading AI service tabs');
+
+    const tabs = await chrome.tabs.query({});
+    let reloadedCount = 0;
+
+    for (const tab of tabs) {
+      if (tab.id && isAIServiceURL(tab.url)) {
+        try {
+          console.log(`[Background] Auto-reloading tab ${tab.id}: ${tab.url}`);
+          await chrome.tabs.reload(tab.id);
+          reloadedCount++;
+        } catch (error) {
+          console.warn(`[Background] Failed to reload tab ${tab.id}:`, error);
+        }
+      }
+    }
+
+    console.log(`[Background] ✅ Auto-reloaded ${reloadedCount} AI service tabs`);
+  }
+
+  // Inject content scripts into existing tabs that weren't reloaded
   await injectIntoExistingTabs();
-// Update badges for all tabs  const tabs = await chrome.tabs.query({});  for (const tab of tabs) {    if (tab.id) {      await checkAndUpdateBadge(tab.id, tab.url);    }  }
+
+  // Update badges for all tabs
+  const tabs = await chrome.tabs.query({});
+  for (const tab of tabs) {
+    if (tab.id) {
+      await checkAndUpdateBadge(tab.id, tab.url);
+    }
+  }
 });
 
 // Handle messages from content script
 chrome.runtime.onMessage.addListener(
-  (message: Message, _sender, sendResponse) => {
-    handleMessage(message)
+  (message: Message, sender, sendResponse) => {
+    handleMessage(message, sender)
       .then(sendResponse)
       .catch((error) => {
         console.error('Error handling message:', error);
@@ -143,17 +187,34 @@ chrome.runtime.onMessage.addListener(
 /**
  * Route messages to appropriate handlers
  */
-async function handleMessage(message: Message): Promise<any> {
+async function handleMessage(message: Message, sender: chrome.runtime.MessageSender): Promise<any> {
   switch (message.type) {
     case 'HEALTH_CHECK':
-      // Simple health check for page status detection
+      // Health check also reports protection status back to tab
+      const senderTabId = message.tabId || sender?.tab?.id;
+
+      if (senderTabId) {
+        console.log(`[Badge] Health check passed for tab ${senderTabId}`);
+
+        // Update badge to protected (health checks are passing)
+        const storage = StorageManager.getInstance();
+        const config = await storage.loadConfig();
+
+        if (config?.settings?.enabled) {
+          await updateBadge(senderTabId, 'protected');
+        }
+      }
+
       return { success: true, status: 'ok' };
 
     case 'PROTECTION_LOST':
-      const tabId = message.tabId;
+      // Get tabId from message sender (content.ts doesn't have access to chrome.tabs.getCurrent)
+      const tabId = message.tabId || sender?.tab?.id;
       if (tabId) {
         console.log(`[Badge] Protection lost for tab ${tabId}`);
         await updateBadge(tabId, 'unprotected');
+      } else {
+        console.warn('[Badge] PROTECTION_LOST received but no tabId available');
       }
       return { success: true };
 

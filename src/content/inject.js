@@ -61,6 +61,12 @@
    * Continuous health monitoring with exponential backoff
    */
   async function monitorHealth() {
+    // Check if extension was disabled - stop monitoring
+    if (extensionDisabled) {
+      console.log('⚠️ Extension disabled - stopping health monitoring');
+      return; // Stop the health check loop
+    }
+
     const wasProtected = isProtected;
     isProtected = await performHealthCheck();
 
@@ -107,6 +113,12 @@
   // Listen for tab visibility changes - show modal when tab becomes visible if not protected
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'visible') {
+      // Check if extension was disabled - skip protection check
+      if (extensionDisabled) {
+        console.log('⚠️ Extension disabled - skipping protection check');
+        return;
+      }
+
       console.log('👁️ Tab became visible, checking protection status...');
 
       // Perform immediate health check
