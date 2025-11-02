@@ -32,3 +32,6 @@ temp/
 # Environment
 .env
 .env.local
+
+# zip
+*.zip
