@@ -43,45 +43,11 @@
 
           <!-- User Profile (shown when authenticated) -->
           <div class="header-user-container hidden" id="headerUserProfileContainer">
-            <div class="user-profile-dropdown">
-              <button class="user-profile-btn" id="userMenuBtn">
-                <img class="user-avatar hidden" id="userAvatar" alt="User avatar">
-                <div class="user-initials" id="userInitials">U</div>
-                <span class="user-tier-badge" id="headerTierBadge">FREE</span>
-              </button>
-
-              <!-- Dropdown Menu -->
-              <div class="user-dropdown hidden" id="userDropdown">
-                <div class="user-dropdown-header">
-                  <div class="user-dropdown-email" id="userEmail">user@example.com</div>
-                  <span class="user-tier-badge" id="dropdownTierBadge">FREE</span>
-                </div>
-
-                <div class="user-dropdown-divider"></div>
-
-                <button class="user-dropdown-item" id="getStartedBtn">
-                  <span class="dropdown-icon">🚀</span>
-                  Get Started
-                </button>
-
-                <button class="user-dropdown-item" id="accountSettingsBtn">
-                  <span class="dropdown-icon">⚙️</span>
-                  Account Settings
-                </button>
-
-                <button class="user-dropdown-item" id="manageBillingBtn">
-                  <span class="dropdown-icon">💳</span>
-                  Manage Billing
-                </button>
-
-                <div class="user-dropdown-divider"></div>
-
-                <button class="user-dropdown-item user-dropdown-signout" id="signOutBtn">
-                  <span class="dropdown-icon">🚪</span>
-                  Sign Out
-                </button>
-              </div>
-            </div>
+            <button class="user-profile-btn" id="userMenuBtn">
+              <img class="user-avatar hidden" id="userAvatar" alt="User avatar">
+              <div class="user-initials" id="userInitials">U</div>
+              <span class="user-tier-badge" id="headerTierBadge">FREE</span>
+            </button>
           </div>
 
           <div class="status-indicator" id="statusIndicator">
@@ -935,6 +901,38 @@
         <button type="button" class="btn btn-secondary" id="authModalCancel">Cancel</button>
       </div>
     </div>
+  </div>
+
+  <!-- User Dropdown Menu (outside header for proper z-index) -->
+  <div class="user-dropdown hidden" id="userDropdown">
+    <div class="user-dropdown-header">
+      <div class="user-dropdown-email" id="userEmail">user@example.com</div>
+      <span class="user-tier-badge" id="dropdownTierBadge">FREE</span>
+    </div>
+
+    <div class="user-dropdown-divider"></div>
+
+    <button class="user-dropdown-item" id="getStartedBtn">
+      <span class="dropdown-icon">🚀</span>
+      Get Started
+    </button>
+
+    <button class="user-dropdown-item" id="accountSettingsBtn">
+      <span class="dropdown-icon">⚙️</span>
+      Account Settings
+    </button>
+
+    <button class="user-dropdown-item" id="manageBillingBtn">
+      <span class="dropdown-icon">💳</span>
+      Manage Billing
+    </button>
+
+    <div class="user-dropdown-divider"></div>
+
+    <button class="user-dropdown-item user-dropdown-signout" id="signOutBtn">
+      <span class="dropdown-icon">🚪</span>
+      Sign Out
+    </button>
   </div>
 
   <script src="popup-v2.js"></script>
