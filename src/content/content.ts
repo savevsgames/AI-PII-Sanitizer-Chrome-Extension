@@ -515,45 +515,58 @@ function showNotProtectedModal(): Promise<'reload' | 'disable'> {
       pointer-events: auto;
     `;
 
-    // Create modal content with glassmorphism
+    // Create modal content - smaller, branded design
     const content = document.createElement('div');
     content.style.cssText = `
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 16px;
-      padding: 32px;
-      max-width: 500px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: #1a202c;
+      border-radius: 12px;
+      padding: 0;
+      max-width: 360px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(102, 126, 234, 0.3);
       pointer-events: auto;
       position: relative;
       z-index: 1;
+      overflow: hidden;
     `;
 
     content.innerHTML = `
-      <div style="text-align: center;">
-        <div style="font-size: 64px; margin-bottom: 16px;">🛑</div>
-        <h2 style="margin: 0 0 8px 0; color: #1a202c; font-size: 24px; font-weight: 600;">
-          PromptBlocker.com
+      <div style="
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        text-align: center;
+      ">
+        <div style="font-size: 36px; margin-bottom: 8px;">🛡️</div>
+        <h2 style="margin: 0; color: white; font-size: 18px; font-weight: 600;">
+          Protection Update Required
         </h2>
-        <h3 style="margin: 0 0 16px 0; color: #ef4444; font-size: 18px; font-weight: 600;">
-          Extension Not Protected
-        </h3>
-        <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 15px; line-height: 1.6;">
-          The extension has lost connection and <strong style="color: #ef4444;">cannot protect your data</strong>.
-          <br><br>
-          <strong>Choose an option:</strong>
+      </div>
+
+      <div style="padding: 20px; color: #e2e8f0;">
+        <div style="
+          background: rgba(239, 68, 68, 0.15);
+          border-left: 3px solid #ef4444;
+          padding: 12px 14px;
+          margin-bottom: 16px;
+          border-radius: 6px;
+        ">
+          <p style="margin: 0; color: #fca5a5; font-size: 13px; font-weight: 600; line-height: 1.5;">
+            ⚠️ <strong style="color: #ef4444;">Connection Lost:</strong> Your data cannot be protected until the page is refreshed.
+          </p>
+        </div>
+
+        <p style="margin: 0 0 16px 0; color: #cbd5e0; font-size: 14px; line-height: 1.5; text-align: center;">
+          Choose an option to continue:
         </p>
 
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
           <button id="not-protected-reload" style="
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 14px 24px;
+            padding: 12px 20px;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -562,15 +575,15 @@ function showNotProtectedModal(): Promise<'reload' | 'disable'> {
             user-select: none;
             -webkit-user-select: none;
           ">
-            🔄 Reload Page (Recommended)
+            🔄 Reload Page
           </button>
           <button id="not-protected-disable" style="
-            background: rgba(0, 0, 0, 0.05);
-            color: #718096;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            padding: 14px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #a0aec0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 20px;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -583,36 +596,30 @@ function showNotProtectedModal(): Promise<'reload' | 'disable'> {
         </div>
 
         <div style="
-          margin: 20px 0 0 0;
-          padding: 14px 18px;
-          background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
-          border-radius: 10px;
-          border: 1.5px solid rgba(102, 126, 234, 0.35);
-          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+          margin: 14px 0 0 0;
+          padding: 10px 12px;
+          background: rgba(102, 126, 234, 0.1);
+          border-radius: 8px;
+          border: 1px solid rgba(102, 126, 234, 0.2);
         ">
           <p style="
             margin: 0;
-            color: #667eea;
-            font-size: 14px;
-            font-weight: 600;
+            color: #a5b4fc;
+            font-size: 12px;
+            font-weight: 500;
             text-align: center;
-            line-height: 1.6;
+            line-height: 1.4;
           ">
-            💡 <strong>Pro Tip:</strong> Press
-            <kbd style="
+            💡 Press <kbd style="
               display: inline-block;
-              background: rgba(102, 126, 234, 0.25);
-              padding: 4px 10px;
-              margin: 0 4px;
-              border-radius: 6px;
-              font-family: 'Courier New', Consolas, monospace;
-              font-size: 13px;
+              background: rgba(102, 126, 234, 0.2);
+              padding: 2px 6px;
+              border-radius: 4px;
+              font-family: 'Courier New', monospace;
+              font-size: 11px;
               font-weight: 700;
-              border: 1px solid rgba(102, 126, 234, 0.4);
-              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-              color: #5a67d8;
-            ">Ctrl+Shift+R</kbd>
-            for a hard refresh to restore protection
+              color: #c7d2fe;
+            ">Ctrl+Shift+R</kbd> for hard refresh
           </p>
         </div>
       </div>
