@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AI PII Sanitizer",
+  "name": "PromptBlocker",
   "version": "0.1.0",
   "description": "Protect your privacy by replacing real PII with aliases when using AI chat services",
   "permissions": [
