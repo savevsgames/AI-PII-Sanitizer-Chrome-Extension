@@ -5,7 +5,6 @@
  */
 
 import { auth } from '../lib/firebase';
-import { signInWithRedirect, getRedirectResult, GoogleAuthProvider } from 'firebase/auth';
 import { syncUserToFirestore } from '../lib/firebaseService';
 
 const statusEl = document.getElementById('status') as HTMLElement;
@@ -15,60 +14,58 @@ const closeInfoEl = document.getElementById('closeInfo') as HTMLElement;
 
 async function handleAuth() {
   try {
-    // Check if we're coming back from a redirect
-    console.log('[Auth Page] Checking for redirect result...');
+    console.log('[Auth Page] Checking authentication status...');
     console.log('[Auth Page] Current URL:', window.location.href);
 
-    const result = await getRedirectResult(auth);
+    // Check if we're returning from promptblocker.com with success
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const uid = urlParams.get('uid');
 
-    if (result) {
-      // Successfully signed in
-      console.log('[Auth Page] Sign-in successful:', result.user.uid);
-      console.log('[Auth Page] User email:', result.user.email);
-      console.log('[Auth Page] User displayName:', result.user.displayName);
-      showSuccess(result.user.email || 'Unknown user');
+    if (success === 'true' && uid) {
+      console.log('[Auth Page] Returned from promptblocker.com with UID:', uid);
 
-      // Sync to Firestore
-      console.log('[Auth Page] Syncing to Firestore...');
-      await syncUserToFirestore(result.user);
-      console.log('[Auth Page] Sync complete');
+      // Wait for auth state to update
+      showSuccess('Completing sign-in...');
 
-      // Close this tab after a short delay
+      // Listen for auth state change
+      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          console.log('[Auth Page] Auth state updated:', user.uid);
+          console.log('[Auth Page] User email:', user.email);
+
+          showSuccess(user.email || 'Unknown user');
+
+          // Sync to Firestore
+          console.log('[Auth Page] Syncing to Firestore...');
+          await syncUserToFirestore(user);
+          console.log('[Auth Page] Sync complete');
+
+          // Clean up listener
+          unsubscribe();
+
+          // Close this tab after a short delay
+          setTimeout(() => {
+            console.log('[Auth Page] Closing tab...');
+            window.close();
+          }, 2000);
+        }
+      });
+
+      // If auth state doesn't update within 5 seconds, show error
       setTimeout(() => {
-        console.log('[Auth Page] Closing tab...');
-        window.close();
-      }, 2000);
+        unsubscribe();
+        showError('Authentication timeout. Please try signing in again.');
+      }, 5000);
+
     } else {
-      // No redirect result, need to initiate sign-in
-      console.log('[Auth Page] No redirect result, initiating sign-in...');
-
-      // Get auth provider from session storage
-      const { authProvider } = await chrome.storage.session.get('authProvider');
-      console.log('[Auth Page] Auth provider:', authProvider);
-
-      if (authProvider === 'google') {
-        const provider = new GoogleAuthProvider();
-
-        // Set custom parameters to ensure redirect comes back to our extension
-        provider.setCustomParameters({
-          prompt: 'select_account'
-        });
-
-        console.log('[Auth Page] Starting Google Sign-In redirect...');
-        console.log('[Auth Page] Extension auth URL:', chrome.runtime.getURL('auth.html'));
-
-        // This will redirect the page to Google OAuth
-        await signInWithRedirect(auth, provider);
-      } else {
-        console.error('[Auth Page] Unknown provider:', authProvider);
-        showError('Unknown authentication provider');
-      }
+      // This page shouldn't be accessed directly
+      showError('Invalid authentication request. Please use the extension popup to sign in.');
     }
   } catch (error: any) {
     console.error('[Auth Page] Error:', error);
     console.error('[Auth Page] Error code:', error.code);
     console.error('[Auth Page] Error message:', error.message);
-    console.error('[Auth Page] Full error:', JSON.stringify(error, null, 2));
     showError(error.message || 'Authentication failed. Please try again.');
   }
 }
