@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ========================================
+    // Helper Functions
+    // ========================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is accessing their own data
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user is admin (for future use)
+    function isAdmin() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // ========================================
+    // Users Collection
+    // ========================================
+    // Users can only read/write their own profile data
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) &&
+                       request.resource.data.keys().hasAll(['email', 'createdAt', 'tier']) &&
+                       request.resource.data.tier in ['free', 'pro'];
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // ========================================
+    // Subscriptions Collection
+    // ========================================
+    // Users can read their subscription, but only backend can write
+    // (Stripe webhooks via Cloud Functions will write here)
+    match /subscriptions/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false; // Only backend/Cloud Functions can write
+    }
+
+    // ========================================
+    // User Settings Collection
+    // ========================================
+    // Synced extension settings across devices
+    match /userSettings/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // ========================================
+    // User Profiles (Alias Profiles)
+    // ========================================
+    // User's alias profiles stored in subcollection
+    match /users/{userId}/profiles/{profileId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // ========================================
+    // Admin Collection (Future Use)
+    // ========================================
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false; // Only manually managed
+    }
+
+    // ========================================
+    // Analytics Collection (Optional)
+    // ========================================
+    // Aggregate usage stats (no PII)
+    match /analytics/{document=**} {
+      allow read: if isAdmin();
+      allow write: if false; // Only backend can write
+    }
+
+    // ========================================
+    // Default: Deny Everything Else
+    // ========================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

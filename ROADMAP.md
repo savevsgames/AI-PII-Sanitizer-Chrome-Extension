@@ -103,8 +103,9 @@
 
 ### 🔐 Phase 2: Authentication & User Management (NEW - Week 2-3)
 **Target Date:** November 15-30, 2024
-**Status:** 📋 Planned
+**Status:** 🚧 **IN PROGRESS**
 **Estimated Time:** 7-10 days
+**Branch:** `Authentication/UserManagement`
 
 **Infrastructure Decision:** Firebase Authentication (Recommended)
 
@@ -116,52 +117,264 @@
 - Secure by default
 
 **Implementation Tasks:**
-- [ ] **Set Up Firebase Project** (Day 1)
-  - Create Firebase project
-  - Configure authentication providers (Google, Email)
-  - Set up Firestore database
-  - Configure security rules
+- [x] **Set Up Firebase Project** (Day 1) ✅ **COMPLETE**
+  - [x] Created Firebase project: `promptblocker-prod`
+  - [x] Configured environment variables in `.env`
+  - [x] Set up Firestore database
+  - [x] Configured security rules (deployed)
+  - [x] Installed Firebase SDK (v11.0.2)
+  - [x] Created `src/lib/firebase.ts` initialization
+  - [x] Integrated dotenv-webpack for config
+  - [x] Deployed Firestore security rules via Firebase CLI
+  - [x] Tested Firebase connection (all tests passed)
 
 - [ ] **Implement Auth Flow** (Day 2-4)
-  - Add login/signup UI in popup
-  - Integrate Firebase Auth SDK
-  - Handle OAuth flows (Google sign-in)
-  - Store auth state in chrome.storage.local
-  - Add logout functionality
+  - [ ] Add login/signup UI in popup
+  - [ ] Integrate Firebase Auth SDK
+  - [ ] Handle OAuth flows (Google sign-in)
+  - [ ] Store auth state in chrome.storage.local
+  - [ ] Add logout functionality
 
 - [ ] **Tier Verification** (Day 5-6)
-  - Create users collection in Firestore
-  - Store tier info (free/pro) per user
-  - Implement checkPROFeature() function
-  - Add upgrade prompts for PRO features
+  - [ ] Create users collection in Firestore
+  - [ ] Store tier info (free/pro) per user
+  - [ ] Implement checkPROFeature() function
+  - [ ] Add upgrade prompts for PRO features
 
 - [ ] **User Profile Management** (Day 7)
-  - Display user email/name in popup
-  - Show current tier (free/pro)
-  - Add account settings page
+  - [ ] Display user email/name in popup
+  - [ ] Show current tier (free/pro)
+  - [ ] Add account settings page
 
 - [ ] **Testing** (Day 8-9)
-  - Test login/logout flows
-  - Test tier verification
-  - Test offline behavior
-  - Handle auth errors gracefully
+  - [ ] Test login/logout flows
+  - [ ] Test tier verification
+  - [ ] Test offline behavior
+  - [ ] Handle auth errors gracefully
+
+**Firebase Setup Documentation:**
+- 📄 [Firebase Setup Guide](./docs/setup/FIREBASE_SETUP_GUIDE.md) (9,000+ words)
+- 📄 [Deployment Quick Reference](./FIREBASE_DEPLOY.md)
+- 📄 [Firebase Test Instructions](./TEST_FIREBASE_INSTRUCTIONS.md)
+
+**Firebase Configuration:**
+- **Project ID:** `promptblocker-prod`
+- **Auth Domain:** `promptblocker-prod.firebaseapp.com`
+- **Storage Bucket:** `promptblocker-prod.firebasestorage.app`
+- **Security Rules:** Deployed (users can only access their own data)
+- **Anonymous Auth:** Enabled (for testing)
+
+**Progress Update (2025-11-02):**
+✅ **Authentication Complete:**
+- [x] Firebase backend configured and deployed
+- [x] Google Sign-In (Chrome Identity API) working
+- [x] User profile UI with dropdown menu
+- [x] Sign-in button with loading spinner
+- [x] Custom sign-out confirmation modal
+- [x] Firestore user sync on authentication
+- [x] Tier info stored and retrieved from Firestore
+- [x] Auth state persists across browser restarts
+
+✅ **UI/UX Enhancements:**
+- [x] Redesigned reload modal (smaller, branded, less alarming)
+- [x] Fixed dropdown z-index (moved outside header)
+- [x] Updated reload banner to use theme CSS
+- [x] Auto-close dropdown on menu item clicks
+
+**Current Status:** ✅ **COMPLETE - Ready for Phase 2A**
 
 **Deliverable:** Working authentication system with free/PRO tier enforcement
 
 **Success Criteria:**
-- ✅ Users can sign up and log in
+- ✅ Users can sign up and log in with Google
 - ✅ Tier info synced from Firestore
 - ✅ PRO features properly gated
 - ✅ Auth persists across browser restarts
+- ✅ Professional UI with no browser dialogs
 
 **Cost:** $0/month (free tier sufficient for first 1,000 users)
 
 ---
 
-### 💳 Phase 3: Payment Integration (NEW - Week 3-4)
-**Target Date:** November 30 - December 7, 2024
+### 🎯 Phase 2A: User Onboarding & First Profile (NEW - Week 3)
+**Target Date:** November 2-8, 2024
+**Status:** 🚧 **NEXT PRIORITY**
+**Estimated Time:** 2-3 days
+
+**Goal:** Guide users to successfully create their first alias profile
+
+**Why This Matters:**
+- Users have authentication but don't know what to do next
+- Creating first alias = activated user (conversion critical)
+- Need to demonstrate core value proposition immediately
+
+**Implementation Tasks:**
+- [ ] **Custom Welcome Modal** (Day 1)
+  - Replace browser `confirm()` dialog with branded modal
+  - Show on first sign-in only
+  - Guide users to promptblocker.com for resources
+  - "Get Started" CTA that opens landing page
+  - Store `hasSeenWelcome` flag in Firestore user profile
+
+- [ ] **First Alias Creation Flow** (Day 2)
+  - Detect if user has 0 profiles in Aliases tab
+  - Show friendly "Create Your First Alias" guide overlay
+  - Pre-fill form with Google account info as suggestion
+  - "Use My Google Info" quick-create button
+  - Explain what each field means (real name → alias name)
+  - Success celebration after first profile created
+
+- [ ] **Empty State Improvements** (Day 2-3)
+  - Better messaging on Aliases tab when no profiles exist
+  - Visual walkthrough: "1. Create Profile → 2. Visit AI Chat → 3. Your Privacy is Protected"
+  - Add helpful hints throughout UI
+  - Link to documentation/video tutorial
+
+**Deliverable:** Smooth onboarding that gets users to create first alias within 2 minutes
+
+**Success Criteria:**
+- ✅ 80%+ of new users create at least one profile
+- ✅ Users understand what the extension does
+- ✅ No confusion about next steps
+- ✅ Positive first impression (professional, helpful)
+
+---
+
+### 🧪 Phase 2B: Multi-Platform Testing (Week 3-4)
+**Target Date:** November 9-15, 2024
+**Status:** 📋 Planned
+**Estimated Time:** 2-3 days
+
+**Goal:** Verify all 7 AI platforms work correctly
+
+**Current Status:**
+- ✅ ChatGPT - Fully tested and working
+- ⏳ Claude - Ready to test
+- ⏳ Gemini - Priority (user-requested)
+- ⏳ Perplexity - Ready to test
+- ⏳ Poe - Ready to test
+- ⏳ Copilot - Ready to test
+- ⏳ You.com - Ready to test
+
+**Testing Protocol (for each service):**
+1. Visit service and create new conversation
+2. Send test message: "My name is Greg Barker and email is greg@test.com"
+3. Open Network tab → Verify request contains aliases ("John Smith", "john@example.com")
+4. Verify response decoded correctly (shows original "Greg Barker")
+5. Check Debug Console → Service name logged correctly
+6. Check Stats tab → Service counter incremented
+7. Test streaming responses (if applicable)
+8. Document any issues or platform-specific quirks
+
+**Implementation Tasks:**
+- [ ] Test Gemini (Priority)
+- [ ] Test Claude
+- [ ] Test Perplexity
+- [ ] Test Poe
+- [ ] Test Copilot
+- [ ] Test You.com
+- [ ] Fix any service-specific issues found
+- [ ] Update service detection patterns if needed
+- [ ] Document compatibility matrix
+
+**Deliverable:** Verified support for 7 AI platforms
+
+**Success Criteria:**
+- ✅ At least 5/7 services fully working
+- ✅ Known issues documented for remaining platforms
+- ✅ No critical bugs blocking core functionality
+- ✅ Service detection accurate
+
+---
+
+### 🎨 Phase 2C: Prompt Templates (NEW - Week 4-5)
+**Target Date:** November 16-22, 2024
 **Status:** 📋 Planned
 **Estimated Time:** 5-7 days
+
+**Goal:** Add prompt template system for power users (PRO feature)
+
+**Feature Overview:**
+Save commonly used prompts with placeholders that auto-fill with alias data when sending to AI chats.
+
+**Example Use Cases:**
+- "Write a professional email from {{name}} at {{email}} about..."
+- "Review this code as if you're {{job_title}} at {{company}}..."
+- "Analyze this data for {{name}}'s research on..."
+
+**Tier Structure:**
+- **FREE:** 3 saved templates
+- **PRO:** Unlimited templates + shared template library
+
+**Implementation Tasks:**
+- [ ] **Data Model** (Day 1)
+  - Create `PromptTemplate` type
+  - Template storage in chrome.storage.local
+  - Placeholder syntax parser (`{{fieldName}}`)
+  - Validation and sanitization
+
+- [ ] **Template Manager UI** (Day 2-3)
+  - Templates section in Settings or Features tab
+  - Add/Edit/Delete templates modal
+  - Template preview with filled placeholders
+  - Organize templates (categories/tags optional)
+  - Search/filter templates
+  - Import/Export templates (JSON)
+
+- [ ] **Chat Integration** (Day 3-4)
+  - Inject template dropdown into AI chat input
+  - Auto-fill placeholders when template selected
+  - Support multiple profiles (choose which profile's data to use)
+  - Keyboard shortcuts (optional)
+
+- [ ] **PRO Feature Gating** (Day 5)
+  - FREE tier: Show "3/3 templates" counter
+  - Upgrade prompt when limit reached
+  - PRO tier: No limits
+
+- [ ] **Testing** (Day 6-7)
+  - Test placeholder replacement
+  - Test with all 7 AI platforms
+  - Test template CRUD operations
+  - Test FREE tier limits
+  - Performance testing (large templates)
+
+**Placeholder Fields Supported:**
+- `{{name}}` - Real name
+- `{{alias_name}}` - Alias name
+- `{{email}}` - Real email
+- `{{alias_email}}` - Alias email
+- `{{phone}}` - Real phone
+- `{{alias_phone}}` - Alias phone
+- `{{address}}` - Real address
+- `{{alias_address}}` - Alias address
+- `{{company}}` - Company name
+- `{{job_title}}` - Job title
+- Custom fields (PRO)
+
+**Deliverable:** Working prompt template system with FREE/PRO tiers
+
+**Success Criteria:**
+- ✅ Users can create and save templates
+- ✅ Placeholders auto-fill correctly
+- ✅ Works on all tested AI platforms
+- ✅ FREE tier limited to 3 templates
+- ✅ PRO tier offers unlimited templates
+- ✅ Smooth UX (fast, intuitive)
+
+---
+
+### 💳 Phase 3: Payment Integration (MOVED - Week 6-7)
+**Target Date:** November 23-30, 2024
+**Status:** 📋 Planned - **LAST PRIORITY**
+**Estimated Time:** 5-7 days
+
+**Why Last:**
+- Want everything perfect before asking for money
+- Need to validate PRO features are actually valuable to users
+- Better to have 100+ happy free users than rush monetization
+- Payment adds complexity (support, refunds, billing issues)
+- Can gate PRO features in UI now, enable payments when ready
 
 **Payment Provider:** Stripe
 

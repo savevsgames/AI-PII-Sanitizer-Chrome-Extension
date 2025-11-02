@@ -7,6 +7,13 @@
 import { createStore } from 'zustand/vanilla';
 import { AliasProfile, UserConfig, ActivityLogEntry } from './types';
 import { StorageManager } from './storage';
+import { User } from 'firebase/auth';
+import {
+  syncUserToFirestore,
+  getUserTier,
+  getUserData,
+  FirestoreUser,
+} from './firebaseService';
 
 interface AppState {
   // State
@@ -14,6 +21,7 @@ interface AppState {
   config: UserConfig | null;
   activityLog: ActivityLogEntry[];
   isLoading: boolean;
+  firestoreUser: FirestoreUser | null;
 
   // Actions - Profiles
   loadProfiles: () => Promise<void>;
@@ -33,6 +41,11 @@ interface AppState {
   updateConfig: (updates: Partial<UserConfig>) => Promise<void>;
   updateSettings: (updates: Partial<UserConfig['settings']>) => Promise<void>;
   updateAccount: (updates: Partial<UserConfig['account']>) => Promise<void>;
+
+  // Actions - Firebase Auth
+  syncUserToFirestore: (user: User) => Promise<void>;
+  loadUserTier: () => Promise<void>;
+  clearAuthState: () => Promise<void>;
 
   // Actions - Activity Log
   addActivityLog: (entry: Omit<ActivityLogEntry, 'id' | 'timestamp'>) => void;
@@ -54,6 +67,7 @@ export const useAppStore = createStore<AppState>((set, get) => ({
   config: null,
   activityLog: [],
   isLoading: false,
+  firestoreUser: null,
 
   // Profile actions
   loadProfiles: async () => {
@@ -158,6 +172,69 @@ export const useAppStore = createStore<AppState>((set, get) => ({
     const storage = StorageManager.getInstance();
     await storage.saveConfig(newConfig);
     set({ config: newConfig });
+  },
+
+  // Firebase Auth actions
+  syncUserToFirestore: async (user) => {
+    try {
+      const firestoreUser = await syncUserToFirestore(user);
+      set({ firestoreUser });
+
+      // Update local config with Firebase user info
+      await get().updateAccount({
+        email: user.email || undefined,
+        firebaseUid: user.uid,
+        displayName: user.displayName || undefined,
+        photoURL: user.photoURL || undefined,
+        tier: firestoreUser.tier,
+      });
+
+      console.log('[Store] User synced to Firestore:', user.uid);
+    } catch (error) {
+      console.error('[Store] Error syncing user to Firestore:', error);
+      throw error;
+    }
+  },
+
+  loadUserTier: async () => {
+    const currentConfig = get().config;
+    const firebaseUid = currentConfig?.account?.firebaseUid;
+
+    if (!firebaseUid) {
+      console.warn('[Store] No Firebase UID found, cannot load tier');
+      return;
+    }
+
+    try {
+      const [tier, userData] = await Promise.all([
+        getUserTier(firebaseUid),
+        getUserData(firebaseUid),
+      ]);
+
+      if (userData) {
+        set({ firestoreUser: userData });
+      }
+
+      await get().updateAccount({ tier });
+
+      console.log('[Store] User tier loaded:', tier);
+    } catch (error) {
+      console.error('[Store] Error loading user tier:', error);
+    }
+  },
+
+  clearAuthState: async () => {
+    set({ firestoreUser: null });
+
+    await get().updateAccount({
+      email: undefined,
+      firebaseUid: undefined,
+      displayName: undefined,
+      photoURL: undefined,
+      tier: 'free',
+    });
+
+    console.log('[Store] Auth state cleared');
   },
 
   // Activity log actions

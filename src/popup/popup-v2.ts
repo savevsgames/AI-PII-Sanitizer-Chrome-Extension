@@ -14,7 +14,10 @@ import { initMinimalMode, loadModePreference, updateMinimalView } from './compon
 import { initPageStatus } from './components/pageStatus';
 import { initFeaturesTab, renderFeaturesHub } from './components/featuresTab';
 import { initAPIKeyModal } from './components/apiKeyModal';
+import { initAuthModal } from './components/authModal';
+import { initUserProfile } from './components/userProfile';
 import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/initUI';
+// import { testFirebaseConnection } from './test-firebase-popup'; // Disabled - interferes with auth
 
 // ========== INITIALIZATION ==========
 
@@ -22,14 +25,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabNavigation();
   initKeyboardShortcuts();
   initTheme();
-  initUI();
+  await initUI(); // Wait for auth redirect check
   await loadInitialData();
+
+  // TEMPORARY: Test Firebase connection
+  // TODO: Remove after verification
+  // DISABLED: Interferes with authentication flow
+  // if (process.env.NODE_ENV === 'development') {
+  //   setTimeout(() => {
+  //     console.log('\n🔥 Running Firebase connection test...\n');
+  //     testFirebaseConnection();
+  //   }, 2000); // Wait 2 seconds for popup to fully load
+  // }
 });
 
 /**
  * Initialize UI components
  */
-function initUI() {
+async function initUI() {
   initProfileModal();
   initActivityLog();
   initSettingsHandlers();
@@ -37,6 +50,8 @@ function initUI() {
   initPageStatus();
   initFeaturesTab();
   initAPIKeyModal();
+  await initAuthModal(); // Check for Google Sign-In redirect
+  initUserProfile();
 
   console.log('[Popup V2] UI initialized');
 }
