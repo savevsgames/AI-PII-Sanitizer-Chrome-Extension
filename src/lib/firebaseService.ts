@@ -54,17 +54,20 @@ export async function syncUserToFirestore(user: User): Promise<FirestoreUser> {
       return userSnap.data() as FirestoreUser;
     } else {
       // Create new user document
-      const newUser: Omit<FirestoreUser, 'createdAt' | 'updatedAt'> & {
-        createdAt: any;
-        updatedAt: any;
-      } = {
+      const newUser: any = {
         email: user.email || '',
-        displayName: user.displayName || undefined,
-        photoURL: user.photoURL || undefined,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         tier: 'free', // Default to free tier
       };
+
+      // Only add displayName and photoURL if they exist (Firestore doesn't allow undefined)
+      if (user.displayName) {
+        newUser.displayName = user.displayName;
+      }
+      if (user.photoURL) {
+        newUser.photoURL = user.photoURL;
+      }
 
       await setDoc(userRef, newUser);
 

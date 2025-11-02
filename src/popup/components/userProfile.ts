@@ -178,17 +178,52 @@ export function updateTierBadge() {
  * Handle sign-out
  */
 async function handleSignOut() {
-  try {
+  // Show custom confirmation modal
+  const modal = document.getElementById('signOutModal');
+  if (!modal) {
+    // Fallback to confirm dialog if modal not found
     const confirmed = confirm('Are you sure you want to sign out?');
     if (!confirmed) return;
 
-    await signOutUser();
-
-    console.log('[User Profile] Signed out successfully');
-  } catch (error) {
-    console.error('[User Profile] Sign-out error:', error);
-    alert('Error signing out. Please try again.');
+    try {
+      await signOutUser();
+      console.log('[User Profile] Signed out successfully');
+    } catch (error) {
+      console.error('[User Profile] Sign-out error:', error);
+      alert('Error signing out. Please try again.');
+    }
+    return;
   }
+
+  // Show modal
+  modal.classList.remove('hidden');
+
+  // Set up modal handlers (one-time setup)
+  const closeBtn = document.getElementById('signOutModalClose');
+  const cancelBtn = document.getElementById('signOutCancel');
+  const confirmBtn = document.getElementById('signOutConfirm');
+  const overlay = modal.querySelector('.modal-overlay');
+
+  const closeModal = () => {
+    modal.classList.add('hidden');
+  };
+
+  const handleConfirm = async () => {
+    try {
+      closeModal();
+      await signOutUser();
+      console.log('[User Profile] Signed out successfully');
+    } catch (error) {
+      console.error('[User Profile] Sign-out error:', error);
+      alert('Error signing out. Please try again.');
+    }
+  };
+
+  // Add event listeners
+  closeBtn?.addEventListener('click', closeModal, { once: true });
+  cancelBtn?.addEventListener('click', closeModal, { once: true });
+  confirmBtn?.addEventListener('click', handleConfirm, { once: true });
+  overlay?.addEventListener('click', closeModal, { once: true });
 }
 
 /**

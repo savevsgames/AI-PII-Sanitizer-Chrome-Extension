@@ -37,7 +37,6 @@
           <!-- Sign-In Button (shown when not authenticated) -->
           <div class="header-signin-container" id="headerSignInContainer">
             <button class="btn btn-sm btn-primary" id="headerSignInBtn">
-              <span class="btn-icon">👤</span>
               Sign In
             </button>
           </div>
@@ -800,6 +799,27 @@
     </div>
   </div>
 
+  <!-- Sign Out Confirmation Modal -->
+  <div class="modal hidden" id="signOutModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h3>Sign Out?</h3>
+        <button class="modal-close" id="signOutModalClose">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p>Are you sure you want to sign out of your account?</p>
+        <p class="text-muted">You'll need to sign in again to access PRO features and sync your data.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="signOutCancel">Cancel</button>
+        <button type="button" class="btn btn-danger" id="signOutConfirm">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Authentication Modal -->
   <div class="modal hidden" id="authModal">
     <div class="modal-overlay"></div>
@@ -817,6 +837,8 @@
             <span class="btn-icon">🔐</span>
             Continue with Google
           </button>
+
+          <div class="form-info hidden" id="googleSignInInfo"></div>
 
           <div class="auth-divider">
             <span>or</span>

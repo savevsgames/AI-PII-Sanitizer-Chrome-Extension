@@ -107,11 +107,23 @@ export function openAuthModal(mode: 'signin' | 'signup' = 'signin') {
  * Close authentication modal
  */
 export function closeAuthModal() {
-  if (!currentModal) return;
+  console.log('[Auth] closeAuthModal() called');
+  console.log('[Auth] currentModal exists:', !!currentModal);
 
+  if (!currentModal) {
+    console.error('[Auth] ERROR: currentModal is null!');
+    return;
+  }
+
+  console.log('[Auth] Adding hidden class to modal...');
   currentModal.classList.add('hidden');
+  console.log('[Auth] Modal hidden class added');
+
+  console.log('[Auth] Clearing auth form...');
   clearAuthForm();
+  console.log('[Auth] Clearing error messages...');
   clearErrorMessages();
+  console.log('[Auth] Modal fully closed');
 }
 
 /**
@@ -173,6 +185,16 @@ async function handleGoogleSignIn() {
       `redirect_uri=${encodeURIComponent(redirectURL)}&` +
       `scope=${encodeURIComponent(scopes.join(' '))}`;
 
+    // Show helper message about popup
+    setLoading(googleSignInBtn, true, 'Opening popup...');
+    showInfo('googleSignInInfo', 'A popup window will open. Please select your Google account.');
+
+    // Close the modal immediately - user will interact with OAuth popup
+    console.log('[Auth] Closing modal before OAuth popup opens');
+    setTimeout(() => {
+      closeAuthModal();
+    }, 200); // Small delay to let user see the info message
+
     const responseUrl = await new Promise<string>((resolve, reject) => {
       chrome.identity.launchWebAuthFlow(
         {
@@ -214,16 +236,19 @@ async function handleGoogleSignIn() {
 
     console.log('[Auth] Firebase sign-in successful:', result.user.uid);
 
+    console.log('[Auth] Starting onAuthSuccess...');
     // Update account and sync to Firestore
     await onAuthSuccess(result.user);
-
-    closeAuthModal();
+    console.log('[Auth] onAuthSuccess completed');
+    console.log('[Auth] Sign-in flow complete!');
 
   } catch (error: any) {
     console.error('[Auth] Google sign-in error:', error);
     console.error('[Auth] Error message:', error.message);
+
+    // Re-open modal to show error
+    openAuthModal('signin');
     showError('googleSignInError', getAuthErrorMessage(error));
-  } finally {
     setLoading(googleSignInBtn, false, 'Continue with Google');
   }
 }
@@ -455,6 +480,17 @@ function showSuccess(elementId: string, message: string) {
   if (successEl) {
     successEl.textContent = message;
     successEl.classList.remove('hidden');
+  }
+}
+
+/**
+ * Show info message
+ */
+function showInfo(elementId: string, message: string) {
+  const infoEl = document.getElementById(elementId);
+  if (infoEl) {
+    infoEl.textContent = message;
+    infoEl.classList.remove('hidden');
   }
 }
 
