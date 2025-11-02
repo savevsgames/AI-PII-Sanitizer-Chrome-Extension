@@ -178,8 +178,8 @@
     // Claude
     'claude.ai/api/organizations',
 
-    // Gemini
-    'gemini.google.com/api',
+    // Gemini (uses BardChatUi endpoint, not /api/)
+    'gemini.google.com/_/BardChatUi',
 
     // Perplexity
     'perplexity.ai/socket.io',
