@@ -62,12 +62,47 @@
 }
 
 @keyframes spin {
-  from {
+  0% {
     transform: rotate(0deg);
   }
-  to {
+  100% {
     transform: rotate(360deg);
   }
+}
+
+/* Onboarding secondary button - avoids CSP issues */
+.onboarding-secondary-btn {
+  padding: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-neutral);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.onboarding-secondary-btn:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.onboarding-secondary-btn:active {
+  transform: translateY(0);
+}
+
+.onboarding-secondary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .modal-header {

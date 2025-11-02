@@ -30,16 +30,21 @@ export function initUserProfile() {
   // Listen for profile changes to re-check onboarding
   window.addEventListener('profilesUpdated', async () => {
     if (currentUser) {
-      // Add delay to allow store to update
+      // Reload store to get latest profiles, then check onboarding
+      const store = useAppStore.getState();
+      await store.loadConfig();
+
+      // Add delay to allow store to fully update
       setTimeout(async () => {
         await checkAndShowOnboarding(currentUser!);
-      }, 300);
+      }, 500);
     }
   });
 
   // Set up onboarding button handlers (one-time setup)
   const quickStartBtn = document.getElementById('onboardingQuickStart');
   const customBtn = document.getElementById('onboardingCustom');
+  const onboardingCloseBtn = document.getElementById('onboardingModalClose');
 
   quickStartBtn?.addEventListener('click', () => {
     if (currentUser) handleQuickStartOnboarding(currentUser);
@@ -47,6 +52,14 @@ export function initUserProfile() {
 
   customBtn?.addEventListener('click', () => {
     handleCustomOnboarding();
+  });
+
+  onboardingCloseBtn?.addEventListener('click', async () => {
+    // Mark onboarding as completed when user closes it
+    await chrome.storage.local.set({ onboardingCompleted: true });
+    const modal = document.getElementById('onboardingModal');
+    modal?.classList.add('hidden');
+    console.log('[User Profile] User dismissed onboarding modal');
   });
 
   // Sign-in button
@@ -344,17 +357,17 @@ async function checkAndShowOnboarding(user: User) {
     }
 
     const store = useAppStore.getState();
-    const profiles = store.config?.profiles || [];
-    const activeProfiles = profiles.filter(p => p.enabled);
+    // Use store.profiles directly, not store.config.profiles
+    const profiles = store.profiles || [];
 
     console.log('[User Profile] Checking onboarding...', {
       totalProfiles: profiles.length,
-      activeProfiles: activeProfiles.length
+      profiles: profiles
     });
 
-    // If user has at least one active profile, mark onboarding as complete
-    if (activeProfiles.length > 0) {
-      console.log('[User Profile] User has active profiles, marking onboarding complete');
+    // If user has ANY profile (active or not), they've completed onboarding
+    if (profiles.length > 0) {
+      console.log('[User Profile] User has profiles, marking onboarding complete');
       await chrome.storage.local.set({ onboardingCompleted: true });
       // Hide modal if it's currently showing
       const modal = document.getElementById('onboardingModal');
@@ -415,9 +428,7 @@ function showOnboardingModal(user: User) {
     // Enable buttons
     if (quickStartBtn) {
       quickStartBtn.disabled = false;
-      // Update button text to indicate ready state
-      const buttonSpan = quickStartBtn.querySelector('span:last-child');
-      if (buttonSpan) buttonSpan.textContent = 'Continue with Google Info';
+      // Button text is already "Quick Start with Google" - no need to change
     }
     if (customBtn) customBtn.disabled = false;
 
@@ -578,27 +589,15 @@ function handleQuickStartOnboarding(user: User) {
 function handleCustomOnboarding() {
   console.log('[User Profile] Custom onboarding selected');
 
-  // Show loading state
-  const customBtn = document.getElementById('onboardingCustom') as HTMLButtonElement;
-  const quickStartBtn = document.getElementById('onboardingQuickStart') as HTMLButtonElement;
-
-  if (customBtn) {
-    customBtn.disabled = true;
-    customBtn.classList.add('loading');
-    customBtn.textContent = 'Loading...';
-  }
-
-  if (quickStartBtn) {
-    quickStartBtn.disabled = true;
-    quickStartBtn.style.opacity = '0.5';
-  }
+  // Hide onboarding modal immediately
+  const onboardingModal = document.getElementById('onboardingModal');
+  onboardingModal?.classList.add('hidden');
 
   // Open profile modal (empty)
   const addProfileBtn = document.getElementById('addProfileBtn');
   addProfileBtn?.click();
 
-  // Keep onboarding modal visible with loading state
-  // It will be hidden by checkAndShowOnboarding once profile is saved
+  // Onboarding modal will reappear if user cancels (resetOnboardingButtons will be called)
 }
 
 /**
@@ -611,15 +610,15 @@ export function resetOnboardingButtons() {
   if (quickStartBtn) {
     quickStartBtn.disabled = false;
     quickStartBtn.classList.remove('loading');
-    quickStartBtn.textContent = '⚡ Use My Google Info (Quick Start)';
     quickStartBtn.style.opacity = '1';
+    // Button text is already correct - no need to change
   }
 
   if (customBtn) {
     customBtn.disabled = false;
     customBtn.classList.remove('loading');
-    customBtn.textContent = '✏️ Create Custom Profile';
     customBtn.style.opacity = '1';
+    // Button HTML is preserved - no need to reset
   }
 
   console.log('[User Profile] Onboarding buttons reset');
