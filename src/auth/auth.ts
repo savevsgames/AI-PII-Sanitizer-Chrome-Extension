@@ -48,7 +48,14 @@ async function handleAuth() {
 
       if (authProvider === 'google') {
         const provider = new GoogleAuthProvider();
+
+        // Set custom parameters to ensure redirect comes back to our extension
+        provider.setCustomParameters({
+          prompt: 'select_account'
+        });
+
         console.log('[Auth Page] Starting Google Sign-In redirect...');
+        console.log('[Auth Page] Extension auth URL:', chrome.runtime.getURL('auth.html'));
 
         // This will redirect the page to Google OAuth
         await signInWithRedirect(auth, provider);
