@@ -163,11 +163,13 @@
           // Try to communicate with extension
           console.log('[Auth Handler] User authenticated:', userData);
 
-          // Redirect back to extension
+          // Redirect back to extension with ID token
           const extensionId = localStorage.getItem('extensionId');
           if (extensionId) {
-            const redirectUrl = `chrome-extension://${extensionId}/auth.html?success=true&uid=${result.user.uid}`;
-            console.log('[Auth Handler] Redirecting to:', redirectUrl);
+            // Encode the ID token for URL safety
+            const encodedToken = encodeURIComponent(idToken);
+            const redirectUrl = `chrome-extension://${extensionId}/auth.html?success=true&uid=${result.user.uid}&token=${encodedToken}`;
+            console.log('[Auth Handler] Redirecting to extension with token');
             window.location.href = redirectUrl;
           } else {
             showMessage('Sign-in successful! You can close this window and return to the extension.');

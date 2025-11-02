@@ -5,6 +5,7 @@
  */
 
 import { auth } from '../lib/firebase';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { syncUserToFirestore } from '../lib/firebaseService';
 
 const statusEl = document.getElementById('status') as HTMLElement;
@@ -21,42 +22,44 @@ async function handleAuth() {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
     const uid = urlParams.get('uid');
+    const token = urlParams.get('token');
 
-    if (success === 'true' && uid) {
+    if (success === 'true' && uid && token) {
       console.log('[Auth Page] Returned from promptblocker.com with UID:', uid);
+      console.log('[Auth Page] Received ID token');
 
-      // Wait for auth state to update
       showSuccess('Completing sign-in...');
 
-      // Listen for auth state change
-      const unsubscribe = auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          console.log('[Auth Page] Auth state updated:', user.uid);
-          console.log('[Auth Page] User email:', user.email);
+      try {
+        // Create credential from ID token
+        const decodedToken = decodeURIComponent(token);
+        const credential = GoogleAuthProvider.credential(decodedToken);
 
-          showSuccess(user.email || 'Unknown user');
+        // Sign in with the credential
+        console.log('[Auth Page] Signing in with credential...');
+        const result = await signInWithCredential(auth, credential);
 
-          // Sync to Firestore
-          console.log('[Auth Page] Syncing to Firestore...');
-          await syncUserToFirestore(user);
-          console.log('[Auth Page] Sync complete');
+        console.log('[Auth Page] Sign-in successful:', result.user.uid);
+        console.log('[Auth Page] User email:', result.user.email);
 
-          // Clean up listener
-          unsubscribe();
+        showSuccess(result.user.email || 'Unknown user');
 
-          // Close this tab after a short delay
-          setTimeout(() => {
-            console.log('[Auth Page] Closing tab...');
-            window.close();
-          }, 2000);
-        }
-      });
+        // Sync to Firestore
+        console.log('[Auth Page] Syncing to Firestore...');
+        await syncUserToFirestore(result.user);
+        console.log('[Auth Page] Sync complete');
 
-      // If auth state doesn't update within 5 seconds, show error
-      setTimeout(() => {
-        unsubscribe();
-        showError('Authentication timeout. Please try signing in again.');
-      }, 5000);
+        // Close this tab after a short delay
+        setTimeout(() => {
+          console.log('[Auth Page] Closing tab...');
+          window.close();
+        }, 2000);
+
+      } catch (error: any) {
+        console.error('[Auth Page] Credential sign-in error:', error);
+        console.error('[Auth Page] Error code:', error.code);
+        showError('Failed to complete sign-in. Please try again.');
+      }
 
     } else {
       // This page shouldn't be accessed directly
