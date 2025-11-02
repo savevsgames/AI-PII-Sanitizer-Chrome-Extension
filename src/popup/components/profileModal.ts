@@ -7,6 +7,7 @@ import { useAppStore } from '../../lib/store';
 import { AliasProfile } from '../../lib/types';
 import { isValidEmail } from './utils';
 import { generateIdentityVariations } from '../../lib/aliasVariations';
+import { handleGoogleQuickStart } from './userProfile';
 
 // Track currently editing profile ID
 let currentEditingProfileId: string | null = null;
@@ -18,9 +19,15 @@ export function initProfileModal() {
   // Open modal buttons
   const addProfileBtn = document.getElementById('addProfileBtn');
   const addProfileBtnEmpty = document.getElementById('addProfileBtnEmpty');
+  const googleQuickStartBtn = document.getElementById('googleQuickStartBtn');
+  const googleQuickStartBtnEmpty = document.getElementById('googleQuickStartBtnEmpty');
 
   addProfileBtn?.addEventListener('click', () => openProfileModal('create'));
   addProfileBtnEmpty?.addEventListener('click', () => openProfileModal('create'));
+
+  // Google Quick Start buttons - only visible when user is authenticated
+  googleQuickStartBtn?.addEventListener('click', handleGoogleQuickStart);
+  googleQuickStartBtnEmpty?.addEventListener('click', handleGoogleQuickStart);
 
   // Profile Editor Modal handlers
   const modalClose = document.getElementById('modalClose');
@@ -131,6 +138,7 @@ export function closeProfileModal() {
   modal.classList.add('hidden');
   currentEditingProfileId = null;
   clearFormErrors();
+
   console.log('[Profile Modal] Closed');
 }
 
@@ -312,6 +320,9 @@ async function saveProfile() {
 
     // Close modal
     closeProfileModal();
+
+    // Dispatch event for onboarding to check if user now has profiles
+    window.dispatchEvent(new Event('profilesUpdated'));
   } catch (error) {
     console.error('[Profile Modal] Error saving profile:', error);
     alert('Error saving profile. Please try again.');
