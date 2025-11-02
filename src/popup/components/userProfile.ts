@@ -10,6 +10,7 @@ import { useAppStore } from '../../lib/store';
 import { openAuthModal, signOutUser } from './authModal';
 
 let currentUser: User | null = null;
+let onboardingCheckInProgress = false; // Prevent duplicate checks
 
 /**
  * Initialize user profile display
@@ -29,8 +30,23 @@ export function initUserProfile() {
   // Listen for profile changes to re-check onboarding
   window.addEventListener('profilesUpdated', async () => {
     if (currentUser) {
-      await checkAndShowOnboarding(currentUser);
+      // Add delay to allow store to update
+      setTimeout(async () => {
+        await checkAndShowOnboarding(currentUser!);
+      }, 300);
     }
+  });
+
+  // Set up onboarding button handlers (one-time setup)
+  const quickStartBtn = document.getElementById('onboardingQuickStart');
+  const customBtn = document.getElementById('onboardingCustom');
+
+  quickStartBtn?.addEventListener('click', () => {
+    if (currentUser) handleQuickStartOnboarding(currentUser);
+  });
+
+  customBtn?.addEventListener('click', () => {
+    handleCustomOnboarding();
   });
 
   // Sign-in button
@@ -103,6 +119,14 @@ export function initUserProfile() {
  */
 async function onUserSignedIn(user: User) {
   console.log('[User Profile] User signed in:', user.uid);
+  console.log('[User Profile] Full user object:', {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    emailVerified: user.emailVerified,
+    providerId: user.providerId
+  });
 
   // Update UI to show user info
   showAuthenticatedUI(user);
@@ -302,24 +326,51 @@ export function isAuthenticated(): boolean {
  * Onboarding is required until user has at least one active profile
  */
 async function checkAndShowOnboarding(user: User) {
-  const store = useAppStore.getState();
-  const profiles = store.config?.profiles || [];
-  const activeProfiles = profiles.filter(p => p.enabled);
-
-  console.log('[User Profile] Checking onboarding...', {
-    totalProfiles: profiles.length,
-    activeProfiles: activeProfiles.length
-  });
-
-  // If user has at least one active profile, they're good to go
-  if (activeProfiles.length > 0) {
-    console.log('[User Profile] User has active profiles, skipping onboarding');
+  // Prevent duplicate checks
+  if (onboardingCheckInProgress) {
+    console.log('[User Profile] Onboarding check already in progress, skipping');
     return;
   }
 
-  // Show onboarding modal (doesn't go away until they create a profile)
-  console.log('[User Profile] No active profiles - showing onboarding');
-  showOnboardingModal(user);
+  onboardingCheckInProgress = true;
+
+  try {
+    // Check if user has already completed onboarding (persisted in chrome.storage)
+    const result = await chrome.storage.local.get('onboardingCompleted');
+    if (result.onboardingCompleted) {
+      console.log('[User Profile] Onboarding already completed (from storage), skipping');
+      onboardingCheckInProgress = false;
+      return;
+    }
+
+    const store = useAppStore.getState();
+    const profiles = store.config?.profiles || [];
+    const activeProfiles = profiles.filter(p => p.enabled);
+
+    console.log('[User Profile] Checking onboarding...', {
+      totalProfiles: profiles.length,
+      activeProfiles: activeProfiles.length
+    });
+
+    // If user has at least one active profile, mark onboarding as complete
+    if (activeProfiles.length > 0) {
+      console.log('[User Profile] User has active profiles, marking onboarding complete');
+      await chrome.storage.local.set({ onboardingCompleted: true });
+      // Hide modal if it's currently showing
+      const modal = document.getElementById('onboardingModal');
+      modal?.classList.add('hidden');
+      onboardingCheckInProgress = false;
+      return;
+    }
+
+    // Show onboarding modal (doesn't go away until they create a profile)
+    console.log('[User Profile] No active profiles - showing onboarding');
+    showOnboardingModal(user);
+    onboardingCheckInProgress = false;
+  } catch (error) {
+    console.error('[User Profile] Error checking onboarding:', error);
+    onboardingCheckInProgress = false;
+  }
 }
 
 /**
@@ -332,25 +383,46 @@ function showOnboardingModal(user: User) {
     return;
   }
 
-  // Pre-fill Google user info in modal
-  const userName = document.getElementById('onboardingUserName');
-  const userEmail = document.getElementById('onboardingUserEmail');
-
-  if (userName) userName.textContent = user.displayName || user.email || 'User';
-  if (userEmail) userEmail.textContent = user.email || '';
-
-  // Show modal (can't be dismissed - no X button, overlay disabled)
+  // Show modal immediately with loading state
   modal.classList.remove('hidden');
 
-  // Wire up button handlers
-  const quickStartBtn = document.getElementById('onboardingQuickStart');
-  const customBtn = document.getElementById('onboardingCustom');
+  // Show loading state initially
+  const loadingState = document.getElementById('onboardingLoadingState');
+  const loadedState = document.getElementById('onboardingLoadedState');
+  const quickStartBtn = document.getElementById('onboardingQuickStart') as HTMLButtonElement;
+  const customBtn = document.getElementById('onboardingCustom') as HTMLButtonElement;
 
-  // Quick Start: Pre-fill with Google info
-  quickStartBtn?.addEventListener('click', () => handleQuickStartOnboarding(user), { once: true });
+  if (loadingState) loadingState.classList.remove('hidden');
+  if (loadedState) loadedState.classList.add('hidden');
 
-  // Custom: Open regular profile editor
-  customBtn?.addEventListener('click', () => handleCustomOnboarding(), { once: true });
+  // Disable buttons while loading
+  if (quickStartBtn) quickStartBtn.disabled = true;
+  if (customBtn) customBtn.disabled = true;
+
+  // Simulate loading delay, then show user info
+  setTimeout(() => {
+    // Pre-fill Google user info in modal
+    const userName = document.getElementById('onboardingUserName');
+    const userEmail = document.getElementById('onboardingUserEmail');
+
+    if (userName) userName.textContent = user.displayName || user.email?.split('@')[0] || 'User';
+    if (userEmail) userEmail.textContent = user.email || '';
+
+    // Switch to loaded state
+    if (loadingState) loadingState.classList.add('hidden');
+    if (loadedState) loadedState.classList.remove('hidden');
+
+    // Enable buttons
+    if (quickStartBtn) {
+      quickStartBtn.disabled = false;
+      // Update button text to indicate ready state
+      const buttonSpan = quickStartBtn.querySelector('span:last-child');
+      if (buttonSpan) buttonSpan.textContent = 'Continue with Google Info';
+    }
+    if (customBtn) customBtn.disabled = false;
+
+    console.log('[User Profile] User info loaded, onboarding ready');
+  }, 100); // Small delay to show spinner briefly
 
   console.log('[User Profile] Onboarding modal displayed');
 }
@@ -361,38 +433,143 @@ function showOnboardingModal(user: User) {
 function handleQuickStartOnboarding(user: User) {
   console.log('[User Profile] Quick start onboarding selected');
 
-  // Close onboarding modal
+  // Hide onboarding modal immediately
   const onboardingModal = document.getElementById('onboardingModal');
   onboardingModal?.classList.add('hidden');
+
+  // Show loading state in onboarding modal buttons (for if user cancels and comes back)
+  const quickStartBtn = document.getElementById('onboardingQuickStart') as HTMLButtonElement;
+  const customBtn = document.getElementById('onboardingCustom') as HTMLButtonElement;
+
+  if (quickStartBtn) {
+    quickStartBtn.disabled = true;
+    quickStartBtn.classList.add('loading');
+    quickStartBtn.textContent = 'Loading...';
+  }
+
+  if (customBtn) {
+    customBtn.disabled = true;
+    customBtn.style.opacity = '0.5';
+  }
 
   // Open profile modal with pre-filled Google info
   const addProfileBtn = document.getElementById('addProfileBtn');
   if (!addProfileBtn) {
     console.error('[User Profile] Add profile button not found');
+
+    // Reset buttons on error
+    if (quickStartBtn) {
+      quickStartBtn.disabled = false;
+      quickStartBtn.classList.remove('loading');
+      quickStartBtn.textContent = '⚡ Use My Google Info (Quick Start)';
+    }
+    if (customBtn) {
+      customBtn.disabled = false;
+      customBtn.style.opacity = '1';
+    }
     return;
   }
 
   // Trigger the add profile modal
   addProfileBtn.click();
 
-  // Pre-fill the form with Google account info
+  // Pre-fill the form with Google account info AND branded fake alias data
+  // Use longer delay to ensure modal is fully rendered
   setTimeout(() => {
+    console.log('[User Profile] Starting auto-fill...');
+    // Profile configuration
+    const profileNameInput = document.getElementById('profileName') as HTMLInputElement;
+    const profileDescInput = document.getElementById('profileDescription') as HTMLInputElement;
+
+    // Real information (from Google)
     const realNameInput = document.getElementById('realName') as HTMLInputElement;
     const realEmailInput = document.getElementById('realEmail') as HTMLInputElement;
 
-    if (realNameInput && user.displayName) {
-      realNameInput.value = user.displayName;
-      // Trigger input event to update any listeners
-      realNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    // Alias information (branded fake data)
+    const aliasNameInput = document.getElementById('aliasName') as HTMLInputElement;
+    const aliasEmailInput = document.getElementById('aliasEmail') as HTMLInputElement;
+    const aliasPhoneInput = document.getElementById('aliasPhone') as HTMLInputElement;
+    const aliasAddressInput = document.getElementById('aliasAddress') as HTMLInputElement;
+
+    // Pre-fill profile name
+    if (profileNameInput) {
+      profileNameInput.value = 'My Gmail Profile';
+      profileNameInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
-    if (realEmailInput && user.email) {
-      realEmailInput.value = user.email;
-      realEmailInput.dispatchEvent(new Event('input', { bubbles: true }));
+    // Pre-fill description
+    if (profileDescInput) {
+      profileDescInput.value = 'My PromptBlocker Gmail alias';
+      profileDescInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
-    console.log('[User Profile] Pre-filled form with Google info');
-  }, 100); // Small delay to ensure modal is open
+    // Pre-fill REAL information from Google
+    if (realNameInput) {
+      // Try to use displayName, or extract from email as fallback
+      let name = user.displayName;
+      if (!name && user.email) {
+        // Extract username from email (before @)
+        const emailPrefix = user.email.split('@')[0];
+        name = emailPrefix;
+        console.log('[User Profile] 📧 Extracted name from email:', name);
+      }
+
+      if (name) {
+        realNameInput.value = name;
+        realNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+        console.log('[User Profile] ✅ Set real name to:', name);
+      } else {
+        console.warn('[User Profile] ❌ No displayName or email available');
+      }
+    } else {
+      console.error('[User Profile] ❌ realNameInput not found');
+    }
+
+    if (realEmailInput) {
+      if (user.email) {
+        realEmailInput.value = user.email;
+        realEmailInput.dispatchEvent(new Event('input', { bubbles: true }));
+        console.log('[User Profile] ✅ Set real email to:', user.email);
+      }
+    } else {
+      console.error('[User Profile] ❌ realEmailInput not found');
+    }
+
+    // Pre-fill ALIAS information with branded fake data
+    if (aliasNameInput) {
+      aliasNameInput.value = 'Alias Personname';
+      aliasNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+      console.log('[User Profile] ✅ Set alias name');
+    } else {
+      console.error('[User Profile] ❌ aliasNameInput not found');
+    }
+
+    if (aliasEmailInput) {
+      aliasEmailInput.value = 'blocked-email@promptblocker.com';
+      aliasEmailInput.dispatchEvent(new Event('input', { bubbles: true }));
+      console.log('[User Profile] ✅ Set alias email');
+    } else {
+      console.error('[User Profile] ❌ aliasEmailInput not found');
+    }
+
+    if (aliasPhoneInput) {
+      aliasPhoneInput.value = '(555) 555-5555';
+      aliasPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+      console.log('[User Profile] ✅ Set alias phone');
+    } else {
+      console.error('[User Profile] ❌ aliasPhoneInput not found');
+    }
+
+    if (aliasAddressInput) {
+      aliasAddressInput.value = '123 Address St, Sometown, STATE, USA';
+      aliasAddressInput.dispatchEvent(new Event('input', { bubbles: true }));
+      console.log('[User Profile] ✅ Set alias address');
+    } else {
+      console.error('[User Profile] ❌ aliasAddressInput not found');
+    }
+
+    console.log('[User Profile] Auto-fill complete');
+  }, 500); // Longer delay to ensure modal is fully rendered
 }
 
 /**
@@ -401,11 +578,49 @@ function handleQuickStartOnboarding(user: User) {
 function handleCustomOnboarding() {
   console.log('[User Profile] Custom onboarding selected');
 
-  // Close onboarding modal
-  const onboardingModal = document.getElementById('onboardingModal');
-  onboardingModal?.classList.add('hidden');
+  // Show loading state
+  const customBtn = document.getElementById('onboardingCustom') as HTMLButtonElement;
+  const quickStartBtn = document.getElementById('onboardingQuickStart') as HTMLButtonElement;
+
+  if (customBtn) {
+    customBtn.disabled = true;
+    customBtn.classList.add('loading');
+    customBtn.textContent = 'Loading...';
+  }
+
+  if (quickStartBtn) {
+    quickStartBtn.disabled = true;
+    quickStartBtn.style.opacity = '0.5';
+  }
 
   // Open profile modal (empty)
   const addProfileBtn = document.getElementById('addProfileBtn');
   addProfileBtn?.click();
+
+  // Keep onboarding modal visible with loading state
+  // It will be hidden by checkAndShowOnboarding once profile is saved
+}
+
+/**
+ * Reset onboarding modal button states (called when profile modal is closed without saving)
+ */
+export function resetOnboardingButtons() {
+  const quickStartBtn = document.getElementById('onboardingQuickStart') as HTMLButtonElement;
+  const customBtn = document.getElementById('onboardingCustom') as HTMLButtonElement;
+
+  if (quickStartBtn) {
+    quickStartBtn.disabled = false;
+    quickStartBtn.classList.remove('loading');
+    quickStartBtn.textContent = '⚡ Use My Google Info (Quick Start)';
+    quickStartBtn.style.opacity = '1';
+  }
+
+  if (customBtn) {
+    customBtn.disabled = false;
+    customBtn.classList.remove('loading');
+    customBtn.textContent = '✏️ Create Custom Profile';
+    customBtn.style.opacity = '1';
+  }
+
+  console.log('[User Profile] Onboarding buttons reset');
 }
