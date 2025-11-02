@@ -126,8 +126,7 @@
 }
 
 .user-profile-dropdown {
-  position: relative;
-  z-index: 10000;
+  position: static;
 }
 
 .user-profile-btn {
@@ -193,12 +192,13 @@
   position: fixed;
   top: 60px;
   right: 20px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
+  background: #1a202c !important;
+  backdrop-filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
   min-width: 220px;
-  z-index: 99999;
+  z-index: 999999 !important;
   animation: slideDown 0.2s ease;
 }
 
