@@ -294,6 +294,9 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
     case 'GET_ALIASES':
       return handleGetAliases();
 
+    case 'GET_PROFILES':
+      return handleGetProfiles();
+
     case 'ADD_ALIAS':
       return handleAddAlias(message.payload);
 
@@ -668,6 +671,15 @@ async function handleGetAliases() {
   const storage = StorageManager.getInstance();
   const aliases = await storage.loadAliases();
   return { success: true, data: aliases };
+}
+
+/**
+ * Get all profiles (V2) - for Gemini observer
+ */
+async function handleGetProfiles() {
+  const storage = StorageManager.getInstance();
+  const profiles = await storage.loadProfiles();
+  return { success: true, data: profiles };
 }
 
 /**

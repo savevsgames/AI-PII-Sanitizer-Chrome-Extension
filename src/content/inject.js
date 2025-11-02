@@ -12,6 +12,8 @@
 
 (function() {
   console.log('🛡️ AI PII Sanitizer: Loading...');
+  console.log('🌐 Current hostname:', window.location.hostname);
+  console.log('🌐 Current URL:', window.location.href);
 
   const nativeFetch = window.fetch;
   window.__nativeFetch = nativeFetch;
@@ -210,12 +212,23 @@
     const [url, options] = args;
     const urlStr = typeof url === 'string' ? url : url.toString();
 
+    // Log ALL requests on Gemini to debug
+    if (window.location.hostname.includes('gemini.google.com')) {
+      console.log('🌐 [DEBUG] All Gemini fetch:', urlStr);
+      console.log('🌐 [DEBUG] isAIRequest?', isAIRequest(urlStr));
+    }
+
     // Pass through non-AI requests immediately
     if (!isAIRequest(urlStr)) {
       return nativeFetch.apply(this, args);
     }
 
     console.log('🔒 AI PII Sanitizer: Intercepting', urlStr);
+    if (urlStr.includes('gemini.google.com')) {
+      console.log('🔍 [Gemini] Request detected!');
+      console.log('🔍 [Gemini] URL:', urlStr);
+      console.log('🔍 [Gemini] Method:', options?.method || 'GET');
+    }
 
     // SECURITY: Check if protection is active before allowing request
     if (!isProtected) {
@@ -491,4 +504,34 @@
   }
 
   console.log('🛡️ AI PII Sanitizer: Active and monitoring');
+
+  // INTERCEPT XMLHttpRequest for Gemini (they don't use fetch!)
+  const nativeXHROpen = XMLHttpRequest.prototype.open;
+  const nativeXHRSend = XMLHttpRequest.prototype.send;
+
+  XMLHttpRequest.prototype.open = function(method, url, ...args) {
+    this._url = url;
+    this._method = method;
+
+    if (window.location.hostname.includes('gemini.google.com')) {
+      console.log('🌐 [DEBUG] XHR open:', method, url);
+    }
+
+    return nativeXHROpen.apply(this, [method, url, ...args]);
+  };
+
+  XMLHttpRequest.prototype.send = function(body) {
+    if (window.location.hostname.includes('gemini.google.com') && this._url) {
+      console.log('🌐 [DEBUG] XHR send:', this._method, this._url);
+      console.log('🌐 [DEBUG] XHR body length:', body?.length || 0);
+
+      if (this._url.includes('BardChatUi') || this._url.includes('batchexecute')) {
+        console.log('🔍 [Gemini] XHR API REQUEST DETECTED!');
+        console.log('🔍 [Gemini] URL:', this._url);
+        console.log('🔍 [Gemini] Body:', body?.substring(0, 200));
+      }
+    }
+
+    return nativeXHRSend.apply(this, [body]);
+  };
 })();
