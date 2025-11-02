@@ -147,33 +147,83 @@ function switchMode(mode: 'signin' | 'signup' | 'reset') {
 }
 
 /**
- * Handle Google Sign-In (opens auth.html in new tab)
+ * Handle Google Sign-In (uses Chrome Identity API + Firebase)
  */
 async function handleGoogleSignIn() {
   const googleSignInBtn = document.getElementById('googleSignInBtn') as HTMLButtonElement;
 
   try {
-    console.log('[Auth] Starting Google Sign-In in new tab...');
-    setLoading(googleSignInBtn, true, 'Opening sign-in...');
+    console.log('[Auth] Starting Google Sign-In with Chrome Identity API...');
+    setLoading(googleSignInBtn, true, 'Signing in...');
     clearErrorMessages();
 
-    // Open extension's auth.html in new tab to handle redirect
-    const authUrl = chrome.runtime.getURL('auth.html');
-    console.log('[Auth] Opening auth page:', authUrl);
+    // Use Chrome's Identity API to get OAuth token
+    console.log('[Auth] Launching Chrome web auth flow...');
 
-    // Store auth provider in session storage
-    await chrome.storage.session.set({ authProvider: 'google' });
+    const redirectURL = chrome.identity.getRedirectURL();
+    console.log('[Auth] Redirect URL:', redirectURL);
 
-    // Open in new tab
-    chrome.tabs.create({ url: authUrl });
+    // Firebase Web Client ID (get from Firebase Console)
+    const clientId = '861822607891-YOUR_CLIENT_ID_SUFFIX.apps.googleusercontent.com';
+    const scopes = ['email', 'profile'];
 
-    // Close the popup
-    window.close();
+    const authUrl = `https://accounts.google.com/o/oauth2/auth?` +
+      `client_id=${clientId}&` +
+      `response_type=id_token&` +
+      `redirect_uri=${encodeURIComponent(redirectURL)}&` +
+      `scope=${encodeURIComponent(scopes.join(' '))}`;
+
+    const responseUrl = await new Promise<string>((resolve, reject) => {
+      chrome.identity.launchWebAuthFlow(
+        {
+          url: authUrl,
+          interactive: true
+        },
+        (redirectUrl) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else if (redirectUrl) {
+            resolve(redirectUrl);
+          } else {
+            reject(new Error('No redirect URL received'));
+          }
+        }
+      );
+    });
+
+    console.log('[Auth] OAuth completed, response URL received');
+
+    // Extract ID token from redirect URL
+    const url = new URL(responseUrl);
+    const hash = url.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const idToken = params.get('id_token');
+
+    if (!idToken) {
+      throw new Error('No ID token in response');
+    }
+
+    console.log('[Auth] ID token received, signing into Firebase...');
+
+    // Sign into Firebase with the ID token
+    const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+    const { auth } = await import('../../lib/firebase');
+
+    const credential = GoogleAuthProvider.credential(idToken);
+    const result = await signInWithCredential(auth, credential);
+
+    console.log('[Auth] Firebase sign-in successful:', result.user.uid);
+
+    // Update account and sync to Firestore
+    await onAuthSuccess(result.user);
+
+    closeAuthModal();
+
   } catch (error: any) {
     console.error('[Auth] Google sign-in error:', error);
-    console.error('[Auth] Error code:', error.code);
     console.error('[Auth] Error message:', error.message);
     showError('googleSignInError', getAuthErrorMessage(error));
+  } finally {
     setLoading(googleSignInBtn, false, 'Continue with Google');
   }
 }
