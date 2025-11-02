@@ -7,8 +7,7 @@ import { useAppStore } from '../../lib/store';
 import { AliasProfile } from '../../lib/types';
 import { isValidEmail } from './utils';
 import { generateIdentityVariations } from '../../lib/aliasVariations';
-import { handleGoogleQuickStart, isAuthenticated } from './userProfile';
-import { openAuthModal } from './authModal';
+import { handleGoogleQuickStart } from './userProfile';
 
 // Track currently editing profile ID
 let currentEditingProfileId: string | null = null;
@@ -26,24 +25,9 @@ export function initProfileModal() {
   addProfileBtn?.addEventListener('click', () => openProfileModal('create'));
   addProfileBtnEmpty?.addEventListener('click', () => openProfileModal('create'));
 
-  // Google Quick Start buttons - check if user is authenticated first
-  googleQuickStartBtn?.addEventListener('click', () => {
-    if (!isAuthenticated()) {
-      // Show sign-in modal if not authenticated
-      openAuthModal('signin');
-    } else {
-      handleGoogleQuickStart();
-    }
-  });
-
-  googleQuickStartBtnEmpty?.addEventListener('click', () => {
-    if (!isAuthenticated()) {
-      // Show sign-in modal if not authenticated
-      openAuthModal('signin');
-    } else {
-      handleGoogleQuickStart();
-    }
-  });
+  // Google Quick Start buttons - only visible when user is authenticated
+  googleQuickStartBtn?.addEventListener('click', handleGoogleQuickStart);
+  googleQuickStartBtnEmpty?.addEventListener('click', handleGoogleQuickStart);
 
   // Profile Editor Modal handlers
   const modalClose = document.getElementById('modalClose');

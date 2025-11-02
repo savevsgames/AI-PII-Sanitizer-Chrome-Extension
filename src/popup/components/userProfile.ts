@@ -174,6 +174,9 @@ function showAuthenticatedUI(user: User) {
     userInitials.classList.remove('hidden');
     userAvatar?.classList.add('hidden');
   }
+
+  // Show Quick Start buttons when authenticated
+  showQuickStartButtons();
 }
 
 /**
@@ -192,6 +195,9 @@ function showUnauthenticatedUI() {
 
   signInContainer?.classList.remove('hidden');
   userProfileContainer?.classList.add('hidden');
+
+  // Hide Quick Start buttons when not authenticated
+  hideQuickStartButtons();
 }
 
 /**
@@ -416,4 +422,42 @@ export function handleGoogleQuickStart() {
 
     console.log('[User Profile] Auto-fill complete');
   }, 500); // Longer delay to ensure modal is fully rendered
+}
+
+/**
+ * Show Quick Start buttons (when user is authenticated)
+ */
+function showQuickStartButtons() {
+  const googleQuickStartBtn = document.getElementById('googleQuickStartBtn');
+  const googleQuickStartBtnEmpty = document.getElementById('googleQuickStartBtnEmpty');
+
+  if (googleQuickStartBtn) {
+    googleQuickStartBtn.classList.remove('hidden');
+    googleQuickStartBtn.style.display = '';
+  }
+
+  if (googleQuickStartBtnEmpty) {
+    googleQuickStartBtnEmpty.classList.remove('hidden');
+    googleQuickStartBtnEmpty.style.display = '';
+  }
+
+  console.log('[User Profile] Quick Start buttons shown');
+}
+
+/**
+ * Hide Quick Start buttons (when user is not authenticated)
+ */
+function hideQuickStartButtons() {
+  const googleQuickStartBtn = document.getElementById('googleQuickStartBtn');
+  const googleQuickStartBtnEmpty = document.getElementById('googleQuickStartBtnEmpty');
+
+  if (googleQuickStartBtn) {
+    googleQuickStartBtn.classList.add('hidden');
+  }
+
+  if (googleQuickStartBtnEmpty) {
+    googleQuickStartBtnEmpty.classList.add('hidden');
+  }
+
+  console.log('[User Profile] Quick Start buttons hidden');
 }
