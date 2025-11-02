@@ -6,6 +6,8 @@
  * inject.js (page) → window.postMessage → content.ts → chrome.runtime.sendMessage → background.ts
  */
 
+import { initObservers } from './observers';
+
 // Guard against multiple injections (happens when extension is reloaded)
 if ((window as any).__AI_PII_CONTENT_INJECTED__) {
   console.warn('⚠️ AI PII Sanitizer content script already injected - skipping duplicate injection');
@@ -20,6 +22,13 @@ if ((window as any).__AI_PII_CONTENT_INJECTED__) {
     console.log('🛡️ AI PII Sanitizer: Injector loaded');
   };
   (document.head || document.documentElement).appendChild(script);
+
+  // Initialize DOM observers after page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initObservers);
+  } else {
+    initObservers();
+  }
 }
 
 /**

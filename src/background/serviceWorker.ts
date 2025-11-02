@@ -195,6 +195,13 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 // Handle messages from content script
 chrome.runtime.onMessage.addListener(
   (message: Message, sender, sendResponse) => {
+    // Validate message has a type field
+    if (!message || !message.type) {
+      console.warn('[Background] Received message without type field:', message);
+      sendResponse({ success: false, error: 'Invalid message format' });
+      return false;
+    }
+
     handleMessage(message, sender)
       .then(sendResponse)
       .catch((error) => {
