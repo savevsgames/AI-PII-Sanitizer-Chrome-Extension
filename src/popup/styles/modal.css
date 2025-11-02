@@ -183,6 +183,23 @@
   display: none;
 }
 
+.form-info {
+  display: block;
+  margin-top: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm);
+  font-size: var(--font-size-xs);
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.form-info.hidden {
+  display: none;
+}
+
 .form-input,
 .form-textarea {
   width: 100%;

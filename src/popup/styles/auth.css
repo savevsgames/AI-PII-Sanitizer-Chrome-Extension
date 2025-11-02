@@ -97,8 +97,37 @@
   margin-right: 1rem;
 }
 
+/* Header sign-in button - clean and simple */
+.header-signin-container .btn {
+  padding: 0.4rem 1rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  border-radius: 20px !important;
+  min-height: unset !important;
+  height: auto !important;
+  line-height: 1.2 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  color: white !important;
+  cursor: pointer !important;
+}
+
+.header-signin-container .btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+.header-signin-container .btn:active {
+  transform: translateY(0) !important;
+}
+
 .user-profile-dropdown {
   position: relative;
+  z-index: 10000;
 }
 
 .user-profile-btn {
@@ -161,15 +190,15 @@
 /* ========== USER DROPDOWN MENU ========== */
 
 .user-dropdown {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
+  position: fixed;
+  top: 60px;
+  right: 20px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   min-width: 220px;
-  z-index: 1000;
+  z-index: 99999;
   animation: slideDown 0.2s ease;
 }
 
@@ -252,8 +281,9 @@
 /* ========== SMALL BUTTON ========== */
 
 .btn-sm {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.875rem;
+  padding: 0.35rem 0.75rem !important;
+  font-size: 0.8125rem !important;
+  min-height: unset !important;
 }
 
 /* ========== MODAL SIZE VARIANTS ========== */
