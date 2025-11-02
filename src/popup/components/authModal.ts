@@ -6,9 +6,7 @@
 
 import { auth } from '../../lib/firebase';
 import {
-  signInWithRedirect,
   getRedirectResult,
-  GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -149,23 +147,29 @@ function switchMode(mode: 'signin' | 'signup' | 'reset') {
 }
 
 /**
- * Handle Google Sign-In (using redirect for Chrome extension compatibility)
+ * Handle Google Sign-In (opens in new tab for Chrome extension compatibility)
  */
 async function handleGoogleSignIn() {
   const googleSignInBtn = document.getElementById('googleSignInBtn') as HTMLButtonElement;
 
   try {
-    console.log('[Auth] Starting Google Sign-In with redirect...');
-    setLoading(googleSignInBtn, true, 'Redirecting...');
+    console.log('[Auth] Starting Google Sign-In in new tab...');
+    setLoading(googleSignInBtn, true, 'Opening sign-in...');
     clearErrorMessages();
 
-    const provider = new GoogleAuthProvider();
+    // Open sign-in in a new tab (Chrome extension workaround)
+    // Create a temporary page that will handle the redirect
+    const authUrl = chrome.runtime.getURL('auth.html');
+    console.log('[Auth] Opening auth page:', authUrl);
 
-    // Use redirect instead of popup (Chrome extension CSP compatible)
-    await signInWithRedirect(auth, provider);
+    // Store auth intent in session storage
+    await chrome.storage.session.set({ authProvider: 'google' });
 
-    // The page will redirect and come back, handled by checkRedirectResult()
-    console.log('[Auth] Redirect initiated');
+    // Open in new tab
+    chrome.tabs.create({ url: authUrl });
+
+    // Close the popup
+    window.close();
   } catch (error: any) {
     console.error('[Auth] Google sign-in error:', error);
     console.error('[Auth] Error code:', error.code);
