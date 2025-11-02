@@ -7,7 +7,8 @@ import { useAppStore } from '../../lib/store';
 import { AliasProfile } from '../../lib/types';
 import { isValidEmail } from './utils';
 import { generateIdentityVariations } from '../../lib/aliasVariations';
-import { resetOnboardingButtons } from './userProfile';
+import { handleGoogleQuickStart, isAuthenticated } from './userProfile';
+import { openAuthModal } from './authModal';
 
 // Track currently editing profile ID
 let currentEditingProfileId: string | null = null;
@@ -19,9 +20,30 @@ export function initProfileModal() {
   // Open modal buttons
   const addProfileBtn = document.getElementById('addProfileBtn');
   const addProfileBtnEmpty = document.getElementById('addProfileBtnEmpty');
+  const googleQuickStartBtn = document.getElementById('googleQuickStartBtn');
+  const googleQuickStartBtnEmpty = document.getElementById('googleQuickStartBtnEmpty');
 
   addProfileBtn?.addEventListener('click', () => openProfileModal('create'));
   addProfileBtnEmpty?.addEventListener('click', () => openProfileModal('create'));
+
+  // Google Quick Start buttons - check if user is authenticated first
+  googleQuickStartBtn?.addEventListener('click', () => {
+    if (!isAuthenticated()) {
+      // Show sign-in modal if not authenticated
+      openAuthModal('signin');
+    } else {
+      handleGoogleQuickStart();
+    }
+  });
+
+  googleQuickStartBtnEmpty?.addEventListener('click', () => {
+    if (!isAuthenticated()) {
+      // Show sign-in modal if not authenticated
+      openAuthModal('signin');
+    } else {
+      handleGoogleQuickStart();
+    }
+  });
 
   // Profile Editor Modal handlers
   const modalClose = document.getElementById('modalClose');
@@ -132,9 +154,6 @@ export function closeProfileModal() {
   modal.classList.add('hidden');
   currentEditingProfileId = null;
   clearFormErrors();
-
-  // Reset onboarding buttons in case user cancelled during onboarding
-  resetOnboardingButtons();
 
   console.log('[Profile Modal] Closed');
 }

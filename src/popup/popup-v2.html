@@ -102,7 +102,13 @@
       <section class="tab-content active" id="aliases-tab">
         <div class="tab-header">
           <h2>Identity Profiles</h2>
-          <button class="btn btn-primary" id="addProfileBtn">+ New Profile</button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary" id="addProfileBtn">+ New Profile</button>
+            <button class="btn btn-secondary" id="googleQuickStartBtn" title="Auto-fill with your Google account info">
+              <span>⚡</span>
+              <span>Quick Start</span>
+            </button>
+          </div>
         </div>
 
         <div class="profile-list" id="profileList">
@@ -114,7 +120,13 @@
           <div class="empty-state-icon">🎭</div>
           <p class="empty-state-title">No profiles yet</p>
           <p class="empty-state-hint">Create your first identity profile to start protecting your privacy</p>
-          <button class="btn btn-primary" id="addProfileBtnEmpty">Create Profile</button>
+          <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="addProfileBtnEmpty">Create Profile</button>
+            <button class="btn btn-secondary" id="googleQuickStartBtnEmpty" title="Auto-fill with your Google account info">
+              <span>⚡</span>
+              <span>Quick Start with Google</span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -782,181 +794,6 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="signOutCancel">Cancel</button>
         <button type="button" class="btn btn-danger" id="signOutConfirm">Sign Out</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Onboarding Modal (shown until first profile created) -->
-  <div class="modal" id="onboardingModal">
-    <div class="modal-overlay" style="pointer-events: none;"></div>
-    <div class="modal-content" style="max-width: 500px; max-height: 90vh; display: flex; flex-direction: column; position: relative;">
-      <!-- Close Button -->
-      <button class="modal-close" id="onboardingModalClose" style="
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: var(--card-bg-light);
-        backdrop-filter: blur(8px);
-        border: 1px solid var(--border-neutral);
-        border-radius: var(--radius-md);
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        color: var(--text-secondary);
-        cursor: pointer;
-        transition: all var(--transition-base);
-        z-index: 10;
-      ">&times;</button>
-
-      <!-- Header -->
-      <div style="text-align: center; padding: 2rem 2rem 1.5rem; flex-shrink: 0;">
-        <div style="
-          font-size: 3rem;
-          margin-bottom: 1rem;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        ">🎉</div>
-        <h2 style="
-          margin: 0 0 0.5rem;
-          font-size: 1.75rem;
-          font-weight: 700;
-          color: var(--text-primary);
-        ">Welcome to PromptBlocker!</h2>
-        <p style="
-          margin: 0;
-          font-size: 0.95rem;
-          color: var(--text-secondary);
-          line-height: 1.5;
-        ">Protect your privacy with AI-powered alias profiles</p>
-      </div>
-
-      <div class="modal-body" style="padding: 0 2rem 2rem; overflow-y: auto; flex: 1;">
-        <!-- Google Info Card -->
-        <div style="
-          background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-          border: 2px solid rgba(102, 126, 234, 0.2);
-          border-radius: 12px;
-          padding: 1.25rem;
-          margin-bottom: 1.5rem;
-        " id="onboardingGoogleCard">
-          <!-- Loading State -->
-          <div id="onboardingLoadingState" style="
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem 1rem;
-            gap: 1rem;
-          ">
-            <div class="spinner" style="
-              width: 48px;
-              height: 48px;
-              border: 4px solid rgba(102, 126, 234, 0.2);
-              border-top-color: var(--color-primary);
-              border-radius: 50%;
-              animation: spin 0.8s linear infinite;
-            "></div>
-            <p style="margin: 0; font-size: 0.9rem; color: var(--text-secondary); font-weight: 500;">
-              Loading your account...
-            </p>
-          </div>
-
-          <!-- Loaded State (hidden initially) -->
-          <div id="onboardingLoadedState" class="hidden">
-            <div style="
-              display: flex;
-              align-items: center;
-              gap: 1rem;
-              margin-bottom: 1rem;
-            ">
-              <div style="
-                width: 48px;
-                height: 48px;
-                border-radius: 50%;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.5rem;
-                flex-shrink: 0;
-              ">👤</div>
-              <div style="flex: 1; min-width: 0;">
-                <div style="
-                  font-weight: 600;
-                  font-size: 1.05rem;
-                  margin-bottom: 0.25rem;
-                  color: var(--text-primary);
-                  overflow: hidden;
-                  text-overflow: ellipsis;
-                  white-space: nowrap;
-                " id="onboardingUserName">User</div>
-                <div style="
-                  font-size: 0.85rem;
-                  color: var(--text-secondary);
-                  overflow: hidden;
-                  text-overflow: ellipsis;
-                  white-space: nowrap;
-                " id="onboardingUserEmail">user@example.com</div>
-              </div>
-              <div style="
-                color: #10b981;
-                font-size: 1.25rem;
-                flex-shrink: 0;
-              ">✓</div>
-            </div>
-            <p style="
-              margin: 0;
-              font-size: 0.85rem;
-              color: var(--text-secondary);
-              line-height: 1.5;
-            ">Account detected! Choose how to create your first profile:</p>
-          </div>
-        </div>
-
-        <!-- Two Options -->
-        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
-          <button class="btn btn-primary btn-block" id="onboardingQuickStart" style="
-            padding: 1rem;
-            font-size: 0.95rem;
-            font-weight: 600;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.625rem;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
-          ">
-            <span style="font-size: 1.25rem;">⚡</span>
-            <span>Quick Start with Google</span>
-          </button>
-
-          <button class="onboarding-secondary-btn" id="onboardingCustom">
-            <span style="font-size: 1.25rem;">✏️</span>
-            <span>Create Custom Profile</span>
-          </button>
-        </div>
-
-        <!-- Info Box -->
-        <div style="
-          padding: 1rem;
-          background: rgba(102, 126, 234, 0.08);
-          border-radius: 10px;
-          border-left: 3px solid var(--color-primary);
-        ">
-          <p style="
-            margin: 0;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            line-height: 1.6;
-          ">
-            <strong style="color: var(--text-primary);">💡 How it works:</strong> Your real info stays encrypted. AI sees your alias, responses get decoded automatically.
-          </p>
-        </div>
       </div>
     </div>
   </div>

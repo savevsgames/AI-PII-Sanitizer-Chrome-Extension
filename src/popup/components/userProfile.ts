@@ -10,7 +10,6 @@ import { useAppStore } from '../../lib/store';
 import { openAuthModal, signOutUser } from './authModal';
 
 let currentUser: User | null = null;
-let onboardingCheckInProgress = false; // Prevent duplicate checks
 
 /**
  * Initialize user profile display
@@ -25,41 +24,6 @@ export function initUserProfile() {
     } else {
       onUserSignedOut();
     }
-  });
-
-  // Listen for profile changes to re-check onboarding
-  window.addEventListener('profilesUpdated', async () => {
-    if (currentUser) {
-      // Reload store to get latest profiles, then check onboarding
-      const store = useAppStore.getState();
-      await store.loadConfig();
-
-      // Add delay to allow store to fully update
-      setTimeout(async () => {
-        await checkAndShowOnboarding(currentUser!);
-      }, 500);
-    }
-  });
-
-  // Set up onboarding button handlers (one-time setup)
-  const quickStartBtn = document.getElementById('onboardingQuickStart');
-  const customBtn = document.getElementById('onboardingCustom');
-  const onboardingCloseBtn = document.getElementById('onboardingModalClose');
-
-  quickStartBtn?.addEventListener('click', () => {
-    if (currentUser) handleQuickStartOnboarding(currentUser);
-  });
-
-  customBtn?.addEventListener('click', () => {
-    handleCustomOnboarding();
-  });
-
-  onboardingCloseBtn?.addEventListener('click', async () => {
-    // Mark onboarding as completed when user closes it
-    await chrome.storage.local.set({ onboardingCompleted: true });
-    const modal = document.getElementById('onboardingModal');
-    modal?.classList.add('hidden');
-    console.log('[User Profile] User dismissed onboarding modal');
   });
 
   // Sign-in button
@@ -156,9 +120,6 @@ async function onUserSignedIn(user: User) {
 
     // Update tier badge
     updateTierBadge();
-
-    // Check if user needs onboarding (no active profiles)
-    await checkAndShowOnboarding(user);
   } catch (error) {
     console.error('[User Profile] Error syncing user:', error);
   }
@@ -335,149 +296,21 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Check if user needs onboarding and show modal if needed
- * Onboarding is required until user has at least one active profile
+ * Handle Quick Start with Google - pre-fill profile with Google account info
+ * This function is exported to be used by the Quick Start button in the UI
  */
-async function checkAndShowOnboarding(user: User) {
-  // Prevent duplicate checks
-  if (onboardingCheckInProgress) {
-    console.log('[User Profile] Onboarding check already in progress, skipping');
+export function handleGoogleQuickStart() {
+  if (!currentUser) {
+    console.error('[User Profile] No user signed in for Quick Start');
     return;
   }
 
-  onboardingCheckInProgress = true;
-
-  try {
-    // Check if user has already completed onboarding (persisted in chrome.storage)
-    const result = await chrome.storage.local.get('onboardingCompleted');
-    if (result.onboardingCompleted) {
-      console.log('[User Profile] Onboarding already completed (from storage), skipping');
-      onboardingCheckInProgress = false;
-      return;
-    }
-
-    const store = useAppStore.getState();
-    // Use store.profiles directly, not store.config.profiles
-    const profiles = store.profiles || [];
-
-    console.log('[User Profile] Checking onboarding...', {
-      totalProfiles: profiles.length,
-      profiles: profiles
-    });
-
-    // If user has ANY profile (active or not), they've completed onboarding
-    if (profiles.length > 0) {
-      console.log('[User Profile] User has profiles, marking onboarding complete');
-      await chrome.storage.local.set({ onboardingCompleted: true });
-      // Hide modal if it's currently showing
-      const modal = document.getElementById('onboardingModal');
-      modal?.classList.add('hidden');
-      onboardingCheckInProgress = false;
-      return;
-    }
-
-    // Show onboarding modal (doesn't go away until they create a profile)
-    console.log('[User Profile] No active profiles - showing onboarding');
-    showOnboardingModal(user);
-    onboardingCheckInProgress = false;
-  } catch (error) {
-    console.error('[User Profile] Error checking onboarding:', error);
-    onboardingCheckInProgress = false;
-  }
-}
-
-/**
- * Show onboarding modal with Google info pre-fill option
- */
-function showOnboardingModal(user: User) {
-  const modal = document.getElementById('onboardingModal');
-  if (!modal) {
-    console.error('[User Profile] Onboarding modal not found');
-    return;
-  }
-
-  // Show modal immediately with loading state
-  modal.classList.remove('hidden');
-
-  // Show loading state initially
-  const loadingState = document.getElementById('onboardingLoadingState');
-  const loadedState = document.getElementById('onboardingLoadedState');
-  const quickStartBtn = document.getElementById('onboardingQuickStart') as HTMLButtonElement;
-  const customBtn = document.getElementById('onboardingCustom') as HTMLButtonElement;
-
-  if (loadingState) loadingState.classList.remove('hidden');
-  if (loadedState) loadedState.classList.add('hidden');
-
-  // Disable buttons while loading
-  if (quickStartBtn) quickStartBtn.disabled = true;
-  if (customBtn) customBtn.disabled = true;
-
-  // Simulate loading delay, then show user info
-  setTimeout(() => {
-    // Pre-fill Google user info in modal
-    const userName = document.getElementById('onboardingUserName');
-    const userEmail = document.getElementById('onboardingUserEmail');
-
-    if (userName) userName.textContent = user.displayName || user.email?.split('@')[0] || 'User';
-    if (userEmail) userEmail.textContent = user.email || '';
-
-    // Switch to loaded state
-    if (loadingState) loadingState.classList.add('hidden');
-    if (loadedState) loadedState.classList.remove('hidden');
-
-    // Enable buttons
-    if (quickStartBtn) {
-      quickStartBtn.disabled = false;
-      // Button text is already "Quick Start with Google" - no need to change
-    }
-    if (customBtn) customBtn.disabled = false;
-
-    console.log('[User Profile] User info loaded, onboarding ready');
-  }, 100); // Small delay to show spinner briefly
-
-  console.log('[User Profile] Onboarding modal displayed');
-}
-
-/**
- * Handle Quick Start onboarding - pre-fill with Google account info
- */
-function handleQuickStartOnboarding(user: User) {
-  console.log('[User Profile] Quick start onboarding selected');
-
-  // Hide onboarding modal immediately
-  const onboardingModal = document.getElementById('onboardingModal');
-  onboardingModal?.classList.add('hidden');
-
-  // Show loading state in onboarding modal buttons (for if user cancels and comes back)
-  const quickStartBtn = document.getElementById('onboardingQuickStart') as HTMLButtonElement;
-  const customBtn = document.getElementById('onboardingCustom') as HTMLButtonElement;
-
-  if (quickStartBtn) {
-    quickStartBtn.disabled = true;
-    quickStartBtn.classList.add('loading');
-    quickStartBtn.textContent = 'Loading...';
-  }
-
-  if (customBtn) {
-    customBtn.disabled = true;
-    customBtn.style.opacity = '0.5';
-  }
+  console.log('[User Profile] Google Quick Start selected');
 
   // Open profile modal with pre-filled Google info
   const addProfileBtn = document.getElementById('addProfileBtn');
   if (!addProfileBtn) {
     console.error('[User Profile] Add profile button not found');
-
-    // Reset buttons on error
-    if (quickStartBtn) {
-      quickStartBtn.disabled = false;
-      quickStartBtn.classList.remove('loading');
-      quickStartBtn.textContent = '⚡ Use My Google Info (Quick Start)';
-    }
-    if (customBtn) {
-      customBtn.disabled = false;
-      customBtn.style.opacity = '1';
-    }
     return;
   }
 
@@ -488,6 +321,8 @@ function handleQuickStartOnboarding(user: User) {
   // Use longer delay to ensure modal is fully rendered
   setTimeout(() => {
     console.log('[User Profile] Starting auto-fill...');
+    const user = currentUser!;
+
     // Profile configuration
     const profileNameInput = document.getElementById('profileName') as HTMLInputElement;
     const profileDescInput = document.getElementById('profileDescription') as HTMLInputElement;
@@ -581,45 +416,4 @@ function handleQuickStartOnboarding(user: User) {
 
     console.log('[User Profile] Auto-fill complete');
   }, 500); // Longer delay to ensure modal is fully rendered
-}
-
-/**
- * Handle Custom onboarding - open empty profile editor
- */
-function handleCustomOnboarding() {
-  console.log('[User Profile] Custom onboarding selected');
-
-  // Hide onboarding modal immediately
-  const onboardingModal = document.getElementById('onboardingModal');
-  onboardingModal?.classList.add('hidden');
-
-  // Open profile modal (empty)
-  const addProfileBtn = document.getElementById('addProfileBtn');
-  addProfileBtn?.click();
-
-  // Onboarding modal will reappear if user cancels (resetOnboardingButtons will be called)
-}
-
-/**
- * Reset onboarding modal button states (called when profile modal is closed without saving)
- */
-export function resetOnboardingButtons() {
-  const quickStartBtn = document.getElementById('onboardingQuickStart') as HTMLButtonElement;
-  const customBtn = document.getElementById('onboardingCustom') as HTMLButtonElement;
-
-  if (quickStartBtn) {
-    quickStartBtn.disabled = false;
-    quickStartBtn.classList.remove('loading');
-    quickStartBtn.style.opacity = '1';
-    // Button text is already correct - no need to change
-  }
-
-  if (customBtn) {
-    customBtn.disabled = false;
-    customBtn.classList.remove('loading');
-    customBtn.style.opacity = '1';
-    // Button HTML is preserved - no need to reset
-  }
-
-  console.log('[User Profile] Onboarding buttons reset');
 }
