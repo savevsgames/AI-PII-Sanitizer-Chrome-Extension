@@ -28,7 +28,14 @@ export function initUserProfile() {
 
   // Sign-in button
   const signInBtn = document.getElementById('headerSignInBtn');
-  signInBtn?.addEventListener('click', () => openAuthModal('signin'));
+  signInBtn?.addEventListener('click', () => {
+    // Show loading state
+    if (signInBtn) {
+      signInBtn.classList.add('loading');
+      signInBtn.setAttribute('disabled', 'true');
+    }
+    openAuthModal('signin');
+  });
 
   // User menu toggle
   const userMenuBtn = document.getElementById('userMenuBtn');
@@ -45,9 +52,15 @@ export function initUserProfile() {
     }
   });
 
+  // Helper function to close dropdown
+  const closeDropdown = () => {
+    userDropdown?.classList.add('hidden');
+  };
+
   // Get Started button - opens promptblocker.com
   const getStartedBtn = document.getElementById('getStartedBtn');
   getStartedBtn?.addEventListener('click', () => {
+    closeDropdown();
     chrome.tabs.create({ url: 'https://promptblocker.com' });
     console.log('[User Profile] Opening promptblocker.com');
   });
@@ -55,13 +68,25 @@ export function initUserProfile() {
   // Account settings
   const accountSettingsBtn = document.getElementById('accountSettingsBtn');
   accountSettingsBtn?.addEventListener('click', () => {
+    closeDropdown();
     // TODO: Open account settings modal
     console.log('[User Profile] Account settings clicked');
   });
 
+  // Manage billing
+  const manageBillingBtn = document.getElementById('manageBillingBtn');
+  manageBillingBtn?.addEventListener('click', () => {
+    closeDropdown();
+    // TODO: Open billing management
+    console.log('[User Profile] Manage billing clicked');
+  });
+
   // Sign-out button
   const signOutBtn = document.getElementById('signOutBtn');
-  signOutBtn?.addEventListener('click', handleSignOut);
+  signOutBtn?.addEventListener('click', () => {
+    closeDropdown();
+    handleSignOut();
+  });
 
   console.log('[User Profile] Initialized');
 }
@@ -116,6 +141,13 @@ function onUserSignedOut() {
 function showAuthenticatedUI(user: User) {
   const signInContainer = document.getElementById('headerSignInContainer');
   const userProfileContainer = document.getElementById('headerUserProfileContainer');
+  const signInBtn = document.getElementById('headerSignInBtn');
+
+  // Remove loading state from sign-in button
+  if (signInBtn) {
+    signInBtn.classList.remove('loading');
+    signInBtn.removeAttribute('disabled');
+  }
 
   signInContainer?.classList.add('hidden');
   userProfileContainer?.classList.remove('hidden');
@@ -145,6 +177,13 @@ function showAuthenticatedUI(user: User) {
 function showUnauthenticatedUI() {
   const signInContainer = document.getElementById('headerSignInContainer');
   const userProfileContainer = document.getElementById('headerUserProfileContainer');
+  const signInBtn = document.getElementById('headerSignInBtn');
+
+  // Remove loading state from sign-in button (in case modal was closed)
+  if (signInBtn) {
+    signInBtn.classList.remove('loading');
+    signInBtn.removeAttribute('disabled');
+  }
 
   signInContainer?.classList.remove('hidden');
   userProfileContainer?.classList.add('hidden');
