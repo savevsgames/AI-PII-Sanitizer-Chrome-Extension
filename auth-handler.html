@@ -193,10 +193,54 @@
             // Encode the ID token for URL safety
             const encodedToken = encodeURIComponent(idToken);
             const redirectUrl = `chrome-extension://${extensionId}/auth.html?success=true&uid=${result.user.uid}&token=${encodedToken}`;
-            console.log('[Auth Handler] Redirecting to extension with token');
-            window.location.href = redirectUrl;
+
+            console.log('[Auth Handler] ========================================');
+            console.log('[Auth Handler] READY TO REDIRECT TO EXTENSION');
+            console.log('[Auth Handler] Extension ID:', extensionId);
+            console.log('[Auth Handler] User UID:', result.user.uid);
+            console.log('[Auth Handler] Token length:', idToken.length);
+            console.log('[Auth Handler] Redirect URL:', redirectUrl);
+            console.log('[Auth Handler] ========================================');
+
+            // Show on page
+            if (messageEl) {
+              messageEl.innerHTML = `
+                <strong>Ready to redirect!</strong><br>
+                Extension ID: ${extensionId}<br>
+                User: ${result.user.email}<br>
+                UID: ${result.user.uid}<br>
+                <br>
+                <button onclick="window.location.href='${redirectUrl}'" style="
+                  background: white;
+                  color: #667eea;
+                  border: none;
+                  padding: 12px 24px;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  cursor: pointer;
+                ">Click to Continue to Extension</button>
+              `;
+            }
+
+            // Auto-redirect after 10 seconds (so you can see the logs and open DevTools)
+            console.log('[Auth Handler] Auto-redirecting in 10 seconds...');
+            let countdown = 10;
+            const countdownInterval = setInterval(() => {
+              countdown--;
+              console.log(`[Auth Handler] Redirecting in ${countdown} seconds...`);
+              if (statusTextEl) {
+                statusTextEl.textContent = `Redirecting in ${countdown} seconds...`;
+              }
+            }, 1000);
+
+            setTimeout(() => {
+              clearInterval(countdownInterval);
+              console.log('[Auth Handler] Redirecting NOW...');
+              window.location.href = redirectUrl;
+            }, 10000);
           } else {
-            showMessage('Sign-in successful! You can close this window and return to the extension.');
+            console.error('[Auth Handler] ERROR: No extension ID found in localStorage');
+            showMessage('Sign-in successful, but extension ID not found. Please try again from the extension.');
           }
 
         } else {
