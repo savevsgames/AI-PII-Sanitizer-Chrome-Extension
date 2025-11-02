@@ -17,18 +17,25 @@ async function handleAuth() {
   try {
     // Check if we're coming back from a redirect
     console.log('[Auth Page] Checking for redirect result...');
+    console.log('[Auth Page] Current URL:', window.location.href);
+
     const result = await getRedirectResult(auth);
 
     if (result) {
       // Successfully signed in
       console.log('[Auth Page] Sign-in successful:', result.user.uid);
+      console.log('[Auth Page] User email:', result.user.email);
+      console.log('[Auth Page] User displayName:', result.user.displayName);
       showSuccess(result.user.email || 'Unknown user');
 
       // Sync to Firestore
+      console.log('[Auth Page] Syncing to Firestore...');
       await syncUserToFirestore(result.user);
+      console.log('[Auth Page] Sync complete');
 
       // Close this tab after a short delay
       setTimeout(() => {
+        console.log('[Auth Page] Closing tab...');
         window.close();
       }, 2000);
     } else {
@@ -37,6 +44,7 @@ async function handleAuth() {
 
       // Get auth provider from session storage
       const { authProvider } = await chrome.storage.session.get('authProvider');
+      console.log('[Auth Page] Auth provider:', authProvider);
 
       if (authProvider === 'google') {
         const provider = new GoogleAuthProvider();
@@ -45,12 +53,16 @@ async function handleAuth() {
         // This will redirect the page to Google OAuth
         await signInWithRedirect(auth, provider);
       } else {
+        console.error('[Auth Page] Unknown provider:', authProvider);
         showError('Unknown authentication provider');
       }
     }
   } catch (error: any) {
     console.error('[Auth Page] Error:', error);
-    showError(error.message || 'Authentication failed');
+    console.error('[Auth Page] Error code:', error.code);
+    console.error('[Auth Page] Error message:', error.message);
+    console.error('[Auth Page] Full error:', JSON.stringify(error, null, 2));
+    showError(error.message || 'Authentication failed. Please try again.');
   }
 }
 
