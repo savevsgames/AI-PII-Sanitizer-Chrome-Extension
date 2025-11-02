@@ -24,9 +24,16 @@ if ((window as any).__AI_PII_CONTENT_INJECTED__) {
   (document.head || document.documentElement).appendChild(script);
 
   // Initialize DOM observers after page load
+  console.log('🌐 [Content] Hostname:', window.location.hostname);
+  console.log('🌐 [Content] URL:', window.location.href);
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initObservers);
+    console.log('📄 [Content] Waiting for DOMContentLoaded...');
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('📄 [Content] DOMContentLoaded fired');
+      initObservers();
+    });
   } else {
+    console.log('📄 [Content] DOM already ready');
     initObservers();
   }
 }
