@@ -96,6 +96,14 @@ export function initUserProfile() {
  */
 async function onUserSignedIn(user: User) {
   console.log('[User Profile] User signed in:', user.uid);
+  console.log('[User Profile] Full user object:', {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    emailVerified: user.emailVerified,
+    providerId: user.providerId
+  });
 
   // Update UI to show user info
   showAuthenticatedUI(user);
@@ -112,9 +120,6 @@ async function onUserSignedIn(user: User) {
 
     // Update tier badge
     updateTierBadge();
-
-    // Check if this is first sign-in (show welcome page)
-    showWelcomePrompt();
   } catch (error) {
     console.error('[User Profile] Error syncing user:', error);
   }
@@ -169,6 +174,9 @@ function showAuthenticatedUI(user: User) {
     userInitials.classList.remove('hidden');
     userAvatar?.classList.add('hidden');
   }
+
+  // Show Quick Start buttons when authenticated
+  showQuickStartButtons();
 }
 
 /**
@@ -187,6 +195,9 @@ function showUnauthenticatedUI() {
 
   signInContainer?.classList.remove('hidden');
   userProfileContainer?.classList.add('hidden');
+
+  // Hide Quick Start buttons when not authenticated
+  hideQuickStartButtons();
 }
 
 /**
@@ -291,28 +302,162 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Show welcome prompt after sign-in with link to promptblocker.com
+ * Handle Quick Start with Google - pre-fill profile with Google account info
+ * This function is exported to be used by the Quick Start button in the UI
  */
-function showWelcomePrompt() {
-  // Check if we've shown this before (don't spam on every sign-in)
-  const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
-
-  if (hasSeenWelcome) return;
-
-  // Show a friendly notification
-  const showWelcomePage = confirm(
-    '🎉 Welcome to PromptBlocker!\n\n' +
-    'Visit our homepage to:\n' +
-    '• Quick access to all supported AI platforms\n' +
-    '• Learn more about protecting your privacy\n' +
-    '• Explore PRO features\n\n' +
-    'Open PromptBlocker.com now?'
-  );
-
-  if (showWelcomePage) {
-    chrome.tabs.create({ url: 'https://promptblocker.com' });
+export function handleGoogleQuickStart() {
+  if (!currentUser) {
+    console.error('[User Profile] No user signed in for Quick Start');
+    return;
   }
 
-  // Mark as seen so we don't show again
-  localStorage.setItem('hasSeenWelcome', 'true');
+  console.log('[User Profile] Google Quick Start selected');
+
+  // Open profile modal with pre-filled Google info
+  const addProfileBtn = document.getElementById('addProfileBtn');
+  if (!addProfileBtn) {
+    console.error('[User Profile] Add profile button not found');
+    return;
+  }
+
+  // Trigger the add profile modal
+  addProfileBtn.click();
+
+  // Pre-fill the form with Google account info AND branded fake alias data
+  // Use longer delay to ensure modal is fully rendered
+  setTimeout(() => {
+    console.log('[User Profile] Starting auto-fill...');
+    const user = currentUser!;
+
+    // Profile configuration
+    const profileNameInput = document.getElementById('profileName') as HTMLInputElement;
+    const profileDescInput = document.getElementById('profileDescription') as HTMLInputElement;
+
+    // Real information (from Google)
+    const realNameInput = document.getElementById('realName') as HTMLInputElement;
+    const realEmailInput = document.getElementById('realEmail') as HTMLInputElement;
+
+    // Alias information (branded fake data)
+    const aliasNameInput = document.getElementById('aliasName') as HTMLInputElement;
+    const aliasEmailInput = document.getElementById('aliasEmail') as HTMLInputElement;
+    const aliasPhoneInput = document.getElementById('aliasPhone') as HTMLInputElement;
+    const aliasAddressInput = document.getElementById('aliasAddress') as HTMLInputElement;
+
+    // Pre-fill profile name
+    if (profileNameInput) {
+      profileNameInput.value = 'My Gmail Profile';
+      profileNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // Pre-fill description
+    if (profileDescInput) {
+      profileDescInput.value = 'My PromptBlocker Gmail alias';
+      profileDescInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    // Pre-fill REAL information from Google
+    if (realNameInput) {
+      // Try to use displayName, or extract from email as fallback
+      let name = user.displayName;
+      if (!name && user.email) {
+        // Extract username from email (before @)
+        const emailPrefix = user.email.split('@')[0];
+        name = emailPrefix;
+        console.log('[User Profile] 📧 Extracted name from email:', name);
+      }
+
+      if (name) {
+        realNameInput.value = name;
+        realNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+        console.log('[User Profile] ✅ Set real name to:', name);
+      } else {
+        console.warn('[User Profile] ❌ No displayName or email available');
+      }
+    } else {
+      console.error('[User Profile] ❌ realNameInput not found');
+    }
+
+    if (realEmailInput) {
+      if (user.email) {
+        realEmailInput.value = user.email;
+        realEmailInput.dispatchEvent(new Event('input', { bubbles: true }));
+        console.log('[User Profile] ✅ Set real email to:', user.email);
+      }
+    } else {
+      console.error('[User Profile] ❌ realEmailInput not found');
+    }
+
+    // Pre-fill ALIAS information with branded fake data
+    if (aliasNameInput) {
+      aliasNameInput.value = 'Alias Personname';
+      aliasNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+      console.log('[User Profile] ✅ Set alias name');
+    } else {
+      console.error('[User Profile] ❌ aliasNameInput not found');
+    }
+
+    if (aliasEmailInput) {
+      aliasEmailInput.value = 'blocked-email@promptblocker.com';
+      aliasEmailInput.dispatchEvent(new Event('input', { bubbles: true }));
+      console.log('[User Profile] ✅ Set alias email');
+    } else {
+      console.error('[User Profile] ❌ aliasEmailInput not found');
+    }
+
+    if (aliasPhoneInput) {
+      aliasPhoneInput.value = '(555) 555-5555';
+      aliasPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+      console.log('[User Profile] ✅ Set alias phone');
+    } else {
+      console.error('[User Profile] ❌ aliasPhoneInput not found');
+    }
+
+    if (aliasAddressInput) {
+      aliasAddressInput.value = '123 Address St, Sometown, STATE, USA';
+      aliasAddressInput.dispatchEvent(new Event('input', { bubbles: true }));
+      console.log('[User Profile] ✅ Set alias address');
+    } else {
+      console.error('[User Profile] ❌ aliasAddressInput not found');
+    }
+
+    console.log('[User Profile] Auto-fill complete');
+  }, 500); // Longer delay to ensure modal is fully rendered
+}
+
+/**
+ * Show Quick Start buttons (when user is authenticated)
+ */
+function showQuickStartButtons() {
+  const googleQuickStartBtn = document.getElementById('googleQuickStartBtn');
+  const googleQuickStartBtnEmpty = document.getElementById('googleQuickStartBtnEmpty');
+
+  if (googleQuickStartBtn) {
+    googleQuickStartBtn.classList.remove('hidden');
+    googleQuickStartBtn.style.display = '';
+  }
+
+  if (googleQuickStartBtnEmpty) {
+    googleQuickStartBtnEmpty.classList.remove('hidden');
+    googleQuickStartBtnEmpty.style.display = '';
+  }
+
+  console.log('[User Profile] Quick Start buttons shown');
+}
+
+/**
+ * Hide Quick Start buttons (when user is not authenticated)
+ */
+function hideQuickStartButtons() {
+  const googleQuickStartBtn = document.getElementById('googleQuickStartBtn');
+  const googleQuickStartBtnEmpty = document.getElementById('googleQuickStartBtnEmpty');
+
+  if (googleQuickStartBtn) {
+    googleQuickStartBtn.classList.add('hidden');
+  }
+
+  if (googleQuickStartBtnEmpty) {
+    googleQuickStartBtnEmpty.classList.add('hidden');
+  }
+
+  console.log('[User Profile] Quick Start buttons hidden');
 }

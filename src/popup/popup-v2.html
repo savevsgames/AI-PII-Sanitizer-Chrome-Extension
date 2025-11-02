@@ -102,7 +102,13 @@
       <section class="tab-content active" id="aliases-tab">
         <div class="tab-header">
           <h2>Identity Profiles</h2>
-          <button class="btn btn-primary" id="addProfileBtn">+ New Profile</button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary" id="addProfileBtn">+ New Profile</button>
+            <button class="btn btn-secondary hidden" id="googleQuickStartBtn" title="Auto-fill with your Google account info">
+              <span>⚡</span>
+              <span>Quick Start</span>
+            </button>
+          </div>
         </div>
 
         <div class="profile-list" id="profileList">
@@ -114,7 +120,13 @@
           <div class="empty-state-icon">🎭</div>
           <p class="empty-state-title">No profiles yet</p>
           <p class="empty-state-hint">Create your first identity profile to start protecting your privacy</p>
-          <button class="btn btn-primary" id="addProfileBtnEmpty">Create Profile</button>
+          <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="addProfileBtnEmpty">Create Profile</button>
+            <button class="btn btn-secondary hidden" id="googleQuickStartBtnEmpty" title="Auto-fill with your Google account info">
+              <span>⚡</span>
+              <span>Quick Start with Google</span>
+            </button>
+          </div>
         </div>
       </section>
 
