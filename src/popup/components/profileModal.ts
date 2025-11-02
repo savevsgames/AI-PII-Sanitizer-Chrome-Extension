@@ -7,6 +7,7 @@ import { useAppStore } from '../../lib/store';
 import { AliasProfile } from '../../lib/types';
 import { isValidEmail } from './utils';
 import { generateIdentityVariations } from '../../lib/aliasVariations';
+import { resetOnboardingButtons } from './userProfile';
 
 // Track currently editing profile ID
 let currentEditingProfileId: string | null = null;
@@ -131,6 +132,10 @@ export function closeProfileModal() {
   modal.classList.add('hidden');
   currentEditingProfileId = null;
   clearFormErrors();
+
+  // Reset onboarding buttons in case user cancelled during onboarding
+  resetOnboardingButtons();
+
   console.log('[Profile Modal] Closed');
 }
 

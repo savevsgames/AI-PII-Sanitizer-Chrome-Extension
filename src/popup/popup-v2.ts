@@ -24,7 +24,15 @@ import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/init
 document.addEventListener('DOMContentLoaded', async () => {
   initTabNavigation();
   initKeyboardShortcuts();
+
+  // Load config FIRST to get saved theme before any UI renders
+  const store = useAppStore.getState();
+  await store.initialize();
+
+  // Now apply theme BEFORE showing UI (prevents white->black flash)
   initTheme();
+  updateThemeUI(store.config);
+
   await initUI(); // Wait for auth redirect check
   await loadInitialData();
 
@@ -63,8 +71,7 @@ async function loadInitialData() {
   try {
     const store = useAppStore.getState();
 
-    // Initialize store
-    await store.initialize();
+    // Store already initialized in DOMContentLoaded - skip re-initialization
 
     // Subscribe to store updates
     useAppStore.subscribe((state) => {
@@ -83,7 +90,7 @@ async function loadInitialData() {
     renderStats(state.config, state.profiles);
     renderActivityLog(state.activityLog);
     updateSettingsUI(state.config);
-    updateThemeUI(state.config);  // Apply saved theme on load
+    // Theme already applied in DOMContentLoaded - skip duplicate call
     updateMinimalView(state.config);
     if (state.config) {
       renderFeaturesHub(state.config);

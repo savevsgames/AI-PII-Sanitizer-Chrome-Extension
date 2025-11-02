@@ -806,17 +806,42 @@
           border-radius: 8px;
           padding: 1rem;
           margin-bottom: 1.5rem;
-        ">
-          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
-            <div style="font-size: 2rem;">👤</div>
-            <div style="flex: 1;">
-              <div style="font-weight: 600; margin-bottom: 0.25rem;" id="onboardingUserName">User</div>
-              <div style="font-size: 0.875rem; color: var(--text-secondary);" id="onboardingUserEmail">user@example.com</div>
-            </div>
+        " id="onboardingGoogleCard">
+          <!-- Loading State -->
+          <div id="onboardingLoadingState" style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            gap: 1rem;
+          ">
+            <div class="spinner" style="
+              width: 40px;
+              height: 40px;
+              border: 3px solid var(--border-neutral);
+              border-top-color: var(--color-primary);
+              border-radius: 50%;
+              animation: spin 0.8s linear infinite;
+            "></div>
+            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">
+              Loading your Google account info...
+            </p>
           </div>
-          <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">
-            We detected your Google account information. You can use this as your real data and create an alias, or start fresh.
-          </p>
+
+          <!-- Loaded State (hidden initially) -->
+          <div id="onboardingLoadedState" class="hidden">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+              <div style="font-size: 2rem;">👤</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 600; margin-bottom: 0.25rem;" id="onboardingUserName">User</div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary);" id="onboardingUserEmail">user@example.com</div>
+              </div>
+            </div>
+            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">
+              We detected your Google account information. You can use this as your real data and create an alias, or start fresh.
+            </p>
+          </div>
         </div>
 
         <!-- Two Options -->
