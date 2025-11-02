@@ -312,6 +312,9 @@ async function saveProfile() {
 
     // Close modal
     closeProfileModal();
+
+    // Dispatch event for onboarding to check if user now has profiles
+    window.dispatchEvent(new Event('profilesUpdated'));
   } catch (error) {
     console.error('[Profile Modal] Error saving profile:', error);
     alert('Error saving profile. Please try again.');
