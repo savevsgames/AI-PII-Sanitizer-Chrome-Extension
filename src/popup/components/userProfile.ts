@@ -45,6 +45,13 @@ export function initUserProfile() {
     }
   });
 
+  // Get Started button - opens promptblocker.com
+  const getStartedBtn = document.getElementById('getStartedBtn');
+  getStartedBtn?.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'https://promptblocker.com' });
+    console.log('[User Profile] Opening promptblocker.com');
+  });
+
   // Account settings
   const accountSettingsBtn = document.getElementById('accountSettingsBtn');
   accountSettingsBtn?.addEventListener('click', () => {
@@ -80,6 +87,9 @@ async function onUserSignedIn(user: User) {
 
     // Update tier badge
     updateTierBadge();
+
+    // Check if this is first sign-in (show welcome page)
+    showWelcomePrompt();
   } catch (error) {
     console.error('[User Profile] Error syncing user:', error);
   }
@@ -204,4 +214,31 @@ export function getCurrentUser(): User | null {
  */
 export function isAuthenticated(): boolean {
   return currentUser !== null;
+}
+
+/**
+ * Show welcome prompt after sign-in with link to promptblocker.com
+ */
+function showWelcomePrompt() {
+  // Check if we've shown this before (don't spam on every sign-in)
+  const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+
+  if (hasSeenWelcome) return;
+
+  // Show a friendly notification
+  const showWelcomePage = confirm(
+    '🎉 Welcome to PromptBlocker!\n\n' +
+    'Visit our homepage to:\n' +
+    '• Quick access to all supported AI platforms\n' +
+    '• Learn more about protecting your privacy\n' +
+    '• Explore PRO features\n\n' +
+    'Open PromptBlocker.com now?'
+  );
+
+  if (showWelcomePage) {
+    chrome.tabs.create({ url: 'https://promptblocker.com' });
+  }
+
+  // Mark as seen so we don't show again
+  localStorage.setItem('hasSeenWelcome', 'true');
 }

@@ -163,8 +163,8 @@ async function handleGoogleSignIn() {
     const redirectURL = chrome.identity.getRedirectURL();
     console.log('[Auth] Redirect URL:', redirectURL);
 
-    // Firebase Web Client ID (get from Firebase Console)
-    const clientId = '861822607891-YOUR_CLIENT_ID_SUFFIX.apps.googleusercontent.com';
+    // OAuth Client ID from Google Cloud Console
+    const clientId = '861822607891-l9ibauv7lhok7eejnml3t403mvhdgf4r.apps.googleusercontent.com';
     const scopes = ['email', 'profile'];
 
     const authUrl = `https://accounts.google.com/o/oauth2/auth?` +
