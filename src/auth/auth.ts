@@ -5,7 +5,7 @@
  */
 
 import { auth } from '../lib/firebase';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { syncUserToFirestore } from '../lib/firebaseService';
 
 const statusEl = document.getElementById('status') as HTMLElement;
@@ -15,55 +15,54 @@ const closeInfoEl = document.getElementById('closeInfo') as HTMLElement;
 
 async function handleAuth() {
   try {
-    console.log('[Auth Page] Checking authentication status...');
+    console.log('==========================================');
+    console.log('[Auth Page] EXTENSION AUTH PAGE LOADED');
     console.log('[Auth Page] Current URL:', window.location.href);
+    console.log('==========================================');
 
-    // Check if we're returning from promptblocker.com with success
-    const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get('success');
-    const uid = urlParams.get('uid');
-    const token = urlParams.get('token');
+    // Check if we're coming back from a redirect
+    console.log('[Auth Page] Checking for redirect result...');
+    const result = await getRedirectResult(auth);
 
-    if (success === 'true' && uid && token) {
-      console.log('[Auth Page] Returned from promptblocker.com with UID:', uid);
-      console.log('[Auth Page] Received ID token');
+    if (result) {
+      // Successfully signed in - returning from Google OAuth
+      console.log('[Auth Page] ✅ Sign-in successful!');
+      console.log('[Auth Page] User UID:', result.user.uid);
+      console.log('[Auth Page] User email:', result.user.email);
+      console.log('[Auth Page] User displayName:', result.user.displayName);
 
-      showSuccess('Completing sign-in...');
+      showSuccess(result.user.email || 'Unknown user');
 
-      try {
-        // Create credential from ID token
-        const decodedToken = decodeURIComponent(token);
-        const credential = GoogleAuthProvider.credential(decodedToken);
+      // Sync to Firestore
+      console.log('[Auth Page] Syncing to Firestore...');
+      await syncUserToFirestore(result.user);
+      console.log('[Auth Page] Sync complete');
 
-        // Sign in with the credential
-        console.log('[Auth Page] Signing in with credential...');
-        const result = await signInWithCredential(auth, credential);
-
-        console.log('[Auth Page] Sign-in successful:', result.user.uid);
-        console.log('[Auth Page] User email:', result.user.email);
-
-        showSuccess(result.user.email || 'Unknown user');
-
-        // Sync to Firestore
-        console.log('[Auth Page] Syncing to Firestore...');
-        await syncUserToFirestore(result.user);
-        console.log('[Auth Page] Sync complete');
-
-        // Close this tab after a short delay
-        setTimeout(() => {
-          console.log('[Auth Page] Closing tab...');
-          window.close();
-        }, 2000);
-
-      } catch (error: any) {
-        console.error('[Auth Page] Credential sign-in error:', error);
-        console.error('[Auth Page] Error code:', error.code);
-        showError('Failed to complete sign-in. Please try again.');
-      }
+      // Close this tab after a short delay
+      setTimeout(() => {
+        console.log('[Auth Page] Closing tab...');
+        window.close();
+      }, 2000);
 
     } else {
-      // This page shouldn't be accessed directly
-      showError('Invalid authentication request. Please use the extension popup to sign in.');
+      // No redirect result, need to initiate sign-in
+      console.log('[Auth Page] No redirect result, checking session storage...');
+
+      const { authProvider } = await chrome.storage.session.get('authProvider');
+      console.log('[Auth Page] Auth provider:', authProvider);
+
+      if (authProvider === 'google') {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({
+          prompt: 'select_account'
+        });
+
+        console.log('[Auth Page] Starting Google Sign-In redirect...');
+        await signInWithRedirect(auth, provider);
+      } else {
+        console.error('[Auth Page] Unknown provider:', authProvider);
+        showError('Unknown authentication provider');
+      }
     }
   } catch (error: any) {
     console.error('[Auth Page] Error:', error);

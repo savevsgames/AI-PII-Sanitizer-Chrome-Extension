@@ -147,23 +147,22 @@ function switchMode(mode: 'signin' | 'signup' | 'reset') {
 }
 
 /**
- * Handle Google Sign-In (opens promptblocker.com auth handler)
+ * Handle Google Sign-In (opens auth.html in new tab)
  */
 async function handleGoogleSignIn() {
   const googleSignInBtn = document.getElementById('googleSignInBtn') as HTMLButtonElement;
 
   try {
-    console.log('[Auth] Starting Google Sign-In via promptblocker.com...');
+    console.log('[Auth] Starting Google Sign-In in new tab...');
     setLoading(googleSignInBtn, true, 'Opening sign-in...');
     clearErrorMessages();
 
-    // Get extension ID to pass to auth handler
-    const extensionId = chrome.runtime.id;
-    console.log('[Auth] Extension ID:', extensionId);
+    // Open extension's auth.html in new tab to handle redirect
+    const authUrl = chrome.runtime.getURL('auth.html');
+    console.log('[Auth] Opening auth page:', authUrl);
 
-    // Open promptblocker.com auth handler with extension ID
-    const authUrl = `https://promptblocker.com/auth-handler.html?action=signin&extensionId=${extensionId}`;
-    console.log('[Auth] Opening auth URL:', authUrl);
+    // Store auth provider in session storage
+    await chrome.storage.session.set({ authProvider: 'google' });
 
     // Open in new tab
     chrome.tabs.create({ url: authUrl });
