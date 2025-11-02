@@ -111,6 +111,22 @@
   </div>
 
   <script type="module">
+    // DIAGNOSTIC: Log page load
+    console.log('==========================================');
+    console.log('[AUTH HANDLER] PAGE LOADED');
+    console.log('[AUTH HANDLER] Current URL:', window.location.href);
+    console.log('[AUTH HANDLER] Search params:', window.location.search);
+    console.log('[AUTH HANDLER] Time:', new Date().toISOString());
+    console.log('==========================================');
+
+    // Show diagnostic info on page
+    document.body.innerHTML += `<div style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: lime; padding: 10px; font-family: monospace; font-size: 12px; max-width: 400px; border-radius: 5px; z-index: 99999;">
+      <strong>🔍 DEBUG MODE</strong><br>
+      URL: ${window.location.href}<br>
+      Params: ${window.location.search}<br>
+      Time: ${new Date().toLocaleTimeString()}
+    </div>`;
+
     // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyButCAKxUJoyaq_4ITE5Wvtcb7BZ5JWhyQ",
@@ -132,14 +148,22 @@
 
     async function handleAuth() {
       try {
+        console.log('==========================================');
+        console.log('[Auth Handler] handleAuth() CALLED');
         console.log('[Auth Handler] Initializing Firebase...');
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        console.log('[Auth Handler] Firebase initialized successfully');
 
         console.log('[Auth Handler] Checking for redirect result...');
         console.log('[Auth Handler] Current URL:', window.location.href);
 
+        // Show on page too
+        updateStatus('Checking authentication status...');
+
         const result = await getRedirectResult(auth);
+        console.log('[Auth Handler] getRedirectResult() completed');
+        console.log('[Auth Handler] Result:', result ? 'USER FOUND' : 'NO RESULT');
 
         if (result) {
           // Successfully signed in - returning from Google OAuth
@@ -207,7 +231,15 @@
       }
     }
 
+    function updateStatus(message) {
+      console.log('[Auth Handler] Status update:', message);
+      if (statusTextEl) {
+        statusTextEl.textContent = message;
+      }
+    }
+
     function showSuccess(email) {
+      console.log('[Auth Handler] showSuccess() called for:', email);
       if (statusEl) {
         statusEl.innerHTML = '<div class="success">✓</div>';
       }
