@@ -26,6 +26,13 @@ export function initUserProfile() {
     }
   });
 
+  // Listen for profile changes to re-check onboarding
+  window.addEventListener('profilesUpdated', async () => {
+    if (currentUser) {
+      await checkAndShowOnboarding(currentUser);
+    }
+  });
+
   // Sign-in button
   const signInBtn = document.getElementById('headerSignInBtn');
   signInBtn?.addEventListener('click', () => {
@@ -113,8 +120,8 @@ async function onUserSignedIn(user: User) {
     // Update tier badge
     updateTierBadge();
 
-    // Check if this is first sign-in (show welcome page)
-    showWelcomePrompt();
+    // Check if user needs onboarding (no active profiles)
+    await checkAndShowOnboarding(user);
   } catch (error) {
     console.error('[User Profile] Error syncing user:', error);
   }
@@ -291,28 +298,114 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Show welcome prompt after sign-in with link to promptblocker.com
+ * Check if user needs onboarding and show modal if needed
+ * Onboarding is required until user has at least one active profile
  */
-function showWelcomePrompt() {
-  // Check if we've shown this before (don't spam on every sign-in)
-  const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+async function checkAndShowOnboarding(user: User) {
+  const store = useAppStore.getState();
+  const profiles = store.config?.profiles || [];
+  const activeProfiles = profiles.filter(p => p.enabled);
 
-  if (hasSeenWelcome) return;
+  console.log('[User Profile] Checking onboarding...', {
+    totalProfiles: profiles.length,
+    activeProfiles: activeProfiles.length
+  });
 
-  // Show a friendly notification
-  const showWelcomePage = confirm(
-    '🎉 Welcome to PromptBlocker!\n\n' +
-    'Visit our homepage to:\n' +
-    '• Quick access to all supported AI platforms\n' +
-    '• Learn more about protecting your privacy\n' +
-    '• Explore PRO features\n\n' +
-    'Open PromptBlocker.com now?'
-  );
-
-  if (showWelcomePage) {
-    chrome.tabs.create({ url: 'https://promptblocker.com' });
+  // If user has at least one active profile, they're good to go
+  if (activeProfiles.length > 0) {
+    console.log('[User Profile] User has active profiles, skipping onboarding');
+    return;
   }
 
-  // Mark as seen so we don't show again
-  localStorage.setItem('hasSeenWelcome', 'true');
+  // Show onboarding modal (doesn't go away until they create a profile)
+  console.log('[User Profile] No active profiles - showing onboarding');
+  showOnboardingModal(user);
+}
+
+/**
+ * Show onboarding modal with Google info pre-fill option
+ */
+function showOnboardingModal(user: User) {
+  const modal = document.getElementById('onboardingModal');
+  if (!modal) {
+    console.error('[User Profile] Onboarding modal not found');
+    return;
+  }
+
+  // Pre-fill Google user info in modal
+  const userName = document.getElementById('onboardingUserName');
+  const userEmail = document.getElementById('onboardingUserEmail');
+
+  if (userName) userName.textContent = user.displayName || user.email || 'User';
+  if (userEmail) userEmail.textContent = user.email || '';
+
+  // Show modal (can't be dismissed - no X button, overlay disabled)
+  modal.classList.remove('hidden');
+
+  // Wire up button handlers
+  const quickStartBtn = document.getElementById('onboardingQuickStart');
+  const customBtn = document.getElementById('onboardingCustom');
+
+  // Quick Start: Pre-fill with Google info
+  quickStartBtn?.addEventListener('click', () => handleQuickStartOnboarding(user), { once: true });
+
+  // Custom: Open regular profile editor
+  customBtn?.addEventListener('click', () => handleCustomOnboarding(), { once: true });
+
+  console.log('[User Profile] Onboarding modal displayed');
+}
+
+/**
+ * Handle Quick Start onboarding - pre-fill with Google account info
+ */
+function handleQuickStartOnboarding(user: User) {
+  console.log('[User Profile] Quick start onboarding selected');
+
+  // Close onboarding modal
+  const onboardingModal = document.getElementById('onboardingModal');
+  onboardingModal?.classList.add('hidden');
+
+  // Open profile modal with pre-filled Google info
+  const addProfileBtn = document.getElementById('addProfileBtn');
+  if (!addProfileBtn) {
+    console.error('[User Profile] Add profile button not found');
+    return;
+  }
+
+  // Trigger the add profile modal
+  addProfileBtn.click();
+
+  // Pre-fill the form with Google account info
+  setTimeout(() => {
+    const realNameInput = document.getElementById('realName') as HTMLInputElement;
+    const realEmailInput = document.getElementById('realEmail') as HTMLInputElement;
+
+    if (realNameInput && user.displayName) {
+      realNameInput.value = user.displayName;
+      // Trigger input event to update any listeners
+      realNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    if (realEmailInput && user.email) {
+      realEmailInput.value = user.email;
+      realEmailInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    console.log('[User Profile] Pre-filled form with Google info');
+  }, 100); // Small delay to ensure modal is open
+}
+
+/**
+ * Handle Custom onboarding - open empty profile editor
+ */
+function handleCustomOnboarding() {
+  console.log('[User Profile] Custom onboarding selected');
+
+  // Close onboarding modal
+  const onboardingModal = document.getElementById('onboardingModal');
+  onboardingModal?.classList.add('hidden');
+
+  // Open profile modal (empty)
+  const addProfileBtn = document.getElementById('addProfileBtn');
+  addProfileBtn?.click();
 }

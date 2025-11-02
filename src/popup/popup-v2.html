@@ -786,6 +786,78 @@
     </div>
   </div>
 
+  <!-- Onboarding Modal (shown until first profile created) -->
+  <div class="modal" id="onboardingModal">
+    <div class="modal-overlay" style="pointer-events: none;"></div>
+    <div class="modal-content modal-medium">
+      <div class="modal-header">
+        <h3>🎉 Welcome to PromptBlocker!</h3>
+      </div>
+
+      <div class="modal-body">
+        <p style="margin-bottom: 1.5rem; text-align: center;">
+          Let's protect your privacy! Create your first alias profile to get started.
+        </p>
+
+        <!-- Google Info Card -->
+        <div style="
+          background: var(--card-bg-light);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          padding: 1rem;
+          margin-bottom: 1.5rem;
+        ">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+            <div style="font-size: 2rem;">👤</div>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; margin-bottom: 0.25rem;" id="onboardingUserName">User</div>
+              <div style="font-size: 0.875rem; color: var(--text-secondary);" id="onboardingUserEmail">user@example.com</div>
+            </div>
+          </div>
+          <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">
+            We detected your Google account information. You can use this as your real data and create an alias, or start fresh.
+          </p>
+        </div>
+
+        <!-- Two Options -->
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <button class="btn btn-primary btn-block" id="onboardingQuickStart" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+          ">
+            <span>⚡</span>
+            <span>Use My Google Info (Quick Start)</span>
+          </button>
+
+          <button class="btn btn-secondary btn-block" id="onboardingCustom" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+          ">
+            <span>✏️</span>
+            <span>Create Custom Profile</span>
+          </button>
+        </div>
+
+        <div style="
+          margin-top: 1.5rem;
+          padding: 1rem;
+          background: rgba(102, 126, 234, 0.1);
+          border-radius: 8px;
+          border-left: 3px solid var(--color-primary);
+        ">
+          <p style="margin: 0; font-size: 0.875rem;">
+            <strong>💡 How it works:</strong> Your real information stays private. When you chat with AI,
+            PromptBlocker automatically replaces it with your alias. Responses are decoded back to show your real info.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Authentication Modal -->
   <div class="modal hidden" id="authModal">
     <div class="modal-overlay"></div>
