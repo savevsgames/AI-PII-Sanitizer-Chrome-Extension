@@ -12,8 +12,8 @@ This directory contains comprehensive platform-specific documentation for all AI
 PromptBlocker provides PII protection across multiple AI chat platforms by intercepting requests at the network level, substituting real PII with aliases before transmission, and decoding responses to show real PII to users.
 
 **Current Status:**
-- **Production:** ChatGPT, Claude, Gemini ✅
-- **Infrastructure Complete, Testing Pending:** Perplexity, Poe, Copilot, You.com 🚧
+- **Production:** ChatGPT, Claude, Gemini, Perplexity ✅
+- **Infrastructure Complete, Testing Pending:** Poe, Copilot, You.com 🚧
 - **Template for Future Platforms:** PLATFORM_TEMPLATE.md 📋
 
 ---
@@ -77,23 +77,23 @@ PromptBlocker provides PII protection across multiple AI chat platforms by inter
 
 #### 4. [perplexity.md](./perplexity.md) - Perplexity AI
 - **URL:** `*.perplexity.ai`
-- **Status:** 🚧 Infrastructure Complete, Testing Pending
-- **Implementation Date:** 2025-11-02 (infrastructure)
+- **Status:** ✅ Production (v1.0.3)
+- **Implementation Date:** 2025-11-03
 - **Priority:** Medium-High
 - **Key Features:**
-  - Hybrid REST + WebSocket (Socket.IO) architecture
-  - Search-focused AI with citations
-  - Real-time web search integration
-- **Technical Challenges:**
-  - **WebSocket interception NOT yet implemented** (high priority)
-  - Socket.IO may bypass fetch() interceptor
-  - Need DOM observer for response rendering
-- **TODO:**
-  - [ ] Test fetch() interception
-  - [ ] Research if Socket.IO interception needed
-  - [ ] Implement PerplexityObserver
-  - [ ] Test with real PII
-- **Test Target:** Phase 2B (Nov 9-15)
+  - REST API via fetch() (standard interception)
+  - Dual-field request format (query_str + dsl_query)
+  - SSE streaming responses
+- **Technical Highlights:**
+  - **CRITICAL FIX:** Must substitute BOTH query_str AND params.dsl_query
+  - Two request formats supported (main chat + follow-up)
+  - Unique dual-field protection prevents PII leaks
+- **Challenges Overcome:**
+  - Discovered hidden dsl_query field causing PII leaks
+  - Fixed dual-field extraction and substitution
+  - Both fields now protected
+- **Test Status:** ✅ Fully tested, working in production
+- **Response Decoding:** Disabled (same as ChatGPT/Claude/Gemini - by design)
 
 #### 5. [poe.md](./poe.md) - Poe (Quora)
 - **URL:** `*.poe.com`
@@ -168,10 +168,13 @@ PromptBlocker provides PII protection across multiple AI chat platforms by inter
 
 | Platform | Status | API Type | Request Format | Interception Method | Observer | Special Features |
 |----------|--------|----------|----------------|---------------------|----------|------------------|
-| **ChatGPT** | ✅ Production | REST | JSON (messages[]) | fetch() | ✅ Implemented | Streaming SSE |
-| **Claude** | ✅ Production | REST | JSON (prompt) | fetch() | ✅ Implemented | Streaming SSE |
-| **Gemini** | ✅ Production | REST (batchexecute) | Form-encoded | **XHR** (unique!) | ✅ Implemented | Proprietary RPC format |
-| **Perplexity** | 🚧 Testing | REST + **WebSocket** | JSON | fetch() + **Socket.IO?** | ⏳ TODO | Real-time search |
+| **ChatGPT** | ✅ Production | REST | JSON (messages[]) | fetch() | Disabled* | Streaming SSE |
+| **Claude** | ✅ Production | REST | JSON (prompt) | fetch() | Disabled* | Streaming SSE |
+| **Gemini** | ✅ Production | REST (batchexecute) | Form-encoded | **XHR** (unique!) | Disabled* | Proprietary RPC format |
+| **Perplexity** | ✅ Production | REST | JSON (dual-field!) | fetch() | Disabled* | **Dual query fields** |
+
+**\*Response Decoding Note:** All production platforms have response decoding **intentionally disabled** (`config.settings.decodeResponses = false`). This is by design to verify substitution is working. Infrastructure is in place and ready for unified UX implementation across all platforms later.
+
 | **Poe** | 🚧 Testing | REST or **GraphQL?** | JSON or GraphQL | fetch() | ⏳ TODO | Multi-model aggregator |
 | **Copilot** | 🚧 Testing | REST | JSON (nested) | fetch() | ⏳ TODO | Adaptive Cards, dual endpoints |
 | **You.com** | 🚧 Testing | REST | JSON | fetch() | ⏳ TODO | AI modes, app integrations |
@@ -436,18 +439,18 @@ src/
 ### Key Metrics
 
 **Production Platforms:**
-- **3 platforms:** ChatGPT, Claude, Gemini
+- **4 platforms:** ChatGPT, Claude, Gemini, Perplexity
 - **Status:** ✅ Fully tested and working
 - **Test Coverage:** 100%
 
 **In Development:**
-- **4 platforms:** Perplexity, Poe, Copilot, You.com
+- **3 platforms:** Poe, Copilot, You.com
 - **Status:** 🚧 Infrastructure complete, testing pending
 - **Test Coverage:** 0% (untested)
 
 **Total:**
 - **7 platforms** supported (infrastructure)
-- **3 production** + **4 pending testing**
+- **4 production** + **3 pending testing**
 - **Target:** All 7 platforms tested by Nov 15, 2025
 
 ---

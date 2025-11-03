@@ -8,9 +8,22 @@
  * Supports ChatGPT, Claude, Gemini, and other AI service formats
  */
 export function extractAllText(data: any): string {
-  // Perplexity format: { query_str: "..." }
+  // Perplexity format 1: { query_str: "...", params: { dsl_query: "..." } }
+  // Extract all query-related fields and combine them
   if (data.query_str && typeof data.query_str === 'string') {
-    return data.query_str;
+    const queries = [data.query_str];
+
+    // Also check for dsl_query in params
+    if (data.params?.dsl_query && typeof data.params.dsl_query === 'string') {
+      queries.push(data.params.dsl_query);
+    }
+
+    return queries.join('\n\n');
+  }
+
+  // Perplexity format 2: { query: "..." }
+  if (data.query && typeof data.query === 'string') {
+    return data.query;
   }
 
   // ChatGPT format: { messages: [{ role, content }] }
@@ -62,9 +75,24 @@ export function extractAllText(data: any): string {
 export function replaceAllText(data: any, substitutedText: string): any {
   const modified = JSON.parse(JSON.stringify(data)); // Deep clone
 
-  // Perplexity format
+  // Perplexity format 1: query_str + dsl_query
   if (modified.query_str && typeof modified.query_str === 'string') {
-    modified.query_str = substitutedText;
+    // Split substituted text back into parts (if we combined multiple fields)
+    const textParts = substitutedText.split('\n\n');
+
+    modified.query_str = textParts[0] || substitutedText;
+
+    // Also update dsl_query if it exists
+    if (modified.params?.dsl_query && typeof modified.params.dsl_query === 'string') {
+      modified.params.dsl_query = textParts[1] || textParts[0] || substitutedText;
+    }
+
+    return modified;
+  }
+
+  // Perplexity format 2: query
+  if (modified.query && typeof modified.query === 'string') {
+    modified.query = substitutedText;
     return modified;
   }
 
@@ -169,6 +197,9 @@ export function hasTextContent(data: any): boolean {
  */
 export function detectFormat(data: any): 'chatgpt' | 'claude' | 'gemini' | 'perplexity' | 'unknown' {
   if (data.query_str && typeof data.query_str === 'string') {
+    return 'perplexity';
+  }
+  if (data.query && typeof data.query === 'string') {
     return 'perplexity';
   }
   if (data.messages && Array.isArray(data.messages)) {
