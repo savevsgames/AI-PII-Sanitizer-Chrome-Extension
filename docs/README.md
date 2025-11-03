@@ -23,7 +23,8 @@ docs/
 │   └── TDD_ AI PII Sanitizer - Technical Spec.pdf
 │
 └── testing/              # Test documentation & results
-    └── test_results_*.md
+    ├── MVP_TEST_SIGN_OFF.md        # Official approval document
+    └── README.md                    # Testing folder index
 ```
 
 ---
@@ -152,11 +153,18 @@ Exported versions of PDD and TDD for archival purposes
 ### Starting Development?
 1. Read **technical_architecture.md** - understand the system
 2. Read **adding_ai_services.md** - learn how to extend it
+3. Review **TESTING.md** - testing guidelines and best practices
 
 ### Preparing for Launch?
 1. Follow **launch_roadmap.md** - step-by-step plan
 2. Use **building_a_trusted_extension.md** - production checklist
 3. Reference **marketing.md** - positioning and messaging
+4. Review **testing/MVP_TEST_SIGN_OFF.md** - official test approval
+
+### Running Tests?
+1. See **TESTING.md** - comprehensive testing guide
+2. Commands: `npm test`, `npm run test:all`, `npm run test:coverage`
+3. Review **TEST_SUITE_STATUS.md** - current test status
 
 ### Building PRO Features?
 1. Review **feature_api_key_vault.md** - first PRO feature
@@ -200,3 +208,68 @@ When adding new documentation:
    - Test reports
    - Bug tracking
    - QA documentation
+
+---
+
+## Testing Documentation
+
+### [TESTING.md](TESTING.md) ✅
+**Purpose:** Comprehensive testing guide for AI PII Sanitizer
+**Audience:** Developers, QA, contributors
+**Key Sections:**
+- Quick start & test commands
+- Complete test suite breakdown (306 tests)
+- Platform coverage matrix (5 platforms)
+- Detailed coverage by module
+- E2E test status (deferred)
+- Troubleshooting guide
+- Testing best practices
+
+**Status:** ✅ **Active** - Primary testing reference
+
+**Test Results:**
+- **306 total unit tests**
+- **289 passing (100% of runnable tests)**
+- **17 properly skipped (crypto-dependent)**
+- **0 failing tests**
+- **All 5 platforms comprehensively tested**
+
+### [testing/MVP_TEST_SIGN_OFF.md](testing/MVP_TEST_SIGN_OFF.md) ✅
+**Purpose:** Official MVP testing approval document
+**Audience:** Stakeholders, management
+**Key Sections:**
+- Executive summary
+- Test results summary
+- Platform validation matrix
+- Feature coverage validation
+- Security validation
+- Risk assessment
+- Official sign-off
+
+**Status:** ✅ **APPROVED FOR MVP LAUNCH**
+
+---
+
+## Additional Testing Documents
+
+### [testing/test-suite-status.md](testing/test-suite-status.md)
+**Purpose:** Current snapshot of test suite status
+**Last Updated:** 2025-11-03
+**Status:** 100% passing (289/289 runnable tests)
+
+### [testing/test-modernization-plan.md](testing/test-modernization-plan.md)
+**Purpose:** Testing roadmap and modernization plan
+**Last Updated:** 2025-11-03
+**Status:** All phases complete ✅
+
+### [testing/code-cleanup-plan.md](testing/code-cleanup-plan.md)
+**Purpose:** Issues found during testing
+**Last Updated:** 2025-11-03
+**Status:** All critical bugs fixed ✅
+
+### [testing/platform-testing-plan.md](testing/platform-testing-plan.md)
+**Purpose:** Platform-specific testing strategy
+**Last Updated:** 2025-11-02
+**Status:** Archived (covered in TESTING.md)
+
+---
