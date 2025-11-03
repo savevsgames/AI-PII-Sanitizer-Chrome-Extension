@@ -401,20 +401,58 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
     try {
       requestData = JSON.parse(body);
     } catch (e) {
-      // Not JSON - might be streaming, form data, or other format
+      // Not JSON - might be streaming, form data, or other format (e.g., Gemini's URL-encoded batchexecute)
       console.log('⚠️ Non-JSON request body, attempting plain text substitution');
 
-      // Try plain text substitution for non-JSON bodies
+      // Check if body is URL-encoded (Gemini batchexecute format)
+      let bodyToSubstitute = body;
+      let isUrlEncoded = false;
+
+      if (typeof body === 'string' && body.includes('f.req=')) {
+        console.log('[Gemini] Detected URL-encoded batchexecute format');
+        try {
+          // Parse URL parameters
+          const params = new URLSearchParams(body);
+          const freqValue = params.get('f.req');
+          
+          if (freqValue) {
+            // Decode only the f.req value for substitution
+            bodyToSubstitute = freqValue;
+            isUrlEncoded = true;
+            console.log('[Gemini] Decoded f.req value length:', bodyToSubstitute.length);
+          }
+        } catch (decodeError) {
+          console.warn('[Gemini] Failed to parse URL parameters, using original');
+          bodyToSubstitute = body;
+        }
+      }
+
+      // Try plain text substitution
       const aliasEngine = await AliasEngine.getInstance();
-      const substituted = aliasEngine.substitute(body, 'encode');
+      const substituted = aliasEngine.substitute(bodyToSubstitute, 'encode');
 
       if (substituted.substitutions.length > 0) {
         console.log('✅ Plain text substituted:', substituted.substitutions.length, 'replacements');
       }
 
+      // Re-encode if we decoded it
+      let finalBody = substituted.text;
+      if (isUrlEncoded) {
+        try {
+          // Reconstruct the form body with substituted f.req value
+          const params = new URLSearchParams(body);
+          params.set('f.req', substituted.text);
+          finalBody = params.toString();
+          console.log('[Gemini] Reconstructed body length:', finalBody.length);
+        } catch (encodeError) {
+          console.error('[Gemini] Failed to reconstruct body:', encodeError);
+          finalBody = substituted.text;
+        }
+      }
+
       return {
         success: true,
-        modifiedBody: substituted.text,
+        modifiedBody: finalBody,
         substitutions: substituted.substitutions.length,
       };
     }
