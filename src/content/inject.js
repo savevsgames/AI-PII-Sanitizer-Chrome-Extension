@@ -186,6 +186,7 @@
     // Perplexity
     'perplexity.ai/socket.io',
     'perplexity.ai/api',
+    'perplexity.ai/rest',  // Main REST API endpoint
 
     // Poe
     'poe.com/api',
@@ -230,56 +231,10 @@
       console.log('🔍 [Gemini] Method:', options?.method || 'GET');
     }
 
-    // SECURITY: Check if protection is active before allowing request
-    if (!isProtected) {
-      console.error('🛑 BLOCKING REQUEST - Extension not protected');
-
-      // Show modal to user asking what to do
-      const userAction = await new Promise((resolve) => {
-        const messageId = Math.random().toString(36);
-
-        const timeout = setTimeout(() => {
-          window.removeEventListener('message', handleResponse);
-          resolve(null); // Block by default on timeout
-        }, 30000); // 30 second timeout
-
-        const handleResponse = (event) => {
-          if (event.data?.source === 'ai-pii-content-not-protected' &&
-              event.data?.messageId === messageId) {
-            clearTimeout(timeout);
-            window.removeEventListener('message', handleResponse);
-            resolve(event.data.action); // 'reload' | 'disable'
-          }
-        };
-
-        window.addEventListener('message', handleResponse);
-
-        // Request modal from content script
-        window.postMessage({
-          source: 'ai-pii-inject-not-protected',
-          messageId
-        }, '*');
-      });
-
-      if (userAction === 'reload') {
-        // Page will reload, request will be cancelled
-        console.log('🔄 Page reloading to restore protection...');
-        throw new Error('AI PII Sanitizer: Page reloading to restore protection');
-      } else if (userAction === 'disable') {
-        // Extension disabled - restore native fetch and allow this request through
-        console.log('⚠️ User chose disable - stopping all interception');
-        extensionDisabled = true;
-        window.fetch = nativeFetch;
-        console.log('✅ Extension disabled - passing through original request');
-
-        // Allow this request to go through using native fetch
-        return nativeFetch.apply(this, args);
-      } else {
-        // Timeout or unknown action - block for safety
-        console.error('🛑 No valid user action - blocking request');
-        throw new Error('AI PII Sanitizer: Request blocked - not protected');
-      }
-    }
+    // Note: We don't block based on isProtected flag anymore.
+    // The background service worker will handle whether to substitute or not.
+    // If no aliases are loaded, substitution will return 0 replacements and
+    // the request will pass through unchanged.
 
     try {
       const requestBody = options?.body || '';
@@ -376,10 +331,13 @@
       console.log('✅ Request substituted:', substituteRequest.substitutions, 'replacements');
 
       // Step 2: Make actual fetch with substituted body
-      const modifiedOptions = {
-        ...options,
-        body: substituteRequest.modifiedBody
-      };
+      const method = (options?.method || 'GET').toUpperCase();
+      const modifiedOptions = { ...options };
+
+      // Only add body for methods that support it (not GET/HEAD)
+      if (method !== 'GET' && method !== 'HEAD') {
+        modifiedOptions.body = substituteRequest.modifiedBody;
+      }
 
       const response = await nativeFetch(urlStr, modifiedOptions);
 
