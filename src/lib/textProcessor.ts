@@ -8,6 +8,11 @@
  * Supports ChatGPT, Claude, Gemini, Perplexity, Copilot, and other AI service formats
  */
 export function extractAllText(data: any): string {
+  // Handle null/undefined data
+  if (!data || typeof data !== 'object') {
+    return '';
+  }
+
   // Copilot WebSocket format: { event: "send", content: [{ type: "text", text: "..." }] }
   if (data.event === 'send' && Array.isArray(data.content)) {
     const texts: string[] = [];
@@ -45,6 +50,7 @@ export function extractAllText(data: any): string {
   //   - object: { content_type: "text", parts: ["hello world"] }
   if (data.messages && Array.isArray(data.messages)) {
     return data.messages
+      .filter((m: any) => m && typeof m === 'object') // Filter out null/undefined elements
       .map((m: any) => {
         if (typeof m.content === 'string') {
           return m.content;
@@ -73,7 +79,13 @@ export function extractAllText(data: any): string {
   // Gemini format: { contents: [{ parts: [{ text }] }] }
   if (data.contents && Array.isArray(data.contents)) {
     return data.contents
-      .flatMap((c: any) => c.parts?.map((p: any) => p.text) || [])
+      .filter((c: any) => c && typeof c === 'object') // Filter out null/undefined elements
+      .flatMap((c: any) => {
+        if (!c.parts || !Array.isArray(c.parts)) return [];
+        return c.parts
+          .filter((p: any) => p && typeof p === 'object') // Filter out null parts
+          .map((p: any) => p.text);
+      })
       .filter(Boolean)
       .join('\n\n');
   }
@@ -224,6 +236,11 @@ export function hasTextContent(data: any): boolean {
  * Extract metadata about the request format
  */
 export function detectFormat(data: any): 'chatgpt' | 'claude' | 'gemini' | 'perplexity' | 'copilot' | 'unknown' {
+  // Handle null/undefined data
+  if (!data || typeof data !== 'object') {
+    return 'unknown';
+  }
+
   if (data.event === 'send' && Array.isArray(data.content)) {
     return 'copilot';
   }
