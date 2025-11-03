@@ -1,18 +1,19 @@
 # Platform Support: You.com
 
 > **Template Version:** 1.0
-> **Last Updated:** 2025-11-02
-> **Status:** 🚧 In Development (Infrastructure Ready, Testing Pending)
+> **Last Updated:** 2025-11-03
+> **Status:** 🟡 Tier 2 Platform (Post-MVP - Deferred)
 
 ---
 
 ## Platform: You.com
 
 **URL Pattern:** `*.you.com`
-**Status:** 🚧 Infrastructure Complete, Manual Testing Pending
-**Implementation Date:** 2025-11-02 (infrastructure)
-**Last Updated:** 2025-11-02
+**Status:** 🟡 Tier 2 (Architecture Analyzed, Implementation Deferred to Post-MVP)
+**Testing Date:** 2025-11-03
+**Last Updated:** 2025-11-03
 **Maintained By:** Core Team
+**Market Share:** 0.40% (5.5M monthly visits)
 
 ---
 
@@ -22,16 +23,30 @@
 You.com is an AI-powered search engine that combines conversational AI with real-time web search, similar to Perplexity. It offers "YouChat" for conversational interactions and integrates search results, citations, and AI-generated summaries. You.com emphasizes privacy and personalized search experiences.
 
 ### User Base & Priority
-- **Estimated Users:** 5M+ monthly active users (estimated)
-- **Priority Level:** Medium
-- **Business Impact:** Privacy-focused alternative to Google/Bing; growing user base among privacy-conscious users
+- **Monthly Visits:** 5.5M (0.40% market share)
+- **Priority Level:** ⚠️ Low (Tier 2 - Post-MVP)
+- **Business Impact:** Small niche platform; low ROI compared to DeepSeek (96M users) and Meta AI (100M+ users)
+- **Tier Status:** Deferred to Post-MVP in favor of higher-priority platforms
 
 ### Key Characteristics
-- **API Type:** REST API
-- **Request Format:** JSON (likely messages array similar to ChatGPT)
-- **Response Format:** JSON with citations/sources (similar to Perplexity)
+- **API Type:** ❌ **GET Requests with URL Parameters** (NOT POST/JSON!)
+- **Request Format:** URL query parameter (`?q=...`) - **FUNDAMENTALLY DIFFERENT from all other platforms**
+- **Response Format:** Server-side rendered (Next.js) with JSON data endpoints
 - **Authentication:** Cookie-based session (you.com account optional)
 - **Special Features:** Search aggregation, AI modes (Smart, Genius, Create), app integration
+
+### ⚠️ **CRITICAL DISCOVERY (2025-11-03):**
+You.com sends user queries via **GET request URL parameters**, NOT POST request bodies like ChatGPT, Claude, Gemini, Perplexity, and Copilot. Our current fetch() body interception strategy **CANNOT intercept URL parameters**. Requires webRequest API implementation (different architecture).
+
+**Test Evidence:**
+```
+URL: https://you.com/search?q=is%20gregcbarker%20a%20palidrome%3F&fromSearchBar=true&chatMode=default
+Method: GET
+PII Location: URL query parameter (?q=...)
+Extension Status: ⚠️ Empty request body, skipping substitution
+```
+
+**See:** `YOU_COM_ANALYSIS.md` for complete technical analysis and implementation plan.
 
 ---
 
