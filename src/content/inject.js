@@ -550,16 +550,10 @@
         return nativeXHRSend.apply(this, [body]);
       }
 
-      // Check if protected
-      if (!isProtected) {
-        console.error('[Gemini XHR] 🛑 NOT PROTECTED - blocking request');
-        // Trigger error event
-        setTimeout(() => {
-          const event = new Event('error');
-          this.dispatchEvent(event);
-        }, 0);
-        return;
-      }
+      // For Gemini XHR interception, we don't block based on isProtected flag
+      // because profiles are loaded via content script independently.
+      // The background will handle whether to substitute or pass through.
+      // If no aliases are loaded, substitution will simply return 0 replacements.
 
       // Handle async XHR with request/response interception
       const xhr = this;
