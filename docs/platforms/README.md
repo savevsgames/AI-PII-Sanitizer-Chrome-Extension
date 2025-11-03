@@ -117,27 +117,30 @@ PromptBlocker provides PII protection across multiple AI chat platforms by inter
 
 #### 6. [copilot.md](./copilot.md) - Microsoft Copilot
 - **URL:** `*.copilot.microsoft.com`, `*.bing.com/sydney*`
-- **Status:** 🚧 Infrastructure Complete, Testing Pending
-- **Implementation Date:** 2025-11-02 (infrastructure)
+- **Status:** 🔴 WebSocket Interception Required (Testing Revealed Architecture - Nov 3)
+- **Implementation Date:** 2025-11-03 (discovery)
 - **Priority:** High
+- **Complexity:** HIGH (WebSocket-based, similar to Gemini XHR complexity)
 - **Key Features:**
   - Microsoft's GPT-4 powered assistant
-  - Dual endpoints (copilot.microsoft.com + sydney.bing.com)
-  - Deeply nested JSON structure
+  - **WebSocket communication** (wss://copilot.microsoft.com/c/api/chat)
+  - Streaming responses via JSON events
   - Web search integration with citations
   - Adaptive Cards for visual responses
 - **Technical Challenges:**
-  - **Endpoint filtering needed** (broad bing.com pattern too wide)
-  - **Deeply nested JSON:** `arguments[0].message.text`
-  - Adaptive Cards may contain PII in card content
-  - Need DOM observer for response rendering
-- **TODO:**
-  - [ ] Add endpoint filtering (P1 - high priority)
-  - [ ] Test fetch() interception
-  - [ ] Research nested JSON structure
-  - [ ] Implement CopilotObserver
-  - [ ] Handle Adaptive Cards
-- **Test Target:** Phase 2B (Nov 9-15)
+  - **WebSocket interception required** (fetch() won't work!)
+  - Must intercept WebSocket.send() in page context (like Gemini XHR)
+  - Streaming event format: `appendText`, `partCompleted`, `done`
+  - Persistent connection (not request/response like REST)
+  - Need to capture request format (Phase 1)
+- **Implementation Plan:**
+  - **Phase 1:** WebSocket interception infrastructure (2-3 hours)
+  - **Phase 2:** Request format capture (30 min)
+  - **Phase 3:** PII substitution (1 hour)
+  - **Phase 4:** Response decoding (2 hours)
+  - **Total Est:** 7-9 hours
+- **See:** `docs/platforms/COPILOT_WEBSOCKET_PLAN.md` for complete plan
+- **Test Target:** TBD (after WebSocket implementation)
 
 #### 7. [you.md](./you.md) - You.com
 - **URL:** `*.you.com`
@@ -176,7 +179,7 @@ PromptBlocker provides PII protection across multiple AI chat platforms by inter
 **\*Response Decoding Note:** All production platforms have response decoding **intentionally disabled** (`config.settings.decodeResponses = false`). This is by design to verify substitution is working. Infrastructure is in place and ready for unified UX implementation across all platforms later.
 
 | **Poe** | 🚧 Testing | REST or **GraphQL?** | JSON or GraphQL | fetch() | ⏳ TODO | Multi-model aggregator |
-| **Copilot** | 🚧 Testing | REST | JSON (nested) | fetch() | ⏳ TODO | Adaptive Cards, dual endpoints |
+| **Copilot** | 🔴 **WebSocket Required** | **WebSocket** (SSE) | JSON events | **WebSocket.send()** | ⏳ TODO | **Streaming events**, Adaptive Cards |
 | **You.com** | 🚧 Testing | REST | JSON | fetch() | ⏳ TODO | AI modes, app integrations |
 
 ---
