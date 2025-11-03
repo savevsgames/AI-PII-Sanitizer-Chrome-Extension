@@ -8,11 +8,6 @@
  * Supports ChatGPT, Claude, Gemini, and other AI service formats
  */
 export function extractAllText(data: any): string {
-  // Perplexity format: { query_str: "..." }
-  if (data.query_str && typeof data.query_str === 'string') {
-    return data.query_str;
-  }
-
   // ChatGPT format: { messages: [{ role, content }] }
   // content can be:
   //   - string: "hello world"
@@ -61,12 +56,6 @@ export function extractAllText(data: any): string {
  */
 export function replaceAllText(data: any, substitutedText: string): any {
   const modified = JSON.parse(JSON.stringify(data)); // Deep clone
-
-  // Perplexity format
-  if (modified.query_str && typeof modified.query_str === 'string') {
-    modified.query_str = substitutedText;
-    return modified;
-  }
 
   // Split substituted text back into messages
   const textParts = substitutedText.split('\n\n').filter(Boolean);
@@ -167,10 +156,7 @@ export function hasTextContent(data: any): boolean {
 /**
  * Extract metadata about the request format
  */
-export function detectFormat(data: any): 'chatgpt' | 'claude' | 'gemini' | 'perplexity' | 'unknown' {
-  if (data.query_str && typeof data.query_str === 'string') {
-    return 'perplexity';
-  }
+export function detectFormat(data: any): 'chatgpt' | 'claude' | 'gemini' | 'unknown' {
   if (data.messages && Array.isArray(data.messages)) {
     return 'chatgpt';
   }
