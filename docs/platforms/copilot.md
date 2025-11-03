@@ -1,18 +1,19 @@
 # Platform Support: GitHub Copilot / Microsoft Copilot
 
 > **Template Version:** 1.0
-> **Last Updated:** 2025-11-02
-> **Status:** 🚧 In Development (Infrastructure Ready, Testing Pending)
+> **Last Updated:** 2025-11-03
+> **Status:** 🚧 In Development (WebSocket Interception Required)
 
 ---
 
 ## Platform: Microsoft Copilot (Bing Chat)
 
 **URL Pattern:** `*.copilot.microsoft.com`, `*.bing.com/sydney*`
-**Status:** 🚧 Infrastructure Complete, Manual Testing Pending
-**Implementation Date:** 2025-11-02 (infrastructure)
-**Last Updated:** 2025-11-02
+**Status:** 🚧 WebSocket Interception Required (Testing Revealed Architecture)
+**Implementation Date:** 2025-11-03 (discovery)
+**Last Updated:** 2025-11-03
 **Maintained By:** Core Team
+**Complexity:** HIGH (WebSocket-based, not REST)
 
 ---
 
@@ -29,11 +30,15 @@ Microsoft Copilot (formerly Bing Chat) is Microsoft's AI-powered conversational 
 - **Business Impact:** Major platform with Microsoft backing and Windows OS integration; critical for enterprise/Microsoft ecosystem users
 
 ### Key Characteristics
-- **API Type:** REST API (proprietary "Sydney" backend)
-- **Request Format:** JSON (Microsoft/Bing proprietary format)
-- **Response Format:** JSON with streaming (Server-Sent Events)
+- **API Type:** **WebSocket** (real-time persistent connection) ⚠️ NOT REST!
+- **WebSocket URL:** `wss://copilot.microsoft.com/c/api/chat?api-version=2`
+- **Request Format:** JSON messages over WebSocket
+- **Response Format:** Streaming JSON events (`appendText`, `partCompleted`, `done`)
 - **Authentication:** Microsoft account OAuth
 - **Special Features:** Web search integration, citations, image generation (DALL-E 3), multimodal input
+
+**⚠️ CRITICAL DISCOVERY (2025-11-03):**
+Copilot uses **WebSocket**, NOT fetch(). Requires WebSocket.send() interception (similar complexity to Gemini's XHR interception).
 
 ---
 
@@ -69,37 +74,43 @@ if (url.includes('copilot.microsoft.com')) return 'copilot';
 
 ### 2.2 Request Interception Method
 
-**Primary Method:** fetch() interception (standard)
+**Primary Method:** **WebSocket interception** (REQUIRED - fetch() won't work!)
 
 **Why This Method:**
-Microsoft Copilot uses modern fetch() API for requests to the Sydney backend, similar to ChatGPT and Claude.
+Microsoft Copilot uses **WebSocket** for real-time chat, NOT fetch(). Messages are sent via `WebSocket.send()` over a persistent connection to `wss://copilot.microsoft.com/c/api/chat`.
 
 **Implementation Location:**
-- **File:** `src/content/inject.js`
-- **Function:** Anonymous IIFE wrapping fetch()
-- **Lines:** 172-197 (aiDomains array includes 'copilot.microsoft.com' and 'bing.com')
+- **File:** `src/content/inject.js` (page context - NEW CODE REQUIRED)
+- **Function:** WebSocket.prototype.send() wrapper (to be implemented)
+- **Pattern:** Similar to Gemini XHR interception (lines 508-697)
 
-**Interception Pattern:**
+**Interception Pattern (To Be Implemented):**
 ```javascript
-// From inject.js aiDomains array
-const aiDomains = [
-  // ...
-  'copilot.microsoft.com',
-  'bing.com',  // Broad match - will catch sydney.bing.com
-  // ...
-];
+// Intercept WebSocket creation
+if (window.location.hostname.includes('copilot.microsoft.com')) {
+  const nativeWebSocket = window.WebSocket;
+  const nativeSend = WebSocket.prototype.send;
 
-// Existing fetch interceptor will catch API calls
-```
+  window.WebSocket = function(url, protocols) {
+    const ws = new nativeWebSocket(url, protocols);
 
-**⚠️ Note on Bing.com:** The broad `'bing.com'` pattern will intercept ALL Bing requests, not just Copilot/Sydney. Need to add endpoint filtering:
-```javascript
-// Should filter to Sydney-specific endpoints:
-if (url.includes('bing.com/sydney') ||
-    url.includes('bing.com/turing/conversation')) {
-  // Intercept
+    // Only intercept Copilot chat WebSocket
+    if (url.includes('/c/api/chat')) {
+      console.log('[Copilot WS] Intercepting WebSocket:', url);
+
+      ws.send = async function(data) {
+        // Send to background for substitution
+        const substituted = await substituteMessage(data);
+        return nativeSend.call(this, substituted);
+      };
+    }
+
+    return ws;
+  };
 }
 ```
+
+**See:** `docs/platforms/COPILOT_WEBSOCKET_PLAN.md` for complete implementation plan
 
 ### 2.3 Request/Response Format
 
