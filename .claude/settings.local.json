@@ -10,7 +10,8 @@
       "Bash(test:*)",
       "Bash(npm run test:e2e:*)",
       "Bash(npm test:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npm run test:unit:*)"
     ],
     "deny": [],
     "ask": []
