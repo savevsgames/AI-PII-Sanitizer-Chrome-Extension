@@ -1,5 +1,18 @@
 # Phase 1 Testing Guide - AI PII Sanitizer
 
+> **⚠️ ARCHIVED DOCUMENT**
+>
+> **Archived Date:** 2025-11-03
+> **Reason:** This document was for Phase 1 MVP testing (October 2025). The extension has since been completed and modernized.
+>
+> **Current Testing Documentation:** See `docs/TESTING.md` for up-to-date testing information.
+>
+> **Historical Context:** This document was used during the initial build phase when only ChatGPT was fully supported. The extension now supports 5 platforms (ChatGPT, Claude, Gemini, Perplexity, Copilot) with 306 comprehensive tests.
+
+---
+
+# Original Document Content (Archived)
+
 **Phase**: MVP Foundation (Week 1-4)
 **Version**: 0.1.0
 **Status**: Initial build complete, ready for testing
