@@ -43,7 +43,7 @@ PromptBlocker provides PII protection across multiple AI chat platforms by inter
 
 ---
 
-### Production Platforms (✅ Complete & Tested)
+### Tier 1: Production Platforms (✅ Complete & Tested - MVP)
 
 #### 1. [gemini.md](./gemini.md) - Google Gemini
 - **URL:** `*.gemini.google.com`
@@ -141,12 +141,41 @@ PromptBlocker provides PII protection across multiple AI chat platforms by inter
 - **Test Status:** ✅ Fully tested, working in production
 - **Response Decoding:** Disabled (same as ChatGPT/Claude/Gemini/Perplexity - by design)
 
+---
+
+### Tier 2: Post-MVP Platforms (🎯 Discovery & Documentation)
+
+#### 6. [meta.md](./meta.md) - Meta AI
+- **URL:** `*.meta.ai`, `graph.meta.ai` (API)
+- **Status:** 🎯 Tier 2 High Priority (Architecture Documented)
+- **Discovery Date:** 2025-11-03
+- **Users:** 100M+ (estimated - built into Facebook, Instagram, WhatsApp)
+- **Priority:** ⭐⭐⭐⭐ High (#2 in Tier 2 after DeepSeek)
+- **Key Characteristics:**
+  - ✅ **GraphQL Architecture Confirmed** (via Network tab analysis)
+  - Uses Meta's Graph API infrastructure
+  - Integrated across Facebook, Instagram, WhatsApp, and meta.ai
+  - GraphQL query structure with nested variables
+- **✅ ARCHITECTURE CONFIRMED (2025-11-03):**
+  - Domain: `meta.ai` (primary), `graph.meta.ai` (API endpoint)
+  - Request format: GraphQL POST with query + variables
+  - Response format: GraphQL data wrapper with `__typename` fields
+  - Text location: Likely `variables.input.text` or similar (TBD)
+- **Implementation Status:**
+  - ⏳ Not in manifest host_permissions (blocked from testing)
+  - ✅ Complete implementation plan documented in meta.md
+  - ✅ GraphQL parsing strategy defined
+  - ⏳ Actual request structure TBD (requires testing)
+- **Estimated Effort:** 5-7 hours
+- **Next Steps:** Add to manifest, test actual GraphQL structure, implement GraphQL parsing
+- **See:** `docs/platforms/meta.md` for complete technical analysis and implementation plan
+
 #### 7. [you.md](./you.md) - You.com
 - **URL:** `*.you.com`
-- **Status:** 🟡 Tier 2 (Post-MVP - Deferred)
+- **Status:** 🟡 Tier 2 Low Priority (Deferred)
 - **Testing Date:** 2025-11-03
 - **Market Share:** 0.40% (5.5M monthly visits)
-- **Priority:** ⚠️ Low (deferred in favor of DeepSeek and Meta AI)
+- **Priority:** ⭐ Low (deferred in favor of DeepSeek and Meta AI)
 - **Key Characteristics:**
   - ❌ **Uses GET requests with URL parameters** (NOT POST/JSON!)
   - Requires webRequest API (different architecture than all other platforms)
@@ -182,12 +211,14 @@ PromptBlocker provides PII protection across multiple AI chat platforms by inter
 
 ### Tier 2: Post-MVP Platforms (Next Priority)
 
-| Platform | Status | Users | API Type (Est.) | Estimated Effort | Priority |
-|----------|--------|-------|-----------------|------------------|----------|
-| **DeepSeek** | 🎯 Next | 96M monthly | POST/JSON (likely) | 2-4 hours | ⭐⭐⭐⭐⭐ HIGH |
-| **Meta AI** | 🎯 Next | 100M+ | POST/GraphQL (likely) | 4-6 hours | ⭐⭐⭐⭐ HIGH |
-| **You.com** | 🟡 Later | 5.5M | **GET/URL params** | 2-4 hours (webRequest) | ⭐ LOW |
-| **Poe** | 🟡 Later | 1.2M | POST/JSON (likely) | 3-5 hours | ⭐⭐ MEDIUM |
+| Platform | Status | Users | API Type | Estimated Effort | Priority | Documentation |
+|----------|--------|-------|----------|------------------|----------|---------------|
+| **Meta AI** | 🎯 Next | 100M+ | **GraphQL** (✅ confirmed) | 5-7 hours | ⭐⭐⭐⭐ HIGH | [meta.md](./meta.md) |
+| **DeepSeek** | 🎯 Next | 96M monthly | POST/JSON (likely) | 4-5 hours | ⭐⭐⭐⭐⭐ HIGH | TBD |
+| **Poe** | 🟡 Later | 1.2M | POST/GraphQL (likely) | 3-5 hours | ⭐⭐ MEDIUM | [poe.md](./poe.md) |
+| **You.com** | 🟡 Later | 5.5M | **GET/URL params** | 2-4 hours (webRequest) | ⭐ LOW | [you.md](./you.md) |
+
+**Note:** Meta AI GraphQL architecture confirmed via Network tab analysis (2025-11-03). Full implementation plan documented in meta.md.
 
 ---
 

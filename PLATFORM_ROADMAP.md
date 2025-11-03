@@ -390,16 +390,380 @@ See `YOU_COM_ANALYSIS.md` for complete implementation guide using webRequest API
 
 ---
 
+## Post-MVP Development Phases
+
+**Status:** MVP Complete (5 platforms) - Transitioning to Quality & Launch Prep
+
+**Decision Date:** 2025-11-03
+
+**Strategic Direction:** Focus on test suite modernization, payment infrastructure, comprehensive audit, and MVP launch preparation before expanding to additional platforms.
+
+---
+
+### Phase 1: Test Suite Modernization 🧪
+
+**Priority:** 🔴 **HIGHEST** (Foundation for all future work)
+
+**Objective:** Completely update test suite to properly test all current functionality
+
+**Rationale:**
+> "Next will be completely updating our test suite to properly test everything - we have come a long way since we wrote those tests."
+
+**Scope:**
+1. **Update Unit Tests**
+   - textProcessor.ts (5 platform formats: chatgpt, claude, gemini, perplexity, copilot)
+   - AliasEngine.ts (current substitution logic)
+   - serviceWorker.ts (service detection for 5 platforms)
+   - Activity logging and stats tracking
+
+2. **Add Integration Tests**
+   - fetch() interception (ChatGPT, Claude, Perplexity)
+   - XHR interception (Gemini)
+   - WebSocket interception (Copilot)
+   - Page context injection (Gemini, Copilot)
+
+3. **Add E2E Tests** (if feasible)
+   - Extension loading on each platform
+   - PII substitution end-to-end
+   - Popup v2 functionality
+   - Settings management
+
+4. **Test Coverage Goals**
+   - Core functionality: 90%+ coverage
+   - Critical paths: 100% coverage
+   - Platform-specific code: 80%+ coverage
+
+**Estimated Effort:** 2-3 weeks (40-60 hours)
+
+**Success Criteria:**
+- [ ] All existing tests updated and passing
+- [ ] New tests for Gemini, Perplexity, Copilot
+- [ ] textProcessor tests cover all 5 formats
+- [ ] Integration tests for all 3 interception methods
+- [ ] CI/CD pipeline runs all tests
+- [ ] Test documentation complete
+
+**Files to Update:**
+- `tests/unit/textProcessor.test.ts`
+- `tests/unit/aliasEngine.test.ts`
+- `tests/unit/serviceWorker.test.ts`
+- `tests/integration/` (new tests)
+- `tests/e2e/` (if implemented)
+
+---
+
+### Phase 2: Payment System Implementation 💳
+
+**Priority:** 🟡 **HIGH** (Business infrastructure before launch)
+
+**Objective:** Implement payment infrastructure for PRO subscriptions and donations
+
+**Rationale:**
+> "Then after the test suite we will focus on a payment system for pro and donations so that we can launch and collect donations and get pro users when we are ready - rather than having to write a whole bunch of code and change the app people have downloaded, when we have the business tasts done and a bank account set up and linked to something - we can hook it up."
+
+**Scope:**
+1. **Payment Provider Integration**
+   - Research options (Stripe, Paddle, Lemon Squeezy, etc.)
+   - Select provider based on:
+     - Chrome Extension compatibility
+     - International support
+     - Fee structure
+     - Developer experience
+   - Implement payment flow
+
+2. **PRO Subscription Features**
+   - Define PRO vs FREE tiers
+   - Implement license validation
+   - Add upgrade prompts to UI
+   - Handle subscription management
+   - Implement trial period (if applicable)
+
+3. **Donation System**
+   - One-time donation flow
+   - Optional recurring donations
+   - Donation acknowledgment
+   - Thank you messaging
+
+4. **Backend Infrastructure**
+   - License validation server (if needed)
+   - Webhook handling
+   - Subscription status checking
+   - Payment receipt generation
+
+5. **UI Components**
+   - Payment modal/page
+   - Subscription status display
+   - Upgrade CTAs
+   - Donation buttons
+
+**Estimated Effort:** 3-4 weeks (60-80 hours)
+
+**Success Criteria:**
+- [ ] Payment provider integrated
+- [ ] PRO subscription flow working
+- [ ] Donation flow working
+- [ ] License validation implemented
+- [ ] Payment UI polished
+- [ ] Webhook handling tested
+- [ ] Backend deployed (if applicable)
+- [ ] Payment testing complete
+
+**Dependencies:**
+- Business tasks (bank account, legal entity)
+- Payment provider account setup
+- Terms of service finalized
+- Privacy policy updated
+
+---
+
+### Phase 3: Complete Application Audit 🔍
+
+**Priority:** 🟡 **HIGH** (Quality assurance before launch)
+
+**Objective:** Comprehensive audit of code quality and visual polish
+
+**Rationale:**
+> "Then we will need to do a complete audit of the app, both code and visuals."
+
+**Scope:**
+
+#### 3.1 Code Audit
+1. **Security Audit**
+   - XSS vulnerability check (innerHTML usage)
+   - Data validation (user inputs)
+   - Storage security (chrome.storage vs localStorage)
+   - API key handling
+   - PII handling (ensure no leaks)
+
+2. **Performance Audit**
+   - Bundle size optimization
+   - Memory leak detection
+   - CPU usage profiling
+   - Network request optimization
+   - Storage quota management
+
+3. **Code Quality Audit**
+   - TypeScript strict mode compliance
+   - ESLint violations
+   - Code duplication (DRY violations)
+   - Function complexity (cyclomatic complexity)
+   - File size (e.g., popup-v2.ts 901 lines)
+
+4. **Architecture Audit**
+   - Module organization
+   - Separation of concerns
+   - State management consistency
+   - Error handling patterns
+   - Logging consistency
+
+#### 3.2 Visual/UX Audit
+1. **Popup v2 Polish**
+   - Visual consistency
+   - Color scheme refinement
+   - Typography consistency
+   - Spacing and alignment
+   - Responsive behavior
+
+2. **User Experience**
+   - Onboarding flow
+   - Empty states
+   - Loading states
+   - Error messages
+   - Success feedback
+
+3. **Accessibility**
+   - Keyboard navigation
+   - Screen reader support
+   - Color contrast (WCAG compliance)
+   - Focus indicators
+   - ARIA labels
+
+4. **Cross-Browser Testing**
+   - Chrome (primary)
+   - Edge (Chromium)
+   - Brave
+   - Other Chromium browsers
+
+**Estimated Effort:** 2-3 weeks (40-60 hours)
+
+**Success Criteria:**
+- [ ] No critical security vulnerabilities
+- [ ] Performance benchmarks met
+- [ ] Code quality scores improved
+- [ ] Visual polish complete
+- [ ] UX refinements implemented
+- [ ] Accessibility standards met
+- [ ] Cross-browser compatibility verified
+- [ ] Audit report documented
+
+**Deliverables:**
+- Security audit report
+- Performance audit report
+- Code quality report
+- UX/Visual audit report
+- Action items list
+- Remediation tracking
+
+---
+
+### Phase 4: MVP Launch Preparation 🚀
+
+**Priority:** 🔴 **CRITICAL** (Final steps before public release)
+
+**Objective:** Complete all tasks required for successful MVP launch
+
+**Rationale:**
+> "Then we will have our MVP launch to do list"
+
+**Scope:**
+
+#### 4.1 Documentation
+- [ ] User documentation (How to use guide)
+- [ ] FAQ
+- [ ] Privacy policy (finalized)
+- [ ] Terms of service (finalized)
+- [ ] Changelog
+- [ ] Release notes
+- [ ] Support documentation
+
+#### 4.2 Marketing Materials
+- [ ] Landing page (if applicable)
+- [ ] Chrome Web Store listing
+  - Screenshots (all required sizes)
+  - Promotional images
+  - Description (optimized for SEO)
+  - Feature highlights
+- [ ] Demo video (optional but recommended)
+- [ ] Social media assets
+- [ ] Press kit (if pursuing PR)
+
+#### 4.3 Chrome Web Store Submission
+- [ ] Extension packaged correctly
+- [ ] Store listing complete
+- [ ] All required assets uploaded
+- [ ] Privacy policy URL provided
+- [ ] Support email/URL provided
+- [ ] Category selection
+- [ ] Pricing tier set
+- [ ] Submit for review
+
+#### 4.4 Launch Infrastructure
+- [ ] Support email setup
+- [ ] Issue tracking system (GitHub Issues configured)
+- [ ] Analytics implementation (if using)
+- [ ] Error tracking (Sentry or similar)
+- [ ] User feedback mechanism
+- [ ] Update distribution plan
+
+#### 4.5 Legal & Compliance
+- [ ] Privacy policy reviewed by legal (if possible)
+- [ ] Terms of service reviewed
+- [ ] GDPR compliance verified
+- [ ] CCPA compliance verified
+- [ ] Chrome Web Store policies compliance
+- [ ] License file updated
+
+#### 4.6 Launch Checklist
+- [ ] All tests passing
+- [ ] No known critical bugs
+- [ ] Payment system tested (if implemented)
+- [ ] Documentation complete
+- [ ] Marketing materials ready
+- [ ] Support infrastructure ready
+- [ ] Legal compliance verified
+- [ ] Chrome Web Store submission approved
+- [ ] Launch date selected
+- [ ] Launch communications prepared
+
+**Estimated Effort:** 2-3 weeks (40-60 hours)
+
+**Success Criteria:**
+- [ ] Chrome Web Store listing approved
+- [ ] All launch blockers resolved
+- [ ] Documentation published
+- [ ] Support channels active
+- [ ] Launch communications ready
+- [ ] Monitoring in place
+- [ ] Rollback plan documented
+
+---
+
+## Post-MVP Timeline
+
+**Total Estimated Time:** 12-16 weeks (240-320 hours)
+
+| Phase | Duration | Cumulative | Priority |
+|-------|----------|------------|----------|
+| **Phase 1: Test Suite** | 2-3 weeks | 2-3 weeks | 🔴 Critical |
+| **Phase 2: Payment System** | 3-4 weeks | 5-7 weeks | 🟡 High |
+| **Phase 3: Audit** | 2-3 weeks | 7-10 weeks | 🟡 High |
+| **Phase 4: Launch Prep** | 2-3 weeks | 9-13 weeks | 🔴 Critical |
+
+**Target Launch Date:** Q2 2025 (assuming 3-4 months from 2025-11-03)
+
+**Milestones:**
+- **Week 4:** Test suite complete
+- **Week 8:** Payment system ready
+- **Week 11:** Audit complete
+- **Week 13:** Launch ready
+
+---
+
+## Tier 2 Platform Expansion (Post-Launch)
+
+**Decision:** Defer Tier 2 platforms until after MVP launch
+
+**Rationale:**
+- Tier 1 already covers 98% market share
+- Quality and launch prep more important than additional platforms
+- Tier 2 can be added as post-launch updates
+
+**Tier 2 Platform Priorities (Future):**
+
+1. **Meta AI** (Highest Priority)
+   - 100M+ users
+   - GraphQL architecture confirmed
+   - Implementation plan documented
+   - Estimated: 5-7 hours
+
+2. **DeepSeek** (High Priority)
+   - 96M users
+   - Likely standard POST/JSON
+   - Estimated: 4-5 hours
+
+3. **Poe** (Medium Priority)
+   - 1.2M users
+   - Likely GraphQL
+   - Estimated: 3-5 hours
+
+4. **You.com** (Lower Priority)
+   - 5.5M users
+   - Requires webRequest API
+   - Estimated: 2-4 hours
+
+**Post-Launch Platform Strategy:**
+- Release Tier 2 platforms as updates (v0.2.0, v0.3.0, etc.)
+- Prioritize based on user demand
+- Maintain quality standards from Tier 1
+
+---
+
 ## Summary
 
 **✅ Tier 1 Achievement:**
-- 5 production platforms
+- 5 production platforms (ChatGPT, Claude, Gemini, Perplexity, Copilot)
 - 98% market coverage
 - Technical excellence across 3 interception methods
+- MVP declared complete
 
-**🎯 Tier 2 Focus:**
-- Prioritize DeepSeek (96M users) and Meta AI (100M+ users)
-- Defer You.com (5.5M users) and Poe (1.2M users)
-- Maximize ROI: 196M+ users vs 9-12 hours effort
+**🎯 Post-MVP Focus (Before Launch):**
+1. Test suite modernization (2-3 weeks)
+2. Payment system implementation (3-4 weeks)
+3. Complete application audit (2-3 weeks)
+4. MVP launch preparation (2-3 weeks)
 
-**Next Action:** Test DeepSeek to verify POST/JSON architecture, then implement!
+**📅 Target Launch:** Q2 2025 (12-16 weeks from 2025-11-03)
+
+**🔮 Post-Launch:** Tier 2 platform expansion (Meta AI, DeepSeek, Poe, You.com)
+
+**Next Action:** Begin Phase 1 - Test Suite Modernization
