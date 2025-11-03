@@ -1,6 +1,6 @@
 # Platform Support Documentation
 
-> **Last Updated:** 2025-11-02
+> **Last Updated:** 2025-11-03
 > **Maintained By:** Core Team
 
 This directory contains comprehensive platform-specific documentation for all AI services supported by PromptBlocker (formerly AI PII Sanitizer).
@@ -12,9 +12,14 @@ This directory contains comprehensive platform-specific documentation for all AI
 PromptBlocker provides PII protection across multiple AI chat platforms by intercepting requests at the network level, substituting real PII with aliases before transmission, and decoding responses to show real PII to users.
 
 **Current Status:**
-- **Production:** ChatGPT, Claude, Gemini, Perplexity, Copilot ✅
-- **Infrastructure Complete, Testing Pending:** Poe, You.com 🚧
+- **Tier 1 (MVP - Production):** ChatGPT, Claude, Gemini, Perplexity, Copilot ✅ (98% market coverage)
+- **Tier 2 (Post-MVP - High Priority):** DeepSeek (96M users), Meta AI (100M+ users) 🎯
+- **Tier 2 (Post-MVP - Lower Priority):** You.com (5.5M users), Poe (1.2M users) 🟡
 - **Template for Future Platforms:** PLATFORM_TEMPLATE.md 📋
+
+**Market Share Coverage:**
+- Current (5 platforms): ~98% of global AI chatbot market
+- Adding DeepSeek + Meta AI: ~99.5% coverage
 
 ---
 
@@ -138,43 +143,51 @@ PromptBlocker provides PII protection across multiple AI chat platforms by inter
 
 #### 7. [you.md](./you.md) - You.com
 - **URL:** `*.you.com`
-- **Status:** 🚧 Infrastructure Complete, Testing Pending
-- **Implementation Date:** 2025-11-02 (infrastructure)
-- **Priority:** Medium
-- **Key Features:**
+- **Status:** 🟡 Tier 2 (Post-MVP - Deferred)
+- **Testing Date:** 2025-11-03
+- **Market Share:** 0.40% (5.5M monthly visits)
+- **Priority:** ⚠️ Low (deferred in favor of DeepSeek and Meta AI)
+- **Key Characteristics:**
+  - ❌ **Uses GET requests with URL parameters** (NOT POST/JSON!)
+  - Requires webRequest API (different architecture than all other platforms)
   - AI-powered search engine (similar to Perplexity)
   - Multiple AI modes (Smart, Genius, Create, Research)
-  - Search aggregation with citations
-  - App integrations (GitHub, Twitter, Reddit, etc.)
-- **Technical Challenges:**
-  - Dual interface (search + chat) may use different endpoints
-  - Multiple AI modes may behave differently
-  - App integrations may return PII in app-specific formats
-  - Need DOM observer for response rendering
-- **TODO:**
-  - [ ] Test fetch() interception (search interface)
-  - [ ] Test fetch() interception (chat interface)
-  - [ ] Test with different AI modes
-  - [ ] Implement YouObserver
-  - [ ] Handle app integration results
-- **Test Target:** Phase 2B (Nov 9-15)
+- **⚠️ CRITICAL DISCOVERY (2025-11-03):**
+  - You.com sends queries via URL parameter (`?q=...`)
+  - Our fetch() body interception **CANNOT intercept URL parameters**
+  - Requires `chrome.webRequest` API for URL modification
+  - **Implementation is 100% feasible** (2-4 hours) but **low ROI** (5.5M users vs DeepSeek 96M users)
+- **Recommendation:** Defer to Tier 2 (Post-MVP), implement after DeepSeek and Meta AI
+- **See:** `YOU_COM_ANALYSIS.md` for complete technical analysis and implementation plan
 
 ---
 
 ## Platform Comparison Matrix
 
-| Platform | Status | API Type | Request Format | Interception Method | Observer | Special Features |
-|----------|--------|----------|----------------|---------------------|----------|------------------|
-| **ChatGPT** | ✅ Production | REST | JSON (messages[]) | fetch() | Disabled* | Streaming SSE |
-| **Claude** | ✅ Production | REST | JSON (prompt) | fetch() | Disabled* | Streaming SSE |
-| **Gemini** | ✅ Production | REST (batchexecute) | Form-encoded | **XHR** (page context) | Disabled* | Proprietary RPC format |
-| **Perplexity** | ✅ Production | REST | JSON (dual-field!) | fetch() | Disabled* | **Dual query fields** |
-| **Copilot** | ✅ Production | **WebSocket** | JSON events | **WebSocket.send()** (page context) | Disabled* | **Streaming events**, WebSocket |
+### Tier 1: Production Platforms (MVP - 98% Market Coverage)
+
+| Platform | Status | API Type | Request Format | Interception Method | Observer | Market Share |
+|----------|--------|----------|----------------|---------------------|----------|--------------|
+| **ChatGPT** | ✅ Production | REST | JSON (messages[]) | fetch() | Disabled* | 82.7% |
+| **Copilot** | ✅ Production | **WebSocket** | JSON events | **WebSocket.send()** (page context) | Disabled* | 4.5% |
+| **Perplexity** | ✅ Production | REST | JSON (dual-field!) | fetch() | Disabled* | 8.2% |
+| **Gemini** | ✅ Production | REST (batchexecute) | Form-encoded | **XHR** (page context) | Disabled* | 2.2% |
+| **Claude** | ✅ Production | REST | JSON (prompt) | fetch() | Disabled* | 0.9% |
 
 **\*Response Decoding Note:** All production platforms have response decoding **intentionally disabled** (`config.settings.decodeResponses = false`). This is by design to verify substitution is working. Infrastructure is in place and ready for unified UX implementation across all platforms later.
 
-| **Poe** | 🚧 Testing | REST or **GraphQL?** | JSON or GraphQL | fetch() | ⏳ TODO | Multi-model aggregator |
-| **You.com** | 🚧 Testing | REST | JSON | fetch() | ⏳ TODO | AI modes, app integrations |
+**Total Coverage:** ~98% of global AI chatbot market
+
+---
+
+### Tier 2: Post-MVP Platforms (Next Priority)
+
+| Platform | Status | Users | API Type (Est.) | Estimated Effort | Priority |
+|----------|--------|-------|-----------------|------------------|----------|
+| **DeepSeek** | 🎯 Next | 96M monthly | POST/JSON (likely) | 2-4 hours | ⭐⭐⭐⭐⭐ HIGH |
+| **Meta AI** | 🎯 Next | 100M+ | POST/GraphQL (likely) | 4-6 hours | ⭐⭐⭐⭐ HIGH |
+| **You.com** | 🟡 Later | 5.5M | **GET/URL params** | 2-4 hours (webRequest) | ⭐ LOW |
+| **Poe** | 🟡 Later | 1.2M | POST/JSON (likely) | 3-5 hours | ⭐⭐ MEDIUM |
 
 ---
 
