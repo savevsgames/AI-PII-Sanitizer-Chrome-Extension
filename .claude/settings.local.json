@@ -11,7 +11,8 @@
       "Bash(npm run test:e2e:*)",
       "Bash(npm test:*)",
       "WebSearch",
-      "Bash(npm run test:unit:*)"
+      "Bash(npm run test:unit:*)",
+      "Bash(npm run test:all:*)"
     ],
     "deny": [],
     "ask": []
