@@ -646,4 +646,152 @@
 
     console.log('[Gemini XHR] ✅ XHR interception initialized for Gemini');
   }
+
+  // ==========================
+  // COPILOT WEBSOCKET INTERCEPTION
+  // ==========================
+  // Copilot uses WebSocket for real-time chat communication
+  // WebSocket URL: wss://copilot.microsoft.com/c/api/chat?api-version=2
+  // This interception is similar to Gemini XHR - runs in page context with message passing
+
+  if (window.location.hostname.includes('copilot.microsoft.com')) {
+    console.log('[Copilot WS] 🚀 Initializing WebSocket interception for Copilot');
+
+    const nativeWebSocket = window.WebSocket;
+    const nativeSend = WebSocket.prototype.send;
+    const nativeAddEventListener = WebSocket.prototype.addEventListener;
+
+    // Track Copilot WebSocket instances
+    const copilotWebSockets = new WeakMap();
+
+    // Intercept WebSocket constructor
+    window.WebSocket = function(url, protocols) {
+      console.log('[Copilot WS] WebSocket created:', url);
+
+      const ws = new nativeWebSocket(url, protocols);
+
+      // Only intercept Copilot chat WebSocket
+      if (url.includes('/c/api/chat')) {
+        console.log('[Copilot WS] ✅ Copilot chat WebSocket detected - will intercept');
+        copilotWebSockets.set(ws, {
+          url: url,
+          shouldIntercept: true,
+          messageBuffer: []
+        });
+      } else {
+        console.log('[Copilot WS] ⏭️  Non-chat WebSocket - passing through');
+      }
+
+      return ws;
+    };
+
+    // Preserve WebSocket prototype
+    window.WebSocket.prototype = nativeWebSocket.prototype;
+    window.WebSocket.CONNECTING = nativeWebSocket.CONNECTING;
+    window.WebSocket.OPEN = nativeWebSocket.OPEN;
+    window.WebSocket.CLOSING = nativeWebSocket.CLOSING;
+    window.WebSocket.CLOSED = nativeWebSocket.CLOSED;
+
+    // Intercept WebSocket.send()
+    WebSocket.prototype.send = function(data) {
+      const wsData = copilotWebSockets.get(this);
+
+      // Pass through if not a Copilot chat WebSocket
+      if (!wsData || !wsData.shouldIntercept) {
+        return nativeSend.call(this, data);
+      }
+
+      // Check if extension is disabled
+      if (extensionDisabled) {
+        console.warn('[Copilot WS] Extension disabled - passing through');
+        return nativeSend.call(this, data);
+      }
+
+      console.log('[Copilot WS] 🔒 Intercepting outgoing message');
+      console.log('[Copilot WS] Message length:', data?.length || 0);
+      console.log('[Copilot WS] Message preview:', typeof data === 'string' ? data.substring(0, 500) : data);
+
+      // Handle async interception
+      const ws = this;
+      (async () => {
+        try {
+          const messageStr = typeof data === 'string' ? data : String(data);
+
+          const substituteRequest = await new Promise((resolve) => {
+            const messageId = Math.random().toString(36);
+
+            const timeout = setTimeout(() => {
+              window.removeEventListener('message', handleResponse);
+              console.error('[Copilot WS] Request substitution timeout');
+              resolve({ success: false, error: 'timeout' });
+            }, 5000);
+
+            const handleResponse = (event) => {
+              if (event.data?.source === 'ai-pii-content' &&
+                  event.data?.messageId === messageId) {
+                clearTimeout(timeout);
+                window.removeEventListener('message', handleResponse);
+                resolve(event.data.response);
+              }
+            };
+
+            window.addEventListener('message', handleResponse);
+
+            window.postMessage({
+              source: 'ai-pii-inject',
+              messageId: messageId,
+              type: 'SUBSTITUTE_REQUEST',
+              payload: {
+                body: messageStr,
+                url: wsData.url,
+                method: 'WEBSOCKET'
+              }
+            }, '*');
+          });
+
+          if (substituteRequest?.success) {
+            console.log('[Copilot WS] ✅ Sending modified message');
+            console.log('[Copilot WS] Substitutions:', substituteRequest.substitutions || 0);
+            nativeSend.call(ws, substituteRequest.modifiedBody);
+          } else {
+            console.error('[Copilot WS] ❌ Substitution failed, sending original');
+            nativeSend.call(ws, data);
+          }
+        } catch (error) {
+          console.error('[Copilot WS] ❌ Interception error:', error);
+          nativeSend.call(ws, data);
+        }
+      })();
+    };
+
+    // Intercept WebSocket.addEventListener('message') for response decoding
+    WebSocket.prototype.addEventListener = function(type, listener, options) {
+      const wsData = copilotWebSockets.get(this);
+
+      // Pass through if not a Copilot chat WebSocket or not a message event
+      if (type !== 'message' || !wsData || !wsData.shouldIntercept) {
+        return nativeAddEventListener.call(this, type, listener, options);
+      }
+
+      console.log('[Copilot WS] 📨 Intercepting onmessage handler');
+
+      // Wrap the listener to decode responses
+      const wrappedListener = async function(event) {
+        try {
+          console.log('[Copilot WS] 📩 Message received:', event.data?.substring(0, 200));
+
+          // TODO Phase 4: Decode aliases in streaming responses
+          // For now, pass through unchanged
+          return listener.call(this, event);
+        } catch (error) {
+          console.error('[Copilot WS] ❌ Message interception error:', error);
+          return listener.call(this, event);
+        }
+      };
+
+      return nativeAddEventListener.call(this, type, wrappedListener, options);
+    };
+
+    console.log('[Copilot WS] ✅ WebSocket interception initialized for Copilot');
+  }
 })();

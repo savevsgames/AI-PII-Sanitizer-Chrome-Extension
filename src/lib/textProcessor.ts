@@ -5,9 +5,22 @@
 
 /**
  * Extract all text content from request data
- * Supports ChatGPT, Claude, Gemini, and other AI service formats
+ * Supports ChatGPT, Claude, Gemini, Perplexity, Copilot, and other AI service formats
  */
 export function extractAllText(data: any): string {
+  // Copilot WebSocket format: { event: "send", content: [{ type: "text", text: "..." }] }
+  if (data.event === 'send' && Array.isArray(data.content)) {
+    const texts: string[] = [];
+    data.content.forEach((item: any) => {
+      if (item.type === 'text' && typeof item.text === 'string') {
+        texts.push(item.text);
+      }
+    });
+    if (texts.length > 0) {
+      return texts.join('\n\n');
+    }
+  }
+
   // Perplexity format 1: { query_str: "...", params: { dsl_query: "..." } }
   // Extract all query-related fields and combine them
   if (data.query_str && typeof data.query_str === 'string') {
@@ -74,6 +87,21 @@ export function extractAllText(data: any): string {
  */
 export function replaceAllText(data: any, substitutedText: string): any {
   const modified = JSON.parse(JSON.stringify(data)); // Deep clone
+
+  // Copilot WebSocket format: { event: "send", content: [{ type: "text", text: "..." }] }
+  if (modified.event === 'send' && Array.isArray(modified.content)) {
+    const textParts = substitutedText.split('\n\n').filter(Boolean);
+    let partIndex = 0;
+
+    modified.content.forEach((item: any) => {
+      if (item.type === 'text' && typeof item.text === 'string') {
+        item.text = textParts[partIndex] || substitutedText;
+        partIndex++;
+      }
+    });
+
+    return modified;
+  }
 
   // Perplexity format 1: query_str + dsl_query
   if (modified.query_str && typeof modified.query_str === 'string') {
@@ -195,7 +223,10 @@ export function hasTextContent(data: any): boolean {
 /**
  * Extract metadata about the request format
  */
-export function detectFormat(data: any): 'chatgpt' | 'claude' | 'gemini' | 'perplexity' | 'unknown' {
+export function detectFormat(data: any): 'chatgpt' | 'claude' | 'gemini' | 'perplexity' | 'copilot' | 'unknown' {
+  if (data.event === 'send' && Array.isArray(data.content)) {
+    return 'copilot';
+  }
   if (data.query_str && typeof data.query_str === 'string') {
     return 'perplexity';
   }
