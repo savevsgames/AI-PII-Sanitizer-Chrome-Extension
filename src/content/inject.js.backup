@@ -505,187 +505,33 @@
 
   console.log('🛡️ AI PII Sanitizer: Active and monitoring');
 
-  // INTERCEPT XMLHttpRequest for Gemini ONLY (they don't use fetch!)
-  // IMPORTANT: This ONLY runs on gemini.google.com - does NOT affect ChatGPT/Claude
-  if (window.location.hostname.includes('gemini.google.com')) {
-    console.log('[Gemini XHR] Initializing XHR interception for Gemini');
+  // INTERCEPT XMLHttpRequest for Gemini (they don't use fetch!)
+  const nativeXHROpen = XMLHttpRequest.prototype.open;
+  const nativeXHRSend = XMLHttpRequest.prototype.send;
 
-    const nativeXHROpen = XMLHttpRequest.prototype.open;
-    const nativeXHRSend = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function(method, url, ...args) {
+    this._url = url;
+    this._method = method;
 
-    XMLHttpRequest.prototype.open = function(method, url, ...args) {
-      this._interceptor = {
-        url: typeof url === 'string' ? url : url.toString(),
-        method: method.toUpperCase(),
-        shouldIntercept: false
-      };
+    if (window.location.hostname.includes('gemini.google.com')) {
+      console.log('🌐 [DEBUG] XHR open:', method, url);
+    }
 
-      // Only intercept POST requests to BardChatUi batchexecute endpoints
-      if (method.toUpperCase() === 'POST' &&
-          (this._interceptor.url.includes('BardChatUi') ||
-           this._interceptor.url.includes('batchexecute'))) {
-        this._interceptor.shouldIntercept = true;
-        console.log('[Gemini XHR] Will intercept:', method, this._interceptor.url);
+    return nativeXHROpen.apply(this, [method, url, ...args]);
+  };
+
+  XMLHttpRequest.prototype.send = function(body) {
+    if (window.location.hostname.includes('gemini.google.com') && this._url) {
+      console.log('🌐 [DEBUG] XHR send:', this._method, this._url);
+      console.log('🌐 [DEBUG] XHR body length:', body?.length || 0);
+
+      if (this._url.includes('BardChatUi') || this._url.includes('batchexecute')) {
+        console.log('🔍 [Gemini] XHR API REQUEST DETECTED!');
+        console.log('🔍 [Gemini] URL:', this._url);
+        console.log('🔍 [Gemini] Body:', body?.substring(0, 200));
       }
+    }
 
-      return nativeXHROpen.apply(this, [method, url, ...args]);
-    };
-
-    XMLHttpRequest.prototype.send = function(body) {
-      const interceptorData = this._interceptor;
-
-      // Pass through if not intercepting
-      if (!interceptorData || !interceptorData.shouldIntercept) {
-        return nativeXHRSend.apply(this, [body]);
-      }
-
-      console.log('[Gemini XHR] 🔒 Intercepting request');
-      console.log('[Gemini XHR] URL:', interceptorData.url);
-      console.log('[Gemini XHR] Body length:', body?.length || 0);
-      console.log('[Gemini XHR] Body preview:', body?.substring(0, 200));
-
-      // Check if extension is disabled
-      if (extensionDisabled) {
-        console.warn('[Gemini XHR] Extension disabled - passing through');
-        return nativeXHRSend.apply(this, [body]);
-      }
-
-      // For Gemini XHR interception, we don't block based on isProtected flag
-      // because profiles are loaded via content script independently.
-      // The background will handle whether to substitute or pass through.
-      // If no aliases are loaded, substitution will simply return 0 replacements.
-
-      // Handle async XHR with request/response interception
-      const xhr = this;
-      (async () => {
-        try {
-          // Step 1: Send request body to background for substitution
-          const bodyStr = body ? String(body) : '';
-
-          const substituteRequest = await new Promise((resolve) => {
-            const messageId = Math.random().toString(36);
-
-            const timeout = setTimeout(() => {
-              window.removeEventListener('message', handleResponse);
-              console.error('[Gemini XHR] Request substitution timeout');
-              resolve({ success: false, error: 'timeout' });
-            }, 5000);
-
-            const handleResponse = (event) => {
-              if (event.data?.source === 'ai-pii-content' &&
-                  event.data?.messageId === messageId) {
-                clearTimeout(timeout);
-                window.removeEventListener('message', handleResponse);
-                resolve(event.data.response);
-              }
-            };
-
-            window.addEventListener('message', handleResponse);
-
-            window.postMessage({
-              source: 'ai-pii-inject',
-              messageId: messageId,
-              type: 'SUBSTITUTE_REQUEST',
-              payload: { body: bodyStr, url: interceptorData.url }
-            }, '*');
-          });
-
-          if (!substituteRequest || !substituteRequest.success) {
-            console.error('[Gemini XHR] ❌ Substitution failed, blocking request');
-            setTimeout(() => {
-              const event = new Event('error');
-              xhr.dispatchEvent(event);
-            }, 0);
-            return;
-          }
-
-          console.log('[Gemini XHR] ✅ Request substituted:', substituteRequest.substitutions, 'replacements');
-
-          // Step 2: Set up response interceptor
-          const originalOnReadyStateChange = xhr.onreadystatechange;
-
-          xhr.onreadystatechange = async function(event) {
-            if (this.readyState === XMLHttpRequest.DONE) {
-              try {
-                const originalResponse = this.responseText;
-
-                console.log('[Gemini XHR] 🔓 Intercepting response');
-                console.log('[Gemini XHR] Response length:', originalResponse.length);
-                console.log('[Gemini XHR] Response preview:', originalResponse.substring(0, 200));
-
-                // Step 3: Send response to background for decoding
-                const substituteResponse = await new Promise((resolve) => {
-                  const messageId = Math.random().toString(36);
-
-                  const timeout = setTimeout(() => {
-                    window.removeEventListener('message', handleResponse);
-                    console.warn('[Gemini XHR] Response substitution timeout');
-                    resolve({ success: false, error: 'timeout' });
-                  }, 5000);
-
-                  const handleResponse = (event) => {
-                    if (event.data?.source === 'ai-pii-content' &&
-                        event.data?.messageId === messageId) {
-                      clearTimeout(timeout);
-                      window.removeEventListener('message', handleResponse);
-                      resolve(event.data.response);
-                    }
-                  };
-
-                  window.addEventListener('message', handleResponse);
-
-                  window.postMessage({
-                    source: 'ai-pii-inject',
-                    messageId: messageId,
-                    type: 'SUBSTITUTE_RESPONSE',
-                    payload: { text: originalResponse }
-                  }, '*');
-                });
-
-                if (substituteResponse && substituteResponse.success) {
-                  console.log('[Gemini XHR] ✅ Response decoded:', substituteResponse.substitutions, 'replacements');
-
-                  // Step 4: Replace responseText with decoded version
-                  Object.defineProperty(this, 'responseText', {
-                    value: substituteResponse.modifiedText,
-                    writable: false,
-                    configurable: true
-                  });
-
-                  // Also handle response property
-                  Object.defineProperty(this, 'response', {
-                    value: this.responseType === '' || this.responseType === 'text'
-                      ? substituteResponse.modifiedText
-                      : this.response,
-                    writable: false,
-                    configurable: true
-                  });
-                } else {
-                  console.warn('[Gemini XHR] ⚠️ Response substitution failed, returning original');
-                }
-
-              } catch (error) {
-                console.error('[Gemini XHR] ❌ Response handling error:', error);
-              }
-            }
-
-            // Call original handler
-            if (originalOnReadyStateChange) {
-              originalOnReadyStateChange.call(this, event);
-            }
-          };
-
-          // Step 5: Send modified request
-          nativeXHRSend.call(xhr, substituteRequest.modifiedBody);
-
-        } catch (error) {
-          console.error('[Gemini XHR] ❌ Interception error:', error);
-          // Fallback: send original request
-          nativeXHRSend.call(xhr, body);
-        }
-      })();
-    };
-
-    console.log('[Gemini XHR] ✅ XHR interception initialized for Gemini');
-  }
+    return nativeXHRSend.apply(this, [body]);
+  };
 })();
