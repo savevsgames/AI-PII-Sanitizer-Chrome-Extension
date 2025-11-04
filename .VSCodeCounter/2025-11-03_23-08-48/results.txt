@@ -1,0 +1,241 @@
+Date : 2025-11-03 23:08:48
+Directory : h:\AI_Interceptor
+Total : 169 files,  62494 codes, 2909 comments, 13622 blanks, all 79025 lines
+
+Languages
++--------------------+------------+------------+------------+------------+------------+
+| language           | files      | code       | comment    | blank      | total      |
++--------------------+------------+------------+------------+------------+------------+
+| Markdown           |         81 |     35,599 |         13 |      9,971 |     45,583 |
+| TypeScript         |         54 |     12,842 |      2,464 |      2,567 |     17,873 |
+| JSON               |          7 |      8,374 |          0 |          6 |      8,380 |
+| PostCSS            |         16 |      3,817 |        251 |        778 |      4,846 |
+| HTML               |          3 |        986 |         48 |        120 |      1,154 |
+| JavaScript JSX     |          4 |        671 |        122 |        155 |        948 |
+| JSON with Comments |          2 |        115 |          0 |          2 |        117 |
+| Batch              |          1 |         48 |          5 |         11 |         64 |
+| Shell Script       |          1 |         42 |          6 |         12 |         60 |
++--------------------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                               | files      | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                  |        169 |     62,494 |      2,909 |     13,622 |     79,025 |
+| . (Files)                                                                          |         14 |     10,192 |         16 |        544 |     10,752 |
+| .claude                                                                            |          1 |         20 |          0 |          1 |         21 |
+| docs                                                                               |         72 |     33,448 |         13 |      9,298 |     42,759 |
+| docs (Files)                                                                       |          4 |      2,181 |          3 |        615 |      2,799 |
+| docs\current                                                                       |          8 |      5,224 |          0 |      1,452 |      6,676 |
+| docs\development                                                                   |         12 |      4,993 |          8 |      1,302 |      6,303 |
+| docs\development (Files)                                                           |          9 |      3,874 |          8 |        969 |      4,851 |
+| docs\development\troubleshooting                                                   |          3 |      1,119 |          0 |        333 |      1,452 |
+| docs\features                                                                      |          6 |      3,894 |          1 |        941 |      4,836 |
+| docs\legacy                                                                        |          8 |      6,014 |          1 |      1,495 |      7,510 |
+| docs\legacy (Files)                                                                |          5 |      2,793 |          0 |        753 |      3,546 |
+| docs\legacy\refactor_v2_planning                                                   |          3 |      3,221 |          1 |        742 |      3,964 |
+| docs\platforms                                                                     |         18 |      7,583 |          0 |      2,197 |      9,780 |
+| docs\setup                                                                         |          8 |      1,799 |          0 |        593 |      2,392 |
+| docs\testing                                                                       |          6 |      1,229 |          0 |        476 |      1,705 |
+| docs\user-guide                                                                    |          2 |        531 |          0 |        227 |        758 |
+| playwright-report                                                                  |          1 |         82 |          0 |          3 |         85 |
+| releases                                                                           |          3 |        409 |          0 |        140 |        549 |
+| releases (Files)                                                                   |          1 |         93 |          0 |         34 |        127 |
+| releases\v0.1.0-beta                                                               |          2 |        316 |          0 |        106 |        422 |
+| scripts                                                                            |          3 |        122 |         11 |         33 |        166 |
+| src                                                                                |         62 |     14,631 |      2,691 |      2,925 |     20,247 |
+| src (Files)                                                                        |          2 |        168 |         13 |         17 |        198 |
+| src\auth                                                                           |          2 |        180 |         11 |         32 |        223 |
+| src\background                                                                     |          1 |        778 |        179 |        160 |      1,117 |
+| src\content                                                                        |          7 |      1,688 |        407 |        370 |      2,465 |
+| src\content (Files)                                                                |          4 |      1,366 |        314 |        297 |      1,977 |
+| src\content\observers                                                              |          3 |        322 |         93 |         73 |        488 |
+| src\lib                                                                            |         13 |      3,028 |        710 |        589 |      4,327 |
+| src\popup                                                                          |         37 |      8,789 |      1,371 |      1,757 |     11,917 |
+| src\popup (Files)                                                                  |          4 |        954 |        101 |        138 |      1,193 |
+| src\popup\api                                                                      |          1 |        137 |         90 |         37 |        264 |
+| src\popup\components                                                               |         14 |      3,650 |        829 |        760 |      5,239 |
+| src\popup\init                                                                     |          1 |         62 |         29 |         15 |        106 |
+| src\popup\styles                                                                   |         15 |      3,804 |        239 |        772 |      4,815 |
+| src\popup\utils                                                                    |          2 |        182 |         83 |         35 |        300 |
+| test-results                                                                       |          1 |          9 |          0 |          0 |          9 |
+| tests                                                                              |         12 |      3,581 |        178 |        678 |      4,437 |
+| tests (Files)                                                                      |         10 |      3,394 |        113 |        612 |      4,119 |
+| tests\e2e                                                                          |          2 |        187 |         65 |         66 |        318 |
++------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| filename                                                                           | language           | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| h:\AI_Interceptor\.claude\settings.local.json                                      | JSON               |         20 |          0 |          1 |         21 |
+| h:\AI_Interceptor\.eslintrc.json                                                   | JSON with Comments |         89 |          0 |          1 |         90 |
+| h:\AI_Interceptor\CHANGELOG.md                                                     | Markdown           |        236 |          0 |         67 |        303 |
+| h:\AI_Interceptor\CONTRIBUTING.md                                                  | Markdown           |        415 |          0 |        139 |        554 |
+| h:\AI_Interceptor\PRIVACY_POLICY.md                                                | Markdown           |        133 |          0 |         68 |        201 |
+| h:\AI_Interceptor\README.md                                                        | Markdown           |        254 |          0 |         63 |        317 |
+| h:\AI_Interceptor\ROADMAP.md                                                       | Markdown           |        672 |          0 |        186 |        858 |
+| h:\AI_Interceptor\docs\ARCHITECTURE.md                                             | Markdown           |        637 |          3 |        149 |        789 |
+| h:\AI_Interceptor\docs\README.md                                                   | Markdown           |        212 |          0 |         64 |        276 |
+| h:\AI_Interceptor\docs\SECURITY_AUDIT.md                                           | Markdown           |        624 |          0 |        192 |        816 |
+| h:\AI_Interceptor\docs\TESTING.md                                                  | Markdown           |        708 |          0 |        210 |        918 |
+| h:\AI_Interceptor\docs\current\MEDIA_GENERATION_GUIDE.md                           | Markdown           |        701 |          0 |        235 |        936 |
+| h:\AI_Interceptor\docs\current\PRE_LAUNCH_CHECKLIST.md                             | Markdown           |        391 |          0 |        115 |        506 |
+| h:\AI_Interceptor\docs\current\STORE_LISTING_FINAL_COPY.md                         | Markdown           |        359 |          0 |        131 |        490 |
+| h:\AI_Interceptor\docs\current\adding_ai_services.md                               | Markdown           |        446 |          0 |         92 |        538 |
+| h:\AI_Interceptor\docs\current\building_a_trusted_extension.md                     | Markdown           |        660 |          0 |        172 |        832 |
+| h:\AI_Interceptor\docs\current\launch_roadmap.md                                   | Markdown           |        451 |          0 |        129 |        580 |
+| h:\AI_Interceptor\docs\current\marketing.md                                        | Markdown           |        409 |          0 |        117 |        526 |
+| h:\AI_Interceptor\docs\current\technical_architecture.md                           | Markdown           |      1,807 |          0 |        461 |      2,268 |
+| h:\AI_Interceptor\docs\development\ENCRYPTION_IMPROVEMENTS.md                      | Markdown           |        243 |          0 |        100 |        343 |
+| h:\AI_Interceptor\docs\development\ESLINT_SECURITY_RULES.md                        | Markdown           |        247 |          0 |         93 |        340 |
+| h:\AI_Interceptor\docs\development\XSS_AUDIT.md                                    | Markdown           |        422 |          0 |         81 |        503 |
+| h:\AI_Interceptor\docs\development\css-refactor-completed.md                       | Markdown           |        419 |          4 |         81 |        504 |
+| h:\AI_Interceptor\docs\development\debug-guide.md                                  | Markdown           |        175 |          0 |         60 |        235 |
+| h:\AI_Interceptor\docs\development\feature-upgrades-archived.md                    | Markdown           |        616 |          4 |        114 |        734 |
+| h:\AI_Interceptor\docs\development\final-dev-phase.md                              | Markdown           |        861 |          0 |        204 |      1,065 |
+| h:\AI_Interceptor\docs\development\phase-history.md                                | Markdown           |        362 |          0 |        116 |        478 |
+| h:\AI_Interceptor\docs\development\troubleshooting\extension-toggle.md             | Markdown           |        254 |          0 |         88 |        342 |
+| h:\AI_Interceptor\docs\development\troubleshooting\protection-status.md            | Markdown           |        660 |          0 |        180 |        840 |
+| h:\AI_Interceptor\docs\development\troubleshooting\vault.md                        | Markdown           |        205 |          0 |         65 |        270 |
+| h:\AI_Interceptor\docs\development\vault-ui-completed.md                           | Markdown           |        529 |          0 |        120 |        649 |
+| h:\AI_Interceptor\docs\features\feature_ai_profile_fill.md                         | Markdown           |        868 |          0 |        211 |      1,079 |
+| h:\AI_Interceptor\docs\features\feature_alias_variations.md                        | Markdown           |        530 |          0 |        144 |        674 |
+| h:\AI_Interceptor\docs\features\feature_api_key_vault.md                           | Markdown           |        654 |          0 |        173 |        827 |
+| h:\AI_Interceptor\docs\features\feature_dev_terms_spellcheck.md                    | Markdown           |        824 |          0 |        183 |      1,007 |
+| h:\AI_Interceptor\docs\features\feature_image_scanning.md                          | Markdown           |        649 |          1 |        133 |        783 |
+| h:\AI_Interceptor\docs\features\feature_prompt_templates.md                        | Markdown           |        369 |          0 |         97 |        466 |
+| h:\AI_Interceptor\docs\legacy\documentation-refactor-plan.md                       | Markdown           |        306 |          0 |         97 |        403 |
+| h:\AI_Interceptor\docs\legacy\phase_1_testing_archive.md                           | Markdown           |        381 |          0 |        135 |        516 |
+| h:\AI_Interceptor\docs\legacy\pii_sanitizer_pdd.md                                 | Markdown           |        281 |          0 |        104 |        385 |
+| h:\AI_Interceptor\docs\legacy\pii_sanitizer_tdd_v2.md                              | Markdown           |        795 |          0 |        182 |        977 |
+| h:\AI_Interceptor\docs\legacy\refactor_v2.md                                       | Markdown           |      1,030 |          0 |        235 |      1,265 |
+| h:\AI_Interceptor\docs\legacy\refactor_v2_planning\COMPREHENSIVE_REFACTOR_PLAN.md  | Markdown           |      2,533 |          0 |        549 |      3,082 |
+| h:\AI_Interceptor\docs\legacy\refactor_v2_planning\README.md                       | Markdown           |         35 |          0 |         14 |         49 |
+| h:\AI_Interceptor\docs\legacy\refactor_v2_planning\REFACTOR_VS_RESTART_ANALYSIS.md | Markdown           |        653 |          1 |        179 |        833 |
+| h:\AI_Interceptor\docs\platforms\COPILOT_WEBSOCKET_PLAN.md                         | Markdown           |        349 |          0 |        112 |        461 |
+| h:\AI_Interceptor\docs\platforms\GEMINI_IMPLEMENTATION_PLAN.md                     | Markdown           |        365 |          0 |        105 |        470 |
+| h:\AI_Interceptor\docs\platforms\GEMINI_XHR_INTERCEPTION_PLAN.md                   | Markdown           |        435 |          0 |        123 |        558 |
+| h:\AI_Interceptor\docs\platforms\PLATFORM_TEMPLATE.md                              | Markdown           |        342 |          0 |        131 |        473 |
+| h:\AI_Interceptor\docs\platforms\README.md                                         | Markdown           |        423 |          0 |        102 |        525 |
+| h:\AI_Interceptor\docs\platforms\claude-notes.md                                   | Markdown           |          1 |          0 |          0 |          1 |
+| h:\AI_Interceptor\docs\platforms\copilot-complete.md                               | Markdown           |        290 |          0 |         80 |        370 |
+| h:\AI_Interceptor\docs\platforms\copilot.md                                        | Markdown           |        958 |          0 |        236 |      1,194 |
+| h:\AI_Interceptor\docs\platforms\gemini.md                                         | Markdown           |        898 |          0 |        215 |      1,113 |
+| h:\AI_Interceptor\docs\platforms\meta.md                                           | Markdown           |        409 |          0 |        127 |        536 |
+| h:\AI_Interceptor\docs\platforms\perplexity-OLD.md                                 | Markdown           |        423 |          0 |        132 |        555 |
+| h:\AI_Interceptor\docs\platforms\perplexity-complete.md                            | Markdown           |        165 |          0 |         59 |        224 |
+| h:\AI_Interceptor\docs\platforms\perplexity-implementation-notes.md                | Markdown           |        222 |          0 |         66 |        288 |
+| h:\AI_Interceptor\docs\platforms\platform-roadmap.md                               | Markdown           |        577 |          0 |        193 |        770 |
+| h:\AI_Interceptor\docs\platforms\platform-support-audit.md                         | Markdown           |        258 |          0 |         81 |        339 |
+| h:\AI_Interceptor\docs\platforms\poe.md                                            | Markdown           |        473 |          0 |        137 |        610 |
+| h:\AI_Interceptor\docs\platforms\you-analysis.md                                   | Markdown           |        525 |          0 |        160 |        685 |
+| h:\AI_Interceptor\docs\platforms\you.md                                            | Markdown           |        470 |          0 |        138 |        608 |
+| h:\AI_Interceptor\docs\setup\FIREBASE_SETUP_GUIDE.md                               | Markdown           |        699 |          0 |        252 |        951 |
+| h:\AI_Interceptor\docs\setup\auth-implementation-summary.md                        | Markdown           |        447 |          0 |        104 |        551 |
+| h:\AI_Interceptor\docs\setup\chrome-identity-setup.md                              | Markdown           |        115 |          0 |         42 |        157 |
+| h:\AI_Interceptor\docs\setup\deployment-auth-handler.md                            | Markdown           |        135 |          0 |         44 |        179 |
+| h:\AI_Interceptor\docs\setup\enable-auth-providers.md                              | Markdown           |         72 |          0 |         29 |        101 |
+| h:\AI_Interceptor\docs\setup\firebase-auth-redirect-fix.md                         | Markdown           |         68 |          0 |         26 |         94 |
+| h:\AI_Interceptor\docs\setup\firebase-deploy.md                                    | Markdown           |        118 |          0 |         44 |        162 |
+| h:\AI_Interceptor\docs\setup\test-firebase-instructions.md                         | Markdown           |        145 |          0 |         52 |        197 |
+| h:\AI_Interceptor\docs\testing\MVP_TEST_SIGN_OFF.md                                | Markdown           |        363 |          0 |        133 |        496 |
+| h:\AI_Interceptor\docs\testing\README.md                                           | Markdown           |         57 |          0 |         29 |         86 |
+| h:\AI_Interceptor\docs\testing\code-cleanup-plan.md                                | Markdown           |         69 |          0 |         28 |         97 |
+| h:\AI_Interceptor\docs\testing\platform-testing-plan.md                            | Markdown           |        305 |          0 |        112 |        417 |
+| h:\AI_Interceptor\docs\testing\test-modernization-plan.md                          | Markdown           |        196 |          0 |         88 |        284 |
+| h:\AI_Interceptor\docs\testing\test-suite-status.md                                | Markdown           |        239 |          0 |         86 |        325 |
+| h:\AI_Interceptor\docs\user-guide\beta-tester-guide.md                             | Markdown           |        278 |          0 |        112 |        390 |
+| h:\AI_Interceptor\docs\user-guide\getting-started.md                               | Markdown           |        253 |          0 |        115 |        368 |
+| h:\AI_Interceptor\firebase.json                                                    | JSON               |          6 |          0 |          1 |          7 |
+| h:\AI_Interceptor\firestore.indexes.json                                           | JSON               |          4 |          0 |          1 |          5 |
+| h:\AI_Interceptor\jest.config.js                                                   | JavaScript JSX     |         20 |          0 |          1 |         21 |
+| h:\AI_Interceptor\package-lock.json                                                | JSON               |      8,212 |          0 |          1 |      8,213 |
+| h:\AI_Interceptor\package.json                                                     | JSON               |         52 |          0 |          1 |         53 |
+| h:\AI_Interceptor\playwright-report\index.html                                     | HTML               |         82 |          0 |          3 |         85 |
+| h:\AI_Interceptor\playwright.config.ts                                             | TypeScript         |         25 |         16 |         12 |         53 |
+| h:\AI_Interceptor\releases\README.md                                               | Markdown           |         93 |          0 |         34 |        127 |
+| h:\AI_Interceptor\releases\v0.1.0-beta\DOWNLOAD.md                                 | Markdown           |         47 |          0 |         23 |         70 |
+| h:\AI_Interceptor\releases\v0.1.0-beta\INSTALL.md                                  | Markdown           |        269 |          0 |         83 |        352 |
+| h:\AI_Interceptor\scripts\README.md                                                | Markdown           |         32 |          0 |         10 |         42 |
+| h:\AI_Interceptor\scripts\firebase-setup.bat                                       | Batch              |         48 |          5 |         11 |         64 |
+| h:\AI_Interceptor\scripts\firebase-setup.sh                                        | Shell Script       |         42 |          6 |         12 |         60 |
+| h:\AI_Interceptor\src\auth\auth.html                                               | HTML               |        100 |          0 |         16 |        116 |
+| h:\AI_Interceptor\src\auth\auth.ts                                                 | TypeScript         |         80 |         11 |         16 |        107 |
+| h:\AI_Interceptor\src\background\serviceWorker.ts                                  | TypeScript         |        778 |        179 |        160 |      1,117 |
+| h:\AI_Interceptor\src\content\content.ts                                           | TypeScript         |        590 |         75 |         79 |        744 |
+| h:\AI_Interceptor\src\content\gemini-xhr-integration.ts                            | TypeScript         |         52 |         35 |         20 |        107 |
+| h:\AI_Interceptor\src\content\inject.js                                            | JavaScript JSX     |        542 |        112 |        144 |        798 |
+| h:\AI_Interceptor\src\content\observers\gemini-observer.ts                         | TypeScript         |        265 |         70 |         59 |        394 |
+| h:\AI_Interceptor\src\content\observers\index.ts                                   | TypeScript         |         38 |         20 |          9 |         67 |
+| h:\AI_Interceptor\src\content\observers\types.ts                                   | TypeScript         |         19 |          3 |          5 |         27 |
+| h:\AI_Interceptor\src\content\xhr-interceptor.ts                                   | TypeScript         |        182 |         92 |         54 |        328 |
+| h:\AI_Interceptor\src\lib\aliasEngine.ts                                           | TypeScript         |        286 |         78 |         58 |        422 |
+| h:\AI_Interceptor\src\lib\aliasVariations.ts                                       | TypeScript         |        176 |         74 |         74 |        324 |
+| h:\AI_Interceptor\src\lib\apiKeyDetector.ts                                        | TypeScript         |        128 |         26 |         18 |        172 |
+| h:\AI_Interceptor\src\lib\chromeTheme.ts                                           | TypeScript         |        100 |         34 |         23 |        157 |
+| h:\AI_Interceptor\src\lib\firebase.ts                                              | TypeScript         |         37 |          8 |         10 |         55 |
+| h:\AI_Interceptor\src\lib\firebaseService.ts                                       | TypeScript         |        144 |         33 |         32 |        209 |
+| h:\AI_Interceptor\src\lib\redactionEngine.ts                                       | TypeScript         |        151 |         44 |         37 |        232 |
+| h:\AI_Interceptor\src\lib\ruleTemplates.ts                                         | TypeScript         |        149 |          7 |          5 |        161 |
+| h:\AI_Interceptor\src\lib\storage.ts                                               | TypeScript         |        726 |        171 |        130 |      1,027 |
+| h:\AI_Interceptor\src\lib\store.ts                                                 | TypeScript         |        263 |         27 |         56 |        346 |
+| h:\AI_Interceptor\src\lib\textProcessor.ts                                         | TypeScript         |        183 |         48 |         33 |        264 |
+| h:\AI_Interceptor\src\lib\types.ts                                                 | TypeScript         |        310 |        110 |         52 |        472 |
+| h:\AI_Interceptor\src\lib\validation.ts                                            | TypeScript         |        375 |         50 |         61 |        486 |
+| h:\AI_Interceptor\src\manifest.json                                                | JSON               |         71 |          0 |          1 |         72 |
+| h:\AI_Interceptor\src\popup\api\chromeApi.ts                                       | TypeScript         |        137 |         90 |         37 |        264 |
+| h:\AI_Interceptor\src\popup\components\activityLog.ts                              | TypeScript         |         59 |         15 |         12 |         86 |
+| h:\AI_Interceptor\src\popup\components\apiKeyModal.ts                              | TypeScript         |        307 |         64 |         65 |        436 |
+| h:\AI_Interceptor\src\popup\components\apiKeyVault.ts                              | TypeScript         |        284 |         67 |         58 |        409 |
+| h:\AI_Interceptor\src\popup\components\authModal.ts                                | TypeScript         |        408 |         88 |        109 |        605 |
+| h:\AI_Interceptor\src\popup\components\customRulesUI.ts                            | TypeScript         |        699 |        119 |        108 |        926 |
+| h:\AI_Interceptor\src\popup\components\featuresTab.ts                              | TypeScript         |        374 |         56 |         39 |        469 |
+| h:\AI_Interceptor\src\popup\components\minimalMode.ts                              | TypeScript         |         70 |         22 |         21 |        113 |
+| h:\AI_Interceptor\src\popup\components\pageStatus.ts                               | TypeScript         |         43 |         20 |         13 |         76 |
+| h:\AI_Interceptor\src\popup\components\profileModal.ts                             | TypeScript         |        576 |        149 |        145 |        870 |
+| h:\AI_Interceptor\src\popup\components\profileRenderer.ts                          | TypeScript         |        121 |         13 |         21 |        155 |
+| h:\AI_Interceptor\src\popup\components\settingsHandlers.ts                         | TypeScript         |        193 |         60 |         49 |        302 |
+| h:\AI_Interceptor\src\popup\components\statsRenderer.ts                            | TypeScript         |        194 |         46 |         37 |        277 |
+| h:\AI_Interceptor\src\popup\components\userProfile.ts                              | TypeScript         |        300 |         90 |         74 |        464 |
+| h:\AI_Interceptor\src\popup\components\utils.ts                                    | TypeScript         |         22 |         20 |          9 |         51 |
+| h:\AI_Interceptor\src\popup\init\initUI.ts                                         | TypeScript         |         62 |         29 |         15 |        106 |
+| h:\AI_Interceptor\src\popup\popup-v2.css                                           | PostCSS            |         13 |         12 |          6 |         31 |
+| h:\AI_Interceptor\src\popup\popup-v2.html                                          | HTML               |        804 |         48 |        101 |        953 |
+| h:\AI_Interceptor\src\popup\popup-v2.ts                                            | TypeScript         |         74 |         31 |         19 |        124 |
+| h:\AI_Interceptor\src\popup\styles\api-key-vault.css                               | PostCSS            |        607 |         26 |        125 |        758 |
+| h:\AI_Interceptor\src\popup\styles\auth.css                                        | PostCSS            |        266 |         14 |         54 |        334 |
+| h:\AI_Interceptor\src\popup\styles\base.css                                        | PostCSS            |        117 |         11 |         26 |        154 |
+| h:\AI_Interceptor\src\popup\styles\buttons.css                                     | PostCSS            |        169 |         15 |         24 |        208 |
+| h:\AI_Interceptor\src\popup\styles\custom-rules.css                                | PostCSS            |        568 |         18 |        109 |        695 |
+| h:\AI_Interceptor\src\popup\styles\features.css                                    | PostCSS            |        258 |         14 |         47 |        319 |
+| h:\AI_Interceptor\src\popup\styles\header.css                                      | PostCSS            |         80 |          6 |         22 |        108 |
+| h:\AI_Interceptor\src\popup\styles\minimal.css                                     | PostCSS            |        114 |          6 |         19 |        139 |
+| h:\AI_Interceptor\src\popup\styles\modal.css                                       | PostCSS            |        507 |         10 |         99 |        616 |
+| h:\AI_Interceptor\src\popup\styles\profile-card.css                                | PostCSS            |        186 |         11 |         50 |        247 |
+| h:\AI_Interceptor\src\popup\styles\settings.css                                    | PostCSS            |        243 |         14 |         51 |        308 |
+| h:\AI_Interceptor\src\popup\styles\stats.css                                       | PostCSS            |        213 |         18 |         32 |        263 |
+| h:\AI_Interceptor\src\popup\styles\tabs.css                                        | PostCSS            |         82 |          4 |         13 |         99 |
+| h:\AI_Interceptor\src\popup\styles\utilities.css                                   | PostCSS            |        189 |          9 |         37 |        235 |
+| h:\AI_Interceptor\src\popup\styles\variables.css                                   | PostCSS            |        205 |         63 |         64 |        332 |
+| h:\AI_Interceptor\src\popup\test-firebase-popup.ts                                 | TypeScript         |         63 |         10 |         12 |         85 |
+| h:\AI_Interceptor\src\popup\utils\dom.ts                                           | TypeScript         |        111 |         52 |         18 |        181 |
+| h:\AI_Interceptor\src\popup\utils\formatters.ts                                    | TypeScript         |         71 |         31 |         17 |        119 |
+| h:\AI_Interceptor\src\test-firebase.ts                                             | TypeScript         |         97 |         13 |         16 |        126 |
+| h:\AI_Interceptor\test-results\.last-run.json                                      | JSON               |          9 |          0 |          0 |          9 |
+| h:\AI_Interceptor\tests\aliasEngine.test.ts                                        | TypeScript         |        163 |         10 |         32 |        205 |
+| h:\AI_Interceptor\tests\apiKeyDetector.test.ts                                     | TypeScript         |        298 |         11 |         73 |        382 |
+| h:\AI_Interceptor\tests\e2e\chatgpt.test.ts                                        | TypeScript         |        143 |         48 |         54 |        245 |
+| h:\AI_Interceptor\tests\e2e\fixtures.ts                                            | TypeScript         |         44 |         17 |         12 |         73 |
+| h:\AI_Interceptor\tests\redactionEngine.test.ts                                    | TypeScript         |        612 |          8 |        103 |        723 |
+| h:\AI_Interceptor\tests\serviceWorker.test.ts                                      | TypeScript         |        433 |         15 |         80 |        528 |
+| h:\AI_Interceptor\tests\setup.js                                                   | JavaScript JSX     |         61 |         10 |          8 |         79 |
+| h:\AI_Interceptor\tests\storage.test.ts                                            | TypeScript         |        316 |         22 |         67 |        405 |
+| h:\AI_Interceptor\tests\textProcessor.test.ts                                      | TypeScript         |        575 |          4 |         62 |        641 |
+| h:\AI_Interceptor\tests\utils.test.ts                                              | TypeScript         |        192 |         10 |         33 |        235 |
+| h:\AI_Interceptor\tests\validation.test.ts                                         | TypeScript         |        426 |         10 |         65 |        501 |
+| h:\AI_Interceptor\tests\xss-prevention.test.ts                                     | TypeScript         |        318 |         13 |         89 |        420 |
+| h:\AI_Interceptor\tsconfig.json                                                    | JSON with Comments |         26 |          0 |          1 |         27 |
+| h:\AI_Interceptor\webpack.config.js                                                | JavaScript JSX     |         48 |          0 |          2 |         50 |
+| Total                                                                              |                    |     62,494 |      2,909 |     13,622 |     79,025 |
++------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
