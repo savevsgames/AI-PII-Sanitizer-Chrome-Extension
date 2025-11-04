@@ -219,8 +219,17 @@ const THEME_MODES: Record<string, 'dark' | 'light'> = {
  * Handle theme change
  */
 async function handleThemeChange(theme: ThemeName) {
+  console.log('[Theme Debug] 💾 User selected theme:', theme);
+
   const store = useAppStore.getState();
+  console.log('[Theme Debug] 📦 Current config before save:', {
+    hasConfig: !!store.config,
+    currentTheme: store.config?.settings?.theme
+  });
+
   await store.updateSettings({ theme });
+
+  console.log('[Theme Debug] ✅ Theme saved to storage:', theme);
 
   // Apply theme immediately
   applyTheme(theme);
@@ -294,8 +303,17 @@ export async function applyTheme(themeInput: ThemeName | string) {
  * Update theme UI from config
  */
 export function updateThemeUI(config: UserConfig | null) {
-  if (!config) return;
+  console.log('[Theme Debug] 🔄 updateThemeUI called:', {
+    hasConfig: !!config,
+    theme: config?.settings?.theme || 'none'
+  });
+
+  if (!config) {
+    console.warn('[Theme Debug] ⚠️ No config provided to updateThemeUI');
+    return;
+  }
 
   const theme = (config.settings.theme || 'classic-dark') as ThemeName;
+  console.log('[Theme Debug] 🎨 Applying theme from config:', theme);
   applyTheme(theme);
 }

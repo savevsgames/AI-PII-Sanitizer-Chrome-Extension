@@ -322,17 +322,29 @@ export class StorageManager {
    * Save configuration
    */
   async saveConfig(config: UserConfig): Promise<void> {
+    console.log('[Theme Debug] 💾 StorageManager.saveConfig called:', {
+      theme: config.settings?.theme,
+      enabled: config.settings?.enabled
+    });
     await chrome.storage.local.set({
       [StorageManager.KEYS.CONFIG]: config,
     });
+    console.log('[Theme Debug] ✅ Config saved to chrome.storage.local successfully');
   }
 
   /**
    * Load configuration
    */
   async loadConfig(): Promise<UserConfig | null> {
+    console.log('[Theme Debug] 📂 StorageManager.loadConfig called...');
     const data = await chrome.storage.local.get(StorageManager.KEYS.CONFIG);
-    return data[StorageManager.KEYS.CONFIG] || null;
+    const config = data[StorageManager.KEYS.CONFIG] || null;
+    console.log('[Theme Debug] 📂 Config retrieved from chrome.storage.local:', {
+      hasConfig: !!config,
+      theme: config?.settings?.theme || 'none',
+      isNull: config === null
+    });
+    return config;
   }
 
   // ========== API KEY VAULT METHODS ==========

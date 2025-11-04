@@ -219,116 +219,83 @@
           <h2>Settings</h2>
         </div>
 
-        <!-- Theme Picker Section -->
+        <!-- Theme Picker Section - Compact Design -->
         <div class="settings-section">
           <h3>🎨 Theme</h3>
           <p class="setting-description">Choose your preferred background theme</p>
 
-          <!-- Dynamic Theme -->
-          <h4 class="theme-group-title">Dynamic</h4>
-          <div class="theme-picker-grid" style="grid-template-columns: 1fr;">
-            <div class="theme-card theme-card-special" data-theme="chrome-theme">
-              <div class="theme-preview theme-preview-chrome">
-                <div class="chrome-icon">🎨</div>
-                <span class="chrome-label">Match Chrome</span>
-              </div>
-              <div class="theme-info">
-                <span class="theme-name">Your Browser Theme</span>
-                <span class="theme-check">✓</span>
+          <!-- Compact Theme Swatches -->
+          <div class="theme-compact-section">
+            <!-- Browser Theme -->
+            <div class="theme-row">
+              <span class="theme-row-label">Browser</span>
+              <div class="theme-swatches">
+                <div class="theme-swatch theme-swatch-special" data-theme="chrome-theme" title="Match Chrome Theme">
+                  <div class="swatch-preview swatch-preview-chrome">🎨</div>
+                  <span class="swatch-name">Chrome</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Light Mode Themes -->
-          <h4 class="theme-group-title">Light Modes</h4>
-          <div class="theme-picker-grid">
-            <div class="theme-card" data-theme="classic-light">
-              <div class="theme-preview theme-preview-classic-light"></div>
-              <div class="theme-info">
-                <span class="theme-name">Classic</span>
-                <span class="theme-check">✓</span>
+            <!-- Light Themes -->
+            <div class="theme-row">
+              <span class="theme-row-label">Light</span>
+              <div class="theme-swatches">
+                <div class="theme-swatch" data-theme="classic-light" title="Classic Light">
+                  <div class="swatch-preview swatch-preview-classic-light"></div>
+                  <span class="swatch-name">Classic</span>
+                </div>
+                <div class="theme-swatch" data-theme="lavender" title="Lavender">
+                  <div class="swatch-preview swatch-preview-lavender"></div>
+                  <span class="swatch-name">Lavender</span>
+                </div>
+                <div class="theme-swatch" data-theme="sky" title="Sky Blue">
+                  <div class="swatch-preview swatch-preview-sky"></div>
+                  <span class="swatch-name">Sky</span>
+                </div>
+                <div class="theme-swatch" data-theme="fire" title="Fire Red">
+                  <div class="swatch-preview swatch-preview-fire"></div>
+                  <span class="swatch-name">Fire</span>
+                </div>
+                <div class="theme-swatch" data-theme="leaf" title="Leaf Green">
+                  <div class="swatch-preview swatch-preview-leaf"></div>
+                  <span class="swatch-name">Leaf</span>
+                </div>
+                <div class="theme-swatch" data-theme="sunlight" title="Sunlight Yellow">
+                  <div class="swatch-preview swatch-preview-sunlight"></div>
+                  <span class="swatch-name">Sun</span>
+                </div>
               </div>
             </div>
-            <div class="theme-card" data-theme="lavender">
-              <div class="theme-preview theme-preview-lavender"></div>
-              <div class="theme-info">
-                <span class="theme-name">Lavender</span>
-                <span class="theme-check">✓</span>
-              </div>
-            </div>
-            <div class="theme-card" data-theme="sky">
-              <div class="theme-preview theme-preview-sky"></div>
-              <div class="theme-info">
-                <span class="theme-name">Sky</span>
-                <span class="theme-check">✓</span>
-              </div>
-            </div>
-            <div class="theme-card" data-theme="fire">
-              <div class="theme-preview theme-preview-fire"></div>
-              <div class="theme-info">
-                <span class="theme-name">Fire</span>
-                <span class="theme-check">✓</span>
-              </div>
-            </div>
-            <div class="theme-card" data-theme="leaf">
-              <div class="theme-preview theme-preview-leaf"></div>
-              <div class="theme-info">
-                <span class="theme-name">Leaf</span>
-                <span class="theme-check">✓</span>
-              </div>
-            </div>
-            <div class="theme-card" data-theme="sunlight">
-              <div class="theme-preview theme-preview-sunlight"></div>
-              <div class="theme-info">
-                <span class="theme-name">Sunlight</span>
-                <span class="theme-check">✓</span>
-              </div>
-            </div>
-          </div>
 
-          <!-- Dark Mode Themes -->
-          <h4 class="theme-group-title">Dark Modes</h4>
-          <div class="theme-picker-grid">
-            <div class="theme-card" data-theme="classic-dark">
-              <div class="theme-preview theme-preview-classic-dark"></div>
-              <div class="theme-info">
-                <span class="theme-name">Classic</span>
-                <span class="theme-check">✓</span>
-              </div>
-            </div>
-            <div class="theme-card" data-theme="midnight-purple">
-              <div class="theme-preview theme-preview-midnight-purple"></div>
-              <div class="theme-info">
-                <span class="theme-name">Midnight Purple</span>
-                <span class="theme-check">✓</span>
-              </div>
-            </div>
-            <div class="theme-card" data-theme="deep-ocean">
-              <div class="theme-preview theme-preview-deep-ocean"></div>
-              <div class="theme-info">
-                <span class="theme-name">Deep Ocean</span>
-                <span class="theme-check">✓</span>
-              </div>
-            </div>
-            <div class="theme-card" data-theme="embers">
-              <div class="theme-preview theme-preview-embers"></div>
-              <div class="theme-info">
-                <span class="theme-name">Embers</span>
-                <span class="theme-check">✓</span>
-              </div>
-            </div>
-            <div class="theme-card" data-theme="forest">
-              <div class="theme-preview theme-preview-forest"></div>
-              <div class="theme-info">
-                <span class="theme-name">Forest</span>
-                <span class="theme-check">✓</span>
-              </div>
-            </div>
-            <div class="theme-card" data-theme="sundown">
-              <div class="theme-preview theme-preview-sundown"></div>
-              <div class="theme-info">
-                <span class="theme-name">Sundown</span>
-                <span class="theme-check">✓</span>
+            <!-- Dark Themes -->
+            <div class="theme-row">
+              <span class="theme-row-label">Dark</span>
+              <div class="theme-swatches">
+                <div class="theme-swatch" data-theme="classic-dark" title="Classic Dark">
+                  <div class="swatch-preview swatch-preview-classic-dark"></div>
+                  <span class="swatch-name">Classic</span>
+                </div>
+                <div class="theme-swatch" data-theme="midnight-purple" title="Midnight Purple">
+                  <div class="swatch-preview swatch-preview-midnight-purple"></div>
+                  <span class="swatch-name">Purple</span>
+                </div>
+                <div class="theme-swatch" data-theme="deep-ocean" title="Deep Ocean">
+                  <div class="swatch-preview swatch-preview-ocean"></div>
+                  <span class="swatch-name">Ocean</span>
+                </div>
+                <div class="theme-swatch" data-theme="embers" title="Embers">
+                  <div class="swatch-preview swatch-preview-embers"></div>
+                  <span class="swatch-name">Embers</span>
+                </div>
+                <div class="theme-swatch" data-theme="forest" title="Forest">
+                  <div class="swatch-preview swatch-preview-forest"></div>
+                  <span class="swatch-name">Forest</span>
+                </div>
+                <div class="theme-swatch" data-theme="sundown" title="Sundown">
+                  <div class="swatch-preview swatch-preview-sundown"></div>
+                  <span class="swatch-name">Sundown</span>
+                </div>
               </div>
             </div>
           </div>
