@@ -22,50 +22,154 @@
   line-height: 1.5;
 }
 
-/* ========== THEME PICKER ========== */
+/* ========== THEME PICKER - COMPACT DESIGN ========== */
 
-.theme-group-title {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
-  margin-top: var(--space-xl);
-  margin-bottom: var(--space-md);
-  opacity: 0.9;
-}
-
-.theme-group-title:first-of-type {
-  margin-top: var(--space-md);
-}
-
-.theme-picker-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.theme-compact-section {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-lg);
-  margin-bottom: var(--space-lg);
 }
 
-.theme-card {
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 2px solid var(--border-neutral);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
+.theme-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.theme-row-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  min-width: 60px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+}
+
+.theme-swatches {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.theme-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   position: relative;
 }
 
-.theme-card:hover {
+.theme-swatch:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-  border-color: rgba(99, 102, 241, 0.5);
 }
 
-.theme-card.active {
+.theme-swatch.active .swatch-preview {
   border-color: #6366f1;
-  border-width: 2px;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+  border-width: 3px;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2),
+              0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.swatch-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border-neutral);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.theme-swatch:hover .swatch-preview {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.swatch-name {
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+  max-width: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chrome Theme Swatch */
+.swatch-preview-chrome {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+  /* Removed shimmer animation - too distracting in compact view */
+}
+
+/* Light Theme Swatches */
+.swatch-preview-classic-light {
+  background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
+}
+
+.swatch-preview-lavender {
+  background: linear-gradient(135deg, #faf5ff 0%, #d8b4fe 100%);
+}
+
+.swatch-preview-sky {
+  background: linear-gradient(135deg, #f0f9ff 0%, #7dd3fc 100%);
+}
+
+.swatch-preview-fire {
+  background: linear-gradient(135deg, #fef2f2 0%, #fca5a5 100%);
+}
+
+.swatch-preview-leaf {
+  background: linear-gradient(135deg, #f0fdf4 0%, #86efac 100%);
+}
+
+.swatch-preview-sunlight {
+  background: linear-gradient(135deg, #fffbeb 0%, #fcd34d 100%);
+}
+
+/* Dark Theme Swatches */
+.swatch-preview-classic-dark {
+  background: linear-gradient(135deg, #000000 0%, #2a2a2a 100%);
+}
+
+.swatch-preview-midnight-purple {
+  background: linear-gradient(135deg, #1a0a2e 0%, #4c3575 100%);
+}
+
+.swatch-preview-ocean {
+  background: linear-gradient(135deg, #001a33 0%, #004e7a 100%);
+}
+
+.swatch-preview-embers {
+  background: linear-gradient(135deg, #2d0a0a 0%, #7a2020 100%);
+}
+
+.swatch-preview-forest {
+  background: linear-gradient(135deg, #0a1f0a 0%, #206620 100%);
+}
+
+.swatch-preview-sundown {
+  background: linear-gradient(135deg, #2d1f0a 0%, #7a6620 100%);
+}
+
+/* OLD STYLES - Keep for backwards compatibility but hidden */
+.theme-group-title {
+  display: none;
+}
+
+.theme-picker-grid {
+  display: none;
+}
+
+.theme-card {
+  display: none;
 }
 
 /* Theme Preview */

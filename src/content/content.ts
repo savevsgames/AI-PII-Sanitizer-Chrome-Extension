@@ -52,6 +52,17 @@ async function showActivationToast() {
       return; // Extension is disabled
     }
 
+    // Check if current domain is in protectedDomains
+    const protectedDomains = response.data?.settings?.protectedDomains || [];
+    const currentDomain = window.location.hostname;
+    const isDomainProtected = protectedDomains.some((domain: string) =>
+      currentDomain.includes(domain) || domain.includes(currentDomain)
+    );
+
+    if (!isDomainProtected) {
+      return; // Current domain is not protected
+    }
+
     // Create toast container with glassmorphism
     const toast = document.createElement('div');
     toast.id = 'ai-pii-sanitizer-toast';
@@ -161,9 +172,40 @@ window.addEventListener('message', async (event) => {
 
     // Verify full chain: inject -> content -> background -> content -> inject
     try {
+      // Check if extension is enabled AND current domain is protected
+      const response = await chrome.runtime.sendMessage({ type: 'GET_CONFIG' });
+
+      if (!response?.success || !response.data?.settings?.enabled) {
+        // Extension is disabled globally
+        window.postMessage({
+          source: 'ai-pii-content-health',
+          messageId,
+          isAlive: false
+        }, '*');
+        return;
+      }
+
+      // Check if current domain is in protectedDomains
+      const protectedDomains = response.data?.settings?.protectedDomains || [];
+      const currentDomain = window.location.hostname;
+      const isDomainProtected = protectedDomains.some((domain: string) =>
+        currentDomain.includes(domain) || domain.includes(currentDomain)
+      );
+
+      if (!isDomainProtected) {
+        // Domain is not protected (service toggle is OFF)
+        window.postMessage({
+          source: 'ai-pii-content-health',
+          messageId,
+          isAlive: false
+        }, '*');
+        return;
+      }
+
+      // Verify background connection
       await chrome.runtime.sendMessage({ type: 'HEALTH_CHECK' });
 
-      // If we got here, the full chain is working
+      // If we got here, the full chain is working AND domain is protected
       window.postMessage({
         source: 'ai-pii-content-health',
         messageId,
