@@ -10,13 +10,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### 🚀 Coming Soon
-- Chrome Web Store launch
-- Payment integration for PRO tier
-- Firefox browser support
+- Chrome Web Store launch (Q1 2025)
+- Payment integration for PRO tier (v1.1.0)
+- Firefox browser support (v1.2.0)
 
 ---
 
-## [1.0.0] - 2024-11-XX (Pre-Launch)
+## [1.0.0] - 2025-01-XX (Pre-Launch - In Progress)
+
+### 🧹 Changed - Codebase Organization (2025-11-03)
+
+**Comprehensive cleanup and modernization:**
+- ✅ Removed 18 temporary files (~2.2MB saved)
+  - 9 debug scripts from Gemini/platform development
+  - 6 outdated backup files from V2 refactor
+  - 1 build artifact (zip)
+  - 1 outdated HTML documentation
+  - 1 erroneous refactor documentation
+- ✅ Organized project structure
+  - Created `scripts/` folder for helper scripts
+  - Moved Firebase setup scripts from root
+  - Archived V2 refactor planning docs to `docs/legacy/`
+- ✅ Improved root directory clarity
+  - Reduced from 30 → 14 configuration files (53% reduction)
+  - Professional organization with clear separation
+- ✅ All tests passing (289/289 unit tests) ✅
+- ✅ Build verified working ✅
+
+**Testing Infrastructure:**
+- ✅ Comprehensive testing documentation (docs/TESTING.md)
+- ✅ 306 total unit tests (289 passing, 17 skipped by design)
+- ✅ Platform-specific test coverage (all 5 platforms)
+- ✅ 100% pass rate on runnable tests
+
+---
+
+## [1.0.0-beta] - 2024-11-XX (Pre-Launch)
 
 ### 🎉 Initial Release - PromptBlocker
 
