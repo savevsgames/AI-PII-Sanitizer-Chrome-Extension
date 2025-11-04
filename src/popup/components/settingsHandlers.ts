@@ -9,6 +9,8 @@ import { isValidEmail } from './utils';
 import { applyChromeTheme } from '../../lib/chromeTheme';
 import { updateStatusIndicator } from './statusIndicator';
 
+const DEBUG_MODE = false; // Set to true for development debugging
+
 // Theme name type
 type ThemeName =
   | 'chrome-theme'
@@ -54,7 +56,7 @@ export function initSettingsHandlers() {
 /**
  * Update settings UI from config
  */
-export function updateSettingsUI(config: UserConfig | null) {
+export async function updateSettingsUI(config: UserConfig | null) {
   if (!config) return;
 
   const enabledToggle = document.getElementById('enabledToggle') as HTMLInputElement;
@@ -101,6 +103,9 @@ export function updateSettingsUI(config: UserConfig | null) {
 
   // Update status indicator
   updateStatusIndicator(config);
+
+  // Update storage usage display
+  await updateStorageUsage();
 }
 
 /**
@@ -157,7 +162,9 @@ async function handleSubscribe() {
   const store = useAppStore.getState();
   await store.updateAccount({ email, emailOptIn: true });
 
-  console.log('[Settings] Subscribing email:', email);
+  if (DEBUG_MODE) {
+    console.log('[Settings] Subscribing email:', email);
+  }
   // TODO: Send to Mailchimp API via serverless function
   alert(`Thanks for subscribing! We'll send updates to ${email}`);
 }
@@ -411,4 +418,53 @@ export function updateThemeUI(config: UserConfig | null) {
   const theme = (config.settings.theme || 'classic-dark') as ThemeName;
   console.log('[Theme Debug] 🎨 Applying theme from config:', theme);
   applyTheme(theme);
+}
+
+/**
+ * Update storage usage display
+ */
+async function updateStorageUsage() {
+  try {
+    const { StorageManager } = await import('../../lib/storage');
+    const storage = StorageManager.getInstance();
+    const usage = await storage.getStorageUsage();
+
+    const usedEl = document.getElementById('storageUsed');
+    const percentEl = document.getElementById('storagePercent');
+    const quotaEl = document.getElementById('storageQuota');
+    const progressFillEl = document.getElementById('storageProgressFill') as HTMLElement;
+    const hintEl = document.getElementById('storageHint');
+
+    if (usedEl) usedEl.textContent = usage.formattedUsage;
+    if (percentEl) percentEl.textContent = `${Math.round(usage.percentUsed)}%`;
+    if (quotaEl) quotaEl.textContent = `of ${usage.formattedQuota}`;
+
+    if (progressFillEl) {
+      progressFillEl.style.width = `${usage.percentUsed}%`;
+
+      // Change color based on usage
+      progressFillEl.classList.remove('warning', 'danger');
+      if (usage.percentUsed >= 90) {
+        progressFillEl.classList.add('danger');
+      } else if (usage.percentUsed >= 80) {
+        progressFillEl.classList.add('warning');
+      }
+    }
+
+    // Update hint based on usage
+    if (hintEl) {
+      if (usage.percentUsed >= 90) {
+        hintEl.textContent = '⚠️ Storage almost full! Consider clearing stats or deleting unused profiles.';
+        hintEl.style.color = 'var(--error-color)';
+      } else if (usage.percentUsed >= 80) {
+        hintEl.textContent = '⚠️ Storage usage is high. You have ' + usage.formattedQuota + ' total.';
+        hintEl.style.color = 'var(--warning-color)';
+      } else {
+        hintEl.textContent = 'ℹ️ Chrome extensions have a 10MB storage limit';
+        hintEl.style.color = 'var(--text-secondary)';
+      }
+    }
+  } catch (error) {
+    console.error('[Settings] Error loading storage usage:', error);
+  }
 }

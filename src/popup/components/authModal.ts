@@ -15,6 +15,8 @@ import {
 } from 'firebase/auth';
 import { useAppStore } from '../../lib/store';
 
+const DEBUG_MODE = false;
+
 let currentModal: HTMLElement | null = null;
 let currentMode: 'signin' | 'signup' | 'reset' = 'signin';
 
@@ -234,7 +236,9 @@ async function handleGoogleSignIn() {
     const credential = GoogleAuthProvider.credential(idToken);
     const result = await signInWithCredential(auth, credential);
 
-    console.log('[Auth] Firebase sign-in successful:', result.user.uid);
+    if (DEBUG_MODE) {
+      console.log('[Auth] Firebase sign-in successful:', result.user.uid);
+    }
 
     console.log('[Auth] Starting onAuthSuccess...');
     // Update account and sync to Firestore
@@ -272,7 +276,9 @@ async function handleEmailSignIn() {
 
     const result = await signInWithEmailAndPassword(auth, email, password);
 
-    console.log('[Auth] Email sign-in successful:', result.user.uid);
+    if (DEBUG_MODE) {
+      console.log('[Auth] Email sign-in successful:', result.user.uid);
+    }
 
     await onAuthSuccess(result.user);
 
@@ -306,7 +312,9 @@ async function handleEmailSignUp() {
 
     const result = await createUserWithEmailAndPassword(auth, email, password);
 
-    console.log('[Auth] Email sign-up successful:', result.user.uid);
+    if (DEBUG_MODE) {
+      console.log('[Auth] Email sign-up successful:', result.user.uid);
+    }
 
     await onAuthSuccess(result.user);
 
@@ -344,7 +352,9 @@ async function handlePasswordReset() {
 
     await sendPasswordResetEmail(auth, email);
 
-    console.log('[Auth] Password reset email sent to:', email);
+    if (DEBUG_MODE) {
+      console.log('[Auth] Password reset email sent to:', email);
+    }
 
     showSuccess('resetEmailSuccess', `Password reset email sent to ${email}. Check your inbox.`);
 
@@ -375,7 +385,9 @@ async function onAuthSuccess(user: User) {
   // Create/update user document in Firestore
   await store.syncUserToFirestore(user);
 
-  console.log('[Auth] User authenticated and synced:', user.uid);
+  if (DEBUG_MODE) {
+    console.log('[Auth] User authenticated and synced:', user.uid);
+  }
 }
 
 /**
@@ -581,8 +593,10 @@ async function checkRedirectResult() {
     const result = await getRedirectResult(auth);
 
     if (result) {
-      console.log('[Auth] Google sign-in successful via redirect:', result.user.uid);
-      console.log('[Auth] User email:', result.user.email);
+      if (DEBUG_MODE) {
+        console.log('[Auth] Google sign-in successful via redirect:', result.user.uid);
+        console.log('[Auth] User email:', result.user.email);
+      }
 
       // Update store with user info
       await onAuthSuccess(result.user);

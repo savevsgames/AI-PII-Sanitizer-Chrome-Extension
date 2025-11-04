@@ -8,6 +8,8 @@ import { auth } from '../lib/firebase';
 import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { syncUserToFirestore } from '../lib/firebaseService';
 
+const DEBUG_MODE = false;
+
 const statusEl = document.getElementById('status') as HTMLElement;
 const statusTextEl = document.getElementById('statusText') as HTMLElement;
 const messageEl = document.getElementById('message') as HTMLElement;
@@ -27,9 +29,11 @@ async function handleAuth() {
     if (result) {
       // Successfully signed in - returning from Google OAuth
       console.log('[Auth Page] ✅ Sign-in successful!');
-      console.log('[Auth Page] User UID:', result.user.uid);
-      console.log('[Auth Page] User email:', result.user.email);
-      console.log('[Auth Page] User displayName:', result.user.displayName);
+      if (DEBUG_MODE) {
+        console.log('[Auth Page] User UID:', result.user.uid);
+        console.log('[Auth Page] User email:', result.user.email);
+        console.log('[Auth Page] User displayName:', result.user.displayName);
+      }
 
       showSuccess(result.user.email || 'Unknown user');
 

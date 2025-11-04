@@ -9,6 +9,8 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { useAppStore } from '../../lib/store';
 import { openAuthModal, signOutUser } from './authModal';
 
+const DEBUG_MODE = false;
+
 let currentUser: User | null = null;
 
 /**
@@ -95,15 +97,17 @@ export function initUserProfile() {
  * Handle user signed in
  */
 async function onUserSignedIn(user: User) {
-  console.log('[User Profile] User signed in:', user.uid);
-  console.log('[User Profile] Full user object:', {
-    uid: user.uid,
-    email: user.email,
-    displayName: user.displayName,
-    photoURL: user.photoURL,
-    emailVerified: user.emailVerified,
-    providerId: user.providerId
-  });
+  if (DEBUG_MODE) {
+    console.log('[User Profile] User signed in:', user.uid);
+    console.log('[User Profile] Full user object:', {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      emailVerified: user.emailVerified,
+      providerId: user.providerId
+    });
+  }
 
   // Update UI to show user info
   showAuthenticatedUI(user);
@@ -363,13 +367,17 @@ export function handleGoogleQuickStart() {
         // Extract username from email (before @)
         const emailPrefix = user.email.split('@')[0];
         name = emailPrefix;
-        console.log('[User Profile] 📧 Extracted name from email:', name);
+        if (DEBUG_MODE) {
+          console.log('[User Profile] 📧 Extracted name from email:', name);
+        }
       }
 
       if (name) {
         realNameInput.value = name;
         realNameInput.dispatchEvent(new Event('input', { bubbles: true }));
-        console.log('[User Profile] ✅ Set real name to:', name);
+        if (DEBUG_MODE) {
+          console.log('[User Profile] ✅ Set real name to:', name);
+        }
       } else {
         console.warn('[User Profile] ❌ No displayName or email available');
       }
@@ -381,7 +389,9 @@ export function handleGoogleQuickStart() {
       if (user.email) {
         realEmailInput.value = user.email;
         realEmailInput.dispatchEvent(new Event('input', { bubbles: true }));
-        console.log('[User Profile] ✅ Set real email to:', user.email);
+        if (DEBUG_MODE) {
+          console.log('[User Profile] ✅ Set real email to:', user.email);
+        }
       }
     } else {
       console.error('[User Profile] ❌ realEmailInput not found');
@@ -391,7 +401,9 @@ export function handleGoogleQuickStart() {
     if (aliasNameInput) {
       aliasNameInput.value = 'Alias Personname';
       aliasNameInput.dispatchEvent(new Event('input', { bubbles: true }));
-      console.log('[User Profile] ✅ Set alias name');
+      if (DEBUG_MODE) {
+        console.log('[User Profile] ✅ Set alias name');
+      }
     } else {
       console.error('[User Profile] ❌ aliasNameInput not found');
     }
@@ -399,7 +411,9 @@ export function handleGoogleQuickStart() {
     if (aliasEmailInput) {
       aliasEmailInput.value = 'blocked-email@promptblocker.com';
       aliasEmailInput.dispatchEvent(new Event('input', { bubbles: true }));
-      console.log('[User Profile] ✅ Set alias email');
+      if (DEBUG_MODE) {
+        console.log('[User Profile] ✅ Set alias email');
+      }
     } else {
       console.error('[User Profile] ❌ aliasEmailInput not found');
     }
@@ -407,7 +421,9 @@ export function handleGoogleQuickStart() {
     if (aliasPhoneInput) {
       aliasPhoneInput.value = '(555) 555-5555';
       aliasPhoneInput.dispatchEvent(new Event('input', { bubbles: true }));
-      console.log('[User Profile] ✅ Set alias phone');
+      if (DEBUG_MODE) {
+        console.log('[User Profile] ✅ Set alias phone');
+      }
     } else {
       console.error('[User Profile] ❌ aliasPhoneInput not found');
     }
@@ -415,7 +431,9 @@ export function handleGoogleQuickStart() {
     if (aliasAddressInput) {
       aliasAddressInput.value = '123 Address St, Sometown, STATE, USA';
       aliasAddressInput.dispatchEvent(new Event('input', { bubbles: true }));
-      console.log('[User Profile] ✅ Set alias address');
+      if (DEBUG_MODE) {
+        console.log('[User Profile] ✅ Set alias address');
+      }
     } else {
       console.error('[User Profile] ❌ aliasAddressInput not found');
     }
