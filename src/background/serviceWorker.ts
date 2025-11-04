@@ -120,6 +120,22 @@ async function checkAndUpdateBadge(tabId: number, url?: string): Promise<void> {
       return;
     }
 
+    // Check if this specific domain is in protectedDomains
+    const protectedDomains = config?.settings?.protectedDomains || [];
+    const currentDomain = url ? new URL(url).hostname : '';
+    const isDomainProtected = protectedDomains.some(domain =>
+      currentDomain.includes(domain) || domain.includes(currentDomain)
+    );
+
+    if (!isDomainProtected) {
+      // Service is disabled for this domain
+      await updateBadge(tabId, 'disabled');
+      if (DEBUG_MODE) {
+        console.log(`[Badge] Tab ${tabId}: Domain ${currentDomain} not in protectedDomains`, protectedDomains);
+      }
+      return;
+    }
+
     // Check if content script is injected and responding
     const isInjected = await isContentScriptInjected(tabId);
 
@@ -1079,16 +1095,25 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 });
 
 /**
- * Update badges for all tabs when storage changes (config enable/disable)
+ * Update badges for all tabs when storage changes (config enable/disable or protectedDomains)
  */
 chrome.storage.onChanged.addListener(async (changes, areaName) => {
-  if (areaName === 'local' && changes.userConfig) {
-    const oldConfig = changes.userConfig.oldValue;
-    const newConfig = changes.userConfig.newValue;
+  if (areaName === 'local' && changes.config) {
+    const oldConfig = changes.config.oldValue;
+    const newConfig = changes.config.newValue;
 
-    // Check if enabled state changed
-    if (oldConfig?.settings?.enabled !== newConfig?.settings?.enabled) {
-      console.log('[Badge] Extension enabled state changed, updating all badges');
+    // Check if enabled state or protectedDomains changed
+    const enabledChanged = oldConfig?.settings?.enabled !== newConfig?.settings?.enabled;
+    const domainsChanged = JSON.stringify(oldConfig?.settings?.protectedDomains) !==
+                           JSON.stringify(newConfig?.settings?.protectedDomains);
+
+    if (enabledChanged || domainsChanged) {
+      console.log('[Badge] Protection settings changed, updating all badges', {
+        enabledChanged,
+        domainsChanged,
+        oldDomains: oldConfig?.settings?.protectedDomains,
+        newDomains: newConfig?.settings?.protectedDomains
+      });
 
       // Update badges for all tabs
       const tabs = await chrome.tabs.query({});

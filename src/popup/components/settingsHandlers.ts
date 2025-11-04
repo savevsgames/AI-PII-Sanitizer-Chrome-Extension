@@ -7,6 +7,7 @@ import { useAppStore } from '../../lib/store';
 import { UserConfig } from '../../lib/types';
 import { isValidEmail } from './utils';
 import { applyChromeTheme } from '../../lib/chromeTheme';
+import { updateStatusIndicator } from './statusIndicator';
 
 // Theme name type
 type ThemeName =
@@ -80,13 +81,26 @@ export function updateSettingsUI(config: UserConfig | null) {
   }
 
   // Update service toggles based on protectedDomains
+  // Match the same service domain logic used in handleServiceToggle
   const domains = config.settings.protectedDomains || [];
-  if (chatgptToggle) chatgptToggle.checked = domains.some(d => d.includes('chatgpt.com') || d.includes('openai.com'));
-  if (claudeToggle) claudeToggle.checked = domains.some(d => d.includes('claude.ai'));
-  if (geminiToggle) geminiToggle.checked = domains.some(d => d.includes('gemini.google.com'));
-  if (perplexityToggle) perplexityToggle.checked = domains.some(d => d.includes('perplexity.ai'));
-  if (copilotToggle) copilotToggle.checked = domains.some(d => d.includes('copilot.microsoft.com'));
+  if (chatgptToggle) {
+    chatgptToggle.checked = domains.includes('chat.openai.com') && domains.includes('chatgpt.com');
   }
+  if (claudeToggle) {
+    claudeToggle.checked = domains.includes('claude.ai');
+  }
+  if (geminiToggle) {
+    geminiToggle.checked = domains.includes('gemini.google.com');
+  }
+  if (perplexityToggle) {
+    perplexityToggle.checked = domains.includes('perplexity.ai');
+  }
+  if (copilotToggle) {
+    copilotToggle.checked = domains.includes('copilot.microsoft.com');
+  }
+
+  // Update status indicator
+  updateStatusIndicator(config);
 }
 
 /**
@@ -96,6 +110,13 @@ async function handleEnabledToggle(event: Event) {
   const checkbox = event.target as HTMLInputElement;
   const store = useAppStore.getState();
   await store.updateSettings({ enabled: checkbox.checked });
+
+  // Update status indicator
+  const config = store.config;
+  if (config) {
+    updateStatusIndicator(config);
+  }
+
   console.log('[Settings] Protection enabled:', checkbox.checked);
 }
 
@@ -208,10 +229,18 @@ async function handleServiceToggle(service: string, enabled: boolean) {
     updatedDomains = updatedDomains.filter(d => !domainsToModify.includes(d));
   }
 
+  console.log(`[Settings] ${service} ${enabled ? 'enabled' : 'disabled'}`, { updatedDomains });
+
   // Update config
   await store.updateSettings({ protectedDomains: updatedDomains });
 
-  console.log(`[Settings] ${service} ${enabled ? 'enabled' : 'disabled'}`);
+  // Refresh the entire settings UI to update all toggles and status
+  setTimeout(() => {
+    const updatedConfig = useAppStore.getState().config;
+    if (updatedConfig) {
+      updateSettingsUI(updatedConfig);
+    }
+  }, 0);
 }
 
 /**

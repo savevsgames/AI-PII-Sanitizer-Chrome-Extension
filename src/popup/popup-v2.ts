@@ -17,6 +17,7 @@ import { initAPIKeyModal } from './components/apiKeyModal';
 import { initAuthModal } from './components/authModal';
 import { initUserProfile } from './components/userProfile';
 import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/initUI';
+import { updateStatusIndicator } from './components/statusIndicator';
 // import { testFirebaseConnection } from './test-firebase-popup'; // Disabled - interferes with auth
 
 // ========== INITIALIZATION ==========
@@ -95,6 +96,7 @@ async function loadInitialData() {
       renderStats(state.config, state.profiles);
       renderActivityLog(state.activityLog);
       updateMinimalView(state.config);
+      updateStatusIndicator(state.config);
       if (state.config) {
         renderFeaturesHub(state.config);
       }
@@ -106,6 +108,7 @@ async function loadInitialData() {
     renderStats(state.config, state.profiles);
     renderActivityLog(state.activityLog);
     updateSettingsUI(state.config);
+    updateStatusIndicator(state.config);
     // Theme already applied in DOMContentLoaded - skip duplicate call
     updateMinimalView(state.config);
     if (state.config) {

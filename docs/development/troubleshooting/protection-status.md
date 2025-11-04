@@ -1,6 +1,57 @@
-# Protection Status Refactoring Plan
+# Protection Status & Per-Service Toggle Documentation
 
-**Goal:** Implement proactive protection status monitoring with tab focus detection and simplified modal options.
+**Last Updated:** 2025-11-04
+
+**Goal:** Document the proactive protection status monitoring system and per-service toggle functionality.
+
+---
+
+## ✅ Per-Service Toggle Feature (IMPLEMENTED - 2025-11-04)
+
+### Overview
+
+Users can now enable/disable protection for individual AI services through the Settings tab. This allows granular control over which platforms are protected.
+
+### Implementation
+
+**Location:** Settings Tab → Protected Services section
+
+**Services Supported:**
+- ChatGPT (chat.openai.com, chatgpt.com)
+- Claude (claude.ai)
+- Gemini (gemini.google.com)
+- Perplexity (perplexity.ai)
+- Copilot (copilot.microsoft.com)
+
+**How it Works:**
+1. Each service has a toggle switch in Settings
+2. Toggling OFF removes that service's domains from `config.settings.protectedDomains`
+3. Toggling ON adds the service's domains back to `protectedDomains`
+4. Status indicator updates to show "Active" (5/5) or "Partial (X/5)"
+
+**Protection Status Updates:**
+- **Health Check (content.ts:175-203)**: Checks if current domain is in `protectedDomains`
+- **Badge (serviceWorker.ts:123-137)**: Updates based on whether domain is protected
+- **Toast (content.ts:55-64)**: Only appears if domain is in `protectedDomains`
+- **Console (inject.js:99)**: Shows "PROTECTED" only if domain enabled
+
+**Storage Listener (serviceWorker.ts:1101):**
+- Listens for `changes.config` (was incorrectly `changes.userConfig` - FIXED)
+- Detects `protectedDomains` array changes
+- Updates all tab badges when domains change
+
+**Files Modified:**
+- `src/popup/popup-v2.html` (lines 374-387) - Added Perplexity & Copilot toggles
+- `src/popup/components/settingsHandlers.ts` (lines 40-45, 84-100, 192-244) - Toggle handlers & UI sync
+- `src/popup/components/statusIndicator.ts` (NEW FILE) - Service-based counting (5 services, not 6 domains)
+- `src/content/content.ts` (lines 175-203) - Health check verifies protectedDomains
+- `src/background/serviceWorker.ts` (line 1101) - Fixed storage key from userConfig to config
+
+**User Experience:**
+- Toggle ChatGPT OFF → badge turns red on ChatGPT, console shows "NOT PROTECTED", no toast
+- Toggle ChatGPT ON → badge turns green, console shows "PROTECTED", toast appears
+- Status shows "Partial (4/5)" when one service disabled
+- All changes reflect immediately without page refresh
 
 ---
 

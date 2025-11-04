@@ -5,6 +5,7 @@
 **Status:** 🔧 **STORAGE AUDIT COMPLETE - FIXING CRITICAL ISSUES**
 
 **Recent Updates:**
+- ✅ **Per-Service Toggle Feature** (2025-11-04) - Users can enable/disable protection for individual AI services
 - ✅ Comprehensive storage audit complete (2025-11-04)
 - ✅ localStorage→chrome.storage migration verified (100% complete)
 - ⚠️ Critical storage issues identified (theme persistence, API key encryption)
@@ -77,6 +78,41 @@
 - [x] Glassmorphism UI design
 - [x] 105 unit tests (98-100% coverage)
 - [x] Production-ready documentation
+
+---
+
+### ✅ Phase 1.4A: Per-Service Toggle Feature (COMPLETE - November 4, 2024)
+**Completed:** November 4, 2024
+**Status:** ✅ **COMPLETE**
+
+**Feature Overview:**
+Users can now individually enable/disable protection for each of the 5 supported AI services through the Settings tab.
+
+**Implementation Highlights:**
+- [x] Added toggle switches for ChatGPT, Claude, Gemini, Perplexity, Copilot
+- [x] Status indicator shows "Active" (all 5) or "Partial (X/5)" when some disabled
+- [x] Badge turns red on disabled services
+- [x] Health check verifies domain is in `protectedDomains` before showing "PROTECTED"
+- [x] Toast notification only appears on protected domains
+- [x] Storage listener updates all badges when service toggles change
+- [x] Fixed storage listener bug (was watching `userConfig`, now correctly watches `config`)
+
+**Files Modified:**
+- `src/popup/popup-v2.html` - Added Perplexity & Copilot toggles
+- `src/popup/components/settingsHandlers.ts` - Toggle handlers & UI synchronization
+- `src/popup/components/statusIndicator.ts` (NEW) - Service-based status counting
+- `src/content/content.ts` - Health check verifies protectedDomains
+- `src/background/serviceWorker.ts` - Fixed storage change listener
+
+**User Benefits:**
+- Granular control over which AI services are protected
+- Can disable protection for trusted services
+- Clear visual feedback (badge, status, console)
+- Changes take effect immediately
+
+**Documentation Updated:**
+- `docs/user-guide/getting-started.md` - Added Protected Services section
+- `docs/development/troubleshooting/protection-status.md` - Complete implementation details
 
 ---
 
