@@ -24,6 +24,11 @@ export class StorageManager {
     VERSION: 'dataVersion',     // Track migration state
   };
 
+  // Cache to prevent excessive decryption
+  private configCache: UserConfig | null = null;
+  private configCacheTimestamp: number = 0;
+  private readonly CACHE_TTL_MS = 1000; // 1 second cache
+
   private constructor() {}
 
   public static getInstance(): StorageManager {
@@ -383,14 +388,26 @@ export class StorageManager {
       [StorageManager.KEYS.CONFIG]: configToSave,
     });
     console.log('[Storage] ✅ Config saved with all sensitive data encrypted');
+
+    // Invalidate cache since config was updated
+    this.configCache = null;
+    this.configCacheTimestamp = 0;
   }
 
   /**
    * Load configuration
    * Decrypts all sensitive data: API keys, custom rules, activity logs, and account data
+   * Uses 1-second cache to prevent excessive decryption calls
    */
   async loadConfig(): Promise<UserConfig | null> {
-    console.log('[Theme Debug] 📂 StorageManager.loadConfig called...');
+    // Check cache first
+    const now = Date.now();
+    if (this.configCache && (now - this.configCacheTimestamp) < this.CACHE_TTL_MS) {
+      console.log('[Storage] 📦 Returning cached config (age: ' + (now - this.configCacheTimestamp) + 'ms)');
+      return this.configCache;
+    }
+
+    console.log('[Theme Debug] 📂 StorageManager.loadConfig called... (cache miss)');
     const data = await chrome.storage.local.get(StorageManager.KEYS.CONFIG);
     const config = data[StorageManager.KEYS.CONFIG] || null;
 
@@ -480,6 +497,10 @@ export class StorageManager {
       logsCount: config.stats?.activityLog?.length || 0,
       hasAccountEmail: !!config.account?.email
     });
+
+    // Cache the result
+    this.configCache = config;
+    this.configCacheTimestamp = Date.now();
 
     return config;
   }
