@@ -24,11 +24,25 @@ export function initSettingsHandlers() {
   const clearStatsBtn = document.getElementById('clearStatsBtn');
   const exportProfilesBtn = document.getElementById('exportProfilesBtn');
 
+  // Service toggles
+  const chatgptToggle = document.getElementById('chatgptToggle') as HTMLInputElement;
+  const claudeToggle = document.getElementById('claudeToggle') as HTMLInputElement;
+  const geminiToggle = document.getElementById('geminiToggle') as HTMLInputElement;
+  const perplexityToggle = document.getElementById('perplexityToggle') as HTMLInputElement;
+  const copilotToggle = document.getElementById('copilotToggle') as HTMLInputElement;
+
   enabledToggle?.addEventListener('change', handleEnabledToggle);
   emailOptInToggle?.addEventListener('change', handleEmailOptInToggle);
   subscribeBtn?.addEventListener('click', handleSubscribe);
   clearStatsBtn?.addEventListener('click', handleClearStats);
   exportProfilesBtn?.addEventListener('click', handleExportProfiles);
+
+  // Service toggle handlers
+  chatgptToggle?.addEventListener('change', () => handleServiceToggle('chatgpt', chatgptToggle.checked));
+  claudeToggle?.addEventListener('change', () => handleServiceToggle('claude', claudeToggle.checked));
+  geminiToggle?.addEventListener('change', () => handleServiceToggle('gemini', geminiToggle.checked));
+  perplexityToggle?.addEventListener('change', () => handleServiceToggle('perplexity', perplexityToggle.checked));
+  copilotToggle?.addEventListener('change', () => handleServiceToggle('copilot', copilotToggle.checked));
 
   // Theme picker
   initThemePicker();
@@ -46,6 +60,13 @@ export function updateSettingsUI(config: UserConfig | null) {
   const emailOptInToggle = document.getElementById('emailOptInToggle') as HTMLInputElement;
   const emailInput = document.getElementById('emailInput') as HTMLInputElement;
 
+  // Service toggles
+  const chatgptToggle = document.getElementById('chatgptToggle') as HTMLInputElement;
+  const claudeToggle = document.getElementById('claudeToggle') as HTMLInputElement;
+  const geminiToggle = document.getElementById('geminiToggle') as HTMLInputElement;
+  const perplexityToggle = document.getElementById('perplexityToggle') as HTMLInputElement;
+  const copilotToggle = document.getElementById('copilotToggle') as HTMLInputElement;
+
   if (enabledToggle) enabledToggle.checked = config.settings.enabled;
   if (emailOptInToggle && config.account) {
     emailOptInToggle.checked = config.account.emailOptIn;
@@ -56,6 +77,15 @@ export function updateSettingsUI(config: UserConfig | null) {
   }
   if (emailInput && config.account?.email) {
     emailInput.value = config.account.email;
+  }
+
+  // Update service toggles based on protectedDomains
+  const domains = config.settings.protectedDomains || [];
+  if (chatgptToggle) chatgptToggle.checked = domains.some(d => d.includes('chatgpt.com') || d.includes('openai.com'));
+  if (claudeToggle) claudeToggle.checked = domains.some(d => d.includes('claude.ai'));
+  if (geminiToggle) geminiToggle.checked = domains.some(d => d.includes('gemini.google.com'));
+  if (perplexityToggle) perplexityToggle.checked = domains.some(d => d.includes('perplexity.ai'));
+  if (copilotToggle) copilotToggle.checked = domains.some(d => d.includes('copilot.microsoft.com'));
   }
 }
 
@@ -144,6 +174,44 @@ async function handleClearStats() {
     console.log('[Settings] Stats cleared');
     alert('Stats cleared successfully!');
   }
+}
+
+/**
+ * Handle service toggle change
+ */
+async function handleServiceToggle(service: string, enabled: boolean) {
+  const store = useAppStore.getState();
+  const config = store.config;
+  if (!config) return;
+
+  // Define domain mappings for each service
+  const serviceDomains: Record<string, string[]> = {
+    chatgpt: ['chat.openai.com', 'chatgpt.com'],
+    claude: ['claude.ai'],
+    gemini: ['gemini.google.com'],
+    perplexity: ['perplexity.ai'],
+    copilot: ['copilot.microsoft.com'],
+  };
+
+  let updatedDomains = [...config.settings.protectedDomains];
+  const domainsToModify = serviceDomains[service] || [];
+
+  if (enabled) {
+    // Add domains if not present
+    domainsToModify.forEach(domain => {
+      if (!updatedDomains.includes(domain)) {
+        updatedDomains.push(domain);
+      }
+    });
+  } else {
+    // Remove domains
+    updatedDomains = updatedDomains.filter(d => !domainsToModify.includes(d));
+  }
+
+  // Update config
+  await store.updateSettings({ protectedDomains: updatedDomains });
+
+  console.log(`[Settings] ${service} ${enabled ? 'enabled' : 'disabled'}`);
 }
 
 /**
