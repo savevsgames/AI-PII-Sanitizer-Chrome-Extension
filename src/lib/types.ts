@@ -64,9 +64,7 @@ export interface AliasProfile {
         claude: number;
         gemini: number;
         perplexity: number;
-        poe: number;
         copilot: number;
-        you: number;
       };
       byPIIType: {
         name: number;
@@ -94,16 +92,14 @@ export interface AliasProfile {
  * Activity log entry for debug console
  */
 /**
- * Supported AI services
+ * Supported AI services (5 platforms - production ready)
  */
 export type AIService =
   | 'chatgpt'
   | 'claude'
   | 'gemini'
   | 'perplexity'
-  | 'poe'
   | 'copilot'
-  | 'you'
   | 'unknown';
 
 export interface ActivityLogEntry {
@@ -180,9 +176,7 @@ export interface UserConfig {
       claude: { requests: number; substitutions: number };
       gemini: { requests: number; substitutions: number };
       perplexity: { requests: number; substitutions: number };
-      poe: { requests: number; substitutions: number };
       copilot: { requests: number; substitutions: number };
-      you: { requests: number; substitutions: number };
     };
     activityLog: ActivityLogEntry[];
   };

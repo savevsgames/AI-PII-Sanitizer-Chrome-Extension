@@ -41,6 +41,9 @@ export class StorageManager {
     // Check for v1 data and migrate if needed
     await this.migrateV1ToV2IfNeeded();
 
+    // Migrate plaintext API keys to encrypted storage if needed
+    await this.migrateAPIKeysToEncryptedIfNeeded();
+
     const config = await this.loadConfig();
     if (!config) {
       await this.saveConfig(this.getDefaultConfig());
@@ -193,9 +196,7 @@ export class StorageManager {
             claude: 0,
             gemini: 0,
             perplexity: 0,
-            poe: 0,
             copilot: 0,
-            you: 0,
           },
           byPIIType: {
             name: 0,
@@ -320,30 +321,166 @@ export class StorageManager {
 
   /**
    * Save configuration
+   * Encrypts ALL sensitive data before saving:
+   * - API key vault
+   * - Custom rules
+   * - Activity logs
+   * - Account data (email, displayName, photoURL)
    */
   async saveConfig(config: UserConfig): Promise<void> {
-    console.log('[Theme Debug] 💾 StorageManager.saveConfig called:', {
-      theme: config.settings?.theme,
-      enabled: config.settings?.enabled
-    });
+    console.log('[Storage] 💾 Saving config with encryption...');
+
+    // Clone config to avoid mutating the original
+    const configToSave = { ...config };
+    const encryptedData = configToSave as any;
+
+    // 1. Encrypt API key vault if it exists and has keys
+    if (configToSave.apiKeyVault && configToSave.apiKeyVault.keys.length > 0) {
+      console.log('[Storage] 🔐 Encrypting API key vault...');
+      encryptedData._encryptedApiKeyVault = await this.encryptAPIKeyVault(configToSave.apiKeyVault);
+      configToSave.apiKeyVault = { ...configToSave.apiKeyVault, keys: [] };
+      console.log('[Storage] ✅ API key vault encrypted');
+    }
+
+    // 2. Encrypt custom rules if they exist
+    if (configToSave.customRules && configToSave.customRules.rules.length > 0) {
+      console.log('[Storage] 🔐 Encrypting custom rules...');
+      encryptedData._encryptedCustomRules = await this.encryptCustomRules(configToSave.customRules);
+      configToSave.customRules = { ...configToSave.customRules, rules: [] };
+      console.log('[Storage] ✅ Custom rules encrypted');
+    }
+
+    // 3. Encrypt activity logs if they exist
+    if (configToSave.stats && configToSave.stats.activityLog.length > 0) {
+      console.log('[Storage] 🔐 Encrypting activity logs...');
+      encryptedData._encryptedActivityLogs = await this.encryptActivityLogs(configToSave.stats.activityLog);
+      configToSave.stats = { ...configToSave.stats, activityLog: [] };
+      console.log('[Storage] ✅ Activity logs encrypted');
+    }
+
+    // 4. Encrypt account data (email, displayName, photoURL)
+    if (configToSave.account && (configToSave.account.email || configToSave.account.displayName)) {
+      console.log('[Storage] 🔐 Encrypting account data...');
+      const accountToEncrypt = {
+        email: configToSave.account.email,
+        displayName: configToSave.account.displayName,
+        photoURL: configToSave.account.photoURL,
+      };
+      encryptedData._encryptedAccountData = await this.encryptAccountData(accountToEncrypt);
+
+      // Keep tier and other non-sensitive fields, clear sensitive ones
+      configToSave.account = {
+        ...configToSave.account,
+        email: undefined,
+        displayName: undefined,
+        photoURL: undefined,
+        firebaseUid: undefined, // Also encrypt UID
+      };
+      console.log('[Storage] ✅ Account data encrypted');
+    }
+
     await chrome.storage.local.set({
-      [StorageManager.KEYS.CONFIG]: config,
+      [StorageManager.KEYS.CONFIG]: configToSave,
     });
-    console.log('[Theme Debug] ✅ Config saved to chrome.storage.local successfully');
+    console.log('[Storage] ✅ Config saved with all sensitive data encrypted');
   }
 
   /**
    * Load configuration
+   * Decrypts all sensitive data: API keys, custom rules, activity logs, and account data
    */
   async loadConfig(): Promise<UserConfig | null> {
     console.log('[Theme Debug] 📂 StorageManager.loadConfig called...');
     const data = await chrome.storage.local.get(StorageManager.KEYS.CONFIG);
     const config = data[StorageManager.KEYS.CONFIG] || null;
+
+    if (!config) {
+      console.log('[Theme Debug] 📂 No config found in storage');
+      return null;
+    }
+
+    const configWithEncrypted = config as any;
+
+    // 1. Decrypt API key vault if it exists
+    if (configWithEncrypted._encryptedApiKeyVault) {
+      try {
+        console.log('[Storage] 🔓 Decrypting API key vault...');
+        const decryptedVault = await this.decryptAPIKeyVault(configWithEncrypted._encryptedApiKeyVault);
+        config.apiKeyVault = decryptedVault;
+        console.log('[Storage] ✅ API key vault decrypted');
+      } catch (error) {
+        console.error('[Storage] ❌ Failed to decrypt API key vault:', error);
+        // Keep the empty vault if decryption fails
+      }
+    } else if (config.apiKeyVault && config.apiKeyVault.keys.length > 0) {
+      console.warn('[Storage] ⚠️ Found plaintext API keys - will encrypt on next save');
+    }
+
+    // 2. Decrypt custom rules if they exist
+    if (configWithEncrypted._encryptedCustomRules) {
+      try {
+        console.log('[Storage] 🔓 Decrypting custom rules...');
+        const decryptedRules = await this.decryptCustomRules(configWithEncrypted._encryptedCustomRules);
+        config.customRules = decryptedRules;
+        console.log('[Storage] ✅ Custom rules decrypted');
+      } catch (error) {
+        console.error('[Storage] ❌ Failed to decrypt custom rules:', error);
+        // Keep the empty rules if decryption fails
+      }
+    } else if (config.customRules && config.customRules.rules.length > 0) {
+      console.warn('[Storage] ⚠️ Found plaintext custom rules - will encrypt on next save');
+    }
+
+    // 3. Decrypt activity logs if they exist
+    if (configWithEncrypted._encryptedActivityLogs) {
+      try {
+        console.log('[Storage] 🔓 Decrypting activity logs...');
+        const decryptedLogs = await this.decryptActivityLogs(configWithEncrypted._encryptedActivityLogs);
+        config.stats.activityLog = decryptedLogs;
+        console.log('[Storage] ✅ Activity logs decrypted');
+      } catch (error) {
+        console.error('[Storage] ❌ Failed to decrypt activity logs:', error);
+        // Keep empty logs if decryption fails
+      }
+    } else if (config.stats && config.stats.activityLog.length > 0) {
+      console.warn('[Storage] ⚠️ Found plaintext activity logs - will encrypt on next save');
+    }
+
+    // 4. Decrypt account data if it exists
+    if (configWithEncrypted._encryptedAccountData) {
+      try {
+        console.log('[Storage] 🔓 Decrypting account data...');
+        const decryptedAccount = await this.decryptAccountData(configWithEncrypted._encryptedAccountData);
+        config.account = {
+          ...config.account,
+          email: decryptedAccount.email,
+          displayName: decryptedAccount.displayName,
+          photoURL: decryptedAccount.photoURL,
+          firebaseUid: decryptedAccount.firebaseUid,
+        };
+        console.log('[Storage] ✅ Account data decrypted');
+      } catch (error) {
+        console.error('[Storage] ❌ Failed to decrypt account data:', error);
+        // Keep empty account data if decryption fails
+      }
+    } else if (config.account && (config.account.email || config.account.displayName)) {
+      console.warn('[Storage] ⚠️ Found plaintext account data - will encrypt on next save');
+    }
+
     console.log('[Theme Debug] 📂 Config retrieved from chrome.storage.local:', {
       hasConfig: !!config,
       theme: config?.settings?.theme || 'none',
-      isNull: config === null
+      isNull: config === null,
+      hasEncryptedKeys: !!configWithEncrypted._encryptedApiKeyVault,
+      hasEncryptedRules: !!configWithEncrypted._encryptedCustomRules,
+      hasEncryptedLogs: !!configWithEncrypted._encryptedActivityLogs,
+      hasEncryptedAccount: !!configWithEncrypted._encryptedAccountData,
+      keyCount: config.apiKeyVault?.keys?.length || 0,
+      rulesCount: config.customRules?.rules?.length || 0,
+      logsCount: config.stats?.activityLog?.length || 0,
+      hasAccountEmail: !!config.account?.email
     });
+
     return config;
   }
 
@@ -690,9 +827,7 @@ export class StorageManager {
           'claude.ai',
           'gemini.google.com',
           'perplexity.ai',
-          'poe.com',
           'copilot.microsoft.com',
-          'you.com',
         ],
         excludedDomains: [],
         strictMode: false,
@@ -711,9 +846,7 @@ export class StorageManager {
           claude: { requests: 0, substitutions: 0 },
           gemini: { requests: 0, substitutions: 0 },
           perplexity: { requests: 0, substitutions: 0 },
-          poe: { requests: 0, substitutions: 0 },
           copilot: { requests: 0, substitutions: 0 },
-          you: { requests: 0, substitutions: 0 },
         },
         activityLog: [],
       },
@@ -805,7 +938,7 @@ export class StorageManager {
           usageStats: {
             totalSubstitutions: totalUsage,
             lastUsed,
-            byService: { chatgpt: 0, claude: 0, gemini: 0, perplexity: 0, poe: 0, copilot: 0, you: 0 },
+            byService: { chatgpt: 0, claude: 0, gemini: 0, perplexity: 0, copilot: 0 },
             byPIIType: { name: 0, email: 0, phone: 0, cellPhone: 0, address: 0, company: 0, custom: 0 },
           },
           confidence: aliases[0].metadata.confidence,
@@ -858,9 +991,7 @@ export class StorageManager {
             claude: { requests: 0, substitutions: 0 },
             gemini: { requests: 0, substitutions: 0 },
             perplexity: { requests: 0, substitutions: 0 },
-            poe: { requests: 0, substitutions: 0 },
             copilot: { requests: 0, substitutions: 0 },
-            you: { requests: 0, substitutions: 0 },
           },
           activityLog: [],
         },
@@ -873,6 +1004,131 @@ export class StorageManager {
     await chrome.storage.local.set({ [StorageManager.KEYS.VERSION]: 2 });
 
     console.log(`[StorageManager] Migration complete! Created ${newProfiles.length} profiles from ${v1Aliases.length} aliases`);
+  }
+
+  /**
+   * Migrate all plaintext sensitive data to encrypted storage
+   * This runs automatically on initialization and handles:
+   * - API keys
+   * - Custom rules
+   * - Activity logs
+   * - Account data
+   */
+  private async migrateAPIKeysToEncryptedIfNeeded(): Promise<void> {
+    const data = await chrome.storage.local.get(StorageManager.KEYS.CONFIG);
+    const config = data[StorageManager.KEYS.CONFIG];
+
+    if (!config) {
+      return; // No config to migrate
+    }
+
+    const configWithEncrypted = config as any;
+    let needsSave = false;
+
+    // 1. Migrate API keys
+    const hasPlaintextKeys = config.apiKeyVault && config.apiKeyVault.keys.length > 0;
+    const hasEncryptedVault = !!configWithEncrypted._encryptedApiKeyVault;
+
+    if (hasPlaintextKeys && !hasEncryptedVault) {
+      console.log('[StorageManager] 🔐 Migrating plaintext API keys to encrypted storage...');
+      console.log(`[StorageManager] Found ${config.apiKeyVault.keys.length} plaintext API keys`);
+
+      try {
+        const encryptedVault = await this.encryptAPIKeyVault(config.apiKeyVault);
+        configWithEncrypted._encryptedApiKeyVault = encryptedVault;
+        config.apiKeyVault = {
+          ...config.apiKeyVault,
+          keys: [], // Clear plaintext keys
+        };
+        needsSave = true;
+        console.log('[StorageManager] ✅ API key migration complete - keys are now encrypted');
+      } catch (error) {
+        console.error('[StorageManager] ❌ Failed to migrate API keys:', error);
+      }
+    }
+
+    // 2. Migrate custom rules
+    const hasPlaintextRules = config.customRules && config.customRules.rules.length > 0;
+    const hasEncryptedRules = !!configWithEncrypted._encryptedCustomRules;
+
+    if (hasPlaintextRules && !hasEncryptedRules) {
+      console.log('[StorageManager] 🔐 Migrating plaintext custom rules to encrypted storage...');
+      console.log(`[StorageManager] Found ${config.customRules.rules.length} plaintext custom rules`);
+
+      try {
+        const encryptedRules = await this.encryptCustomRules(config.customRules);
+        configWithEncrypted._encryptedCustomRules = encryptedRules;
+        config.customRules = {
+          ...config.customRules,
+          rules: [], // Clear plaintext rules
+        };
+        needsSave = true;
+        console.log('[StorageManager] ✅ Custom rules migration complete - rules are now encrypted');
+      } catch (error) {
+        console.error('[StorageManager] ❌ Failed to migrate custom rules:', error);
+      }
+    }
+
+    // 3. Migrate activity logs
+    const hasPlaintextLogs = config.stats && config.stats.activityLog.length > 0;
+    const hasEncryptedLogs = !!configWithEncrypted._encryptedActivityLogs;
+
+    if (hasPlaintextLogs && !hasEncryptedLogs) {
+      console.log('[StorageManager] 🔐 Migrating plaintext activity logs to encrypted storage...');
+      console.log(`[StorageManager] Found ${config.stats.activityLog.length} plaintext activity log entries`);
+
+      try {
+        const encryptedLogs = await this.encryptActivityLogs(config.stats.activityLog);
+        configWithEncrypted._encryptedActivityLogs = encryptedLogs;
+        config.stats = {
+          ...config.stats,
+          activityLog: [], // Clear plaintext logs
+        };
+        needsSave = true;
+        console.log('[StorageManager] ✅ Activity logs migration complete - logs are now encrypted');
+      } catch (error) {
+        console.error('[StorageManager] ❌ Failed to migrate activity logs:', error);
+      }
+    }
+
+    // 4. Migrate account data
+    const hasPlaintextAccount = config.account && (config.account.email || config.account.displayName);
+    const hasEncryptedAccount = !!configWithEncrypted._encryptedAccountData;
+
+    if (hasPlaintextAccount && !hasEncryptedAccount) {
+      console.log('[StorageManager] 🔐 Migrating plaintext account data to encrypted storage...');
+      console.log('[StorageManager] Found plaintext account data (email, displayName, etc.)');
+
+      try {
+        const accountToEncrypt = {
+          email: config.account.email,
+          displayName: config.account.displayName,
+          photoURL: config.account.photoURL,
+          firebaseUid: config.account.firebaseUid,
+        };
+        const encryptedAccount = await this.encryptAccountData(accountToEncrypt);
+        configWithEncrypted._encryptedAccountData = encryptedAccount;
+        config.account = {
+          ...config.account,
+          email: undefined,
+          displayName: undefined,
+          photoURL: undefined,
+          firebaseUid: undefined,
+        };
+        needsSave = true;
+        console.log('[StorageManager] ✅ Account data migration complete - account data is now encrypted');
+      } catch (error) {
+        console.error('[StorageManager] ❌ Failed to migrate account data:', error);
+      }
+    }
+
+    // Save updated config if any migrations occurred
+    if (needsSave) {
+      await chrome.storage.local.set({
+        [StorageManager.KEYS.CONFIG]: config,
+      });
+      console.log('[StorageManager] 🎉 All sensitive data migration complete - all data is now encrypted');
+    }
   }
 
   // ========== ENCRYPTION ==========
@@ -955,6 +1211,115 @@ export class StorageManager {
       false,
       ['encrypt', 'decrypt']
     );
+  }
+
+  /**
+   * Encrypt API key vault
+   * Encrypts the entire apiKeyVault object including all key values
+   */
+  private async encryptAPIKeyVault(vault: any): Promise<string> {
+    try {
+      const json = JSON.stringify(vault);
+      return await this.encrypt(json);
+    } catch (error) {
+      console.error('[StorageManager] Failed to encrypt API key vault:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Decrypt API key vault
+   * Decrypts the encrypted vault string back to the original object
+   */
+  private async decryptAPIKeyVault(encryptedVault: string): Promise<any> {
+    try {
+      const json = await this.decrypt(encryptedVault);
+      return JSON.parse(json);
+    } catch (error) {
+      console.error('[StorageManager] Failed to decrypt API key vault:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Encrypt custom rules
+   * Encrypts the custom rules array including patterns and replacements
+   */
+  private async encryptCustomRules(rules: any): Promise<string> {
+    try {
+      const json = JSON.stringify(rules);
+      return await this.encrypt(json);
+    } catch (error) {
+      console.error('[StorageManager] Failed to encrypt custom rules:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Decrypt custom rules
+   */
+  private async decryptCustomRules(encryptedRules: string): Promise<any> {
+    try {
+      const json = await this.decrypt(encryptedRules);
+      return JSON.parse(json);
+    } catch (error) {
+      console.error('[StorageManager] Failed to decrypt custom rules:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Encrypt activity logs
+   * Encrypts activity log array to protect usage history
+   */
+  private async encryptActivityLogs(logs: any): Promise<string> {
+    try {
+      const json = JSON.stringify(logs);
+      return await this.encrypt(json);
+    } catch (error) {
+      console.error('[StorageManager] Failed to encrypt activity logs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Decrypt activity logs
+   */
+  private async decryptActivityLogs(encryptedLogs: string): Promise<any> {
+    try {
+      const json = await this.decrypt(encryptedLogs);
+      return JSON.parse(json);
+    } catch (error) {
+      console.error('[StorageManager] Failed to decrypt activity logs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Encrypt account data
+   * Encrypts email, displayName, photoURL
+   */
+  private async encryptAccountData(account: any): Promise<string> {
+    try {
+      const json = JSON.stringify(account);
+      return await this.encrypt(json);
+    } catch (error) {
+      console.error('[StorageManager] Failed to encrypt account data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Decrypt account data
+   */
+  private async decryptAccountData(encryptedAccount: string): Promise<any> {
+    try {
+      const json = await this.decrypt(encryptedAccount);
+      return JSON.parse(json);
+    } catch (error) {
+      console.error('[StorageManager] Failed to decrypt account data:', error);
+      throw error;
+    }
   }
 
   /**

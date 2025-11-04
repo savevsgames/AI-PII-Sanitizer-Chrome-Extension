@@ -29,9 +29,7 @@ const AI_SERVICE_URLS = [
   'claude.ai',
   'gemini.google.com',
   'perplexity.ai',
-  'poe.com',
   'copilot.microsoft.com',
-  'you.com',
 ];
 
 /**
@@ -363,14 +361,8 @@ function detectService(url: string): import('../lib/types').AIService {
   if (url.includes('perplexity.ai')) {
     return 'perplexity';
   }
-  if (url.includes('poe.com')) {
-    return 'poe';
-  }
   if (url.includes('copilot.microsoft.com') || url.includes('bing.com/sydney')) {
     return 'copilot';
-  }
-  if (url.includes('you.com')) {
-    return 'you';
   }
   return 'unknown';
 }
@@ -487,9 +479,7 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
                          service === 'claude' ? 'Claude' :
                          service === 'gemini' ? 'Gemini' :
                          service === 'perplexity' ? 'Perplexity' :
-                         service === 'poe' ? 'Poe' :
-                         service === 'copilot' ? 'Copilot' :
-                         service === 'you' ? 'You.com' : 'Unknown';
+                         service === 'copilot' ? 'Copilot' : 'Unknown';
 
       logActivity({
         type: 'substitution',
@@ -540,9 +530,7 @@ async function handleSubstituteRequest(payload: { body: string; url?: string }):
                         service === 'claude' ? 'Claude' :
                         service === 'gemini' ? 'Gemini' :
                         service === 'perplexity' ? 'Perplexity' :
-                        service === 'poe' ? 'Poe' :
-                        service === 'copilot' ? 'Copilot' :
-                        service === 'you' ? 'You.com' : 'Unknown';
+                        service === 'copilot' ? 'Copilot' : 'Unknown';
 
     if (config?.apiKeyVault?.enabled) {
       console.log('🔐 API Key Vault enabled, scanning for keys...');
@@ -803,9 +791,7 @@ async function injectIntoExistingTabs(): Promise<void> {
     '*://claude.ai/*',
     '*://gemini.google.com/*',
     '*://perplexity.ai/*',
-    '*://poe.com/*',
     '*://copilot.microsoft.com/*',
-    '*://you.com/*',
   ];
 
   try {
