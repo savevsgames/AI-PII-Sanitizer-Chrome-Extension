@@ -149,17 +149,19 @@ The PromptBlocker badge shows your current protection status:
 | Badge | Status | Meaning |
 |-------|--------|---------|
 | 🟢 Green | Protected | Extension is working, PII will be substituted |
-| 🔴 Red | Not Protected | Extension not active, **real PII will be sent** |
+| 🔴 Red | Not Protected | Extension not active OR service toggle is OFF, **real PII will be sent** |
 | ⚪ Gray | Inactive | Not on a supported AI service |
 
 ### What to Do if Badge is Red?
 
-1. **Refresh the page** (F5 or Ctrl+R)
-2. Wait 2-3 seconds for extension to load
-3. Check if badge turns green
-4. If still red, click the PromptBlocker icon to see why
+1. **Check if service is enabled** - Open Settings tab and verify the toggle for that service (ChatGPT, Claude, etc.) is ON
+2. **Refresh the page** (F5 or Ctrl+R) if toggle is ON but badge is still red
+3. Wait 2-3 seconds for extension to load
+4. Check if badge turns green
+5. If still red, click the PromptBlocker icon to see why
 
 **Common Reasons:**
+- Service toggle is OFF in Settings (turn it ON to protect that platform)
 - Extension was just installed (refresh page)
 - Extension was just updated (refresh page)
 - Content script failed to inject (check console for errors)
@@ -216,9 +218,11 @@ In the **Settings** tab, you can configure:
 - Auto-enable on install
 - Show notifications
 
-**Protected Domains:**
-- Add custom domains to protect
-- Remove domains you don't want protected
+**Protected Services:**
+- Toggle protection for individual AI services (ChatGPT, Claude, Gemini, Perplexity, Copilot)
+- Each service can be enabled/disabled independently
+- Status indicator shows "Active" (all 5 services protected) or "Partial (X/5)" when some are disabled
+- Disabled services will show red badge and no protection on those platforms
 
 **Privacy:**
 - Export profiles (encrypted backup)

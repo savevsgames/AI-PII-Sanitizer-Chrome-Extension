@@ -7,6 +7,7 @@ import { useAppStore } from '../../lib/store';
 import { UserConfig } from '../../lib/types';
 import { isValidEmail } from './utils';
 import { applyChromeTheme } from '../../lib/chromeTheme';
+import { updateStatusIndicator } from './statusIndicator';
 
 // Theme name type
 type ThemeName =
@@ -24,11 +25,25 @@ export function initSettingsHandlers() {
   const clearStatsBtn = document.getElementById('clearStatsBtn');
   const exportProfilesBtn = document.getElementById('exportProfilesBtn');
 
+  // Service toggles
+  const chatgptToggle = document.getElementById('chatgptToggle') as HTMLInputElement;
+  const claudeToggle = document.getElementById('claudeToggle') as HTMLInputElement;
+  const geminiToggle = document.getElementById('geminiToggle') as HTMLInputElement;
+  const perplexityToggle = document.getElementById('perplexityToggle') as HTMLInputElement;
+  const copilotToggle = document.getElementById('copilotToggle') as HTMLInputElement;
+
   enabledToggle?.addEventListener('change', handleEnabledToggle);
   emailOptInToggle?.addEventListener('change', handleEmailOptInToggle);
   subscribeBtn?.addEventListener('click', handleSubscribe);
   clearStatsBtn?.addEventListener('click', handleClearStats);
   exportProfilesBtn?.addEventListener('click', handleExportProfiles);
+
+  // Service toggle handlers
+  chatgptToggle?.addEventListener('change', () => handleServiceToggle('chatgpt', chatgptToggle.checked));
+  claudeToggle?.addEventListener('change', () => handleServiceToggle('claude', claudeToggle.checked));
+  geminiToggle?.addEventListener('change', () => handleServiceToggle('gemini', geminiToggle.checked));
+  perplexityToggle?.addEventListener('change', () => handleServiceToggle('perplexity', perplexityToggle.checked));
+  copilotToggle?.addEventListener('change', () => handleServiceToggle('copilot', copilotToggle.checked));
 
   // Theme picker
   initThemePicker();
@@ -46,6 +61,13 @@ export function updateSettingsUI(config: UserConfig | null) {
   const emailOptInToggle = document.getElementById('emailOptInToggle') as HTMLInputElement;
   const emailInput = document.getElementById('emailInput') as HTMLInputElement;
 
+  // Service toggles
+  const chatgptToggle = document.getElementById('chatgptToggle') as HTMLInputElement;
+  const claudeToggle = document.getElementById('claudeToggle') as HTMLInputElement;
+  const geminiToggle = document.getElementById('geminiToggle') as HTMLInputElement;
+  const perplexityToggle = document.getElementById('perplexityToggle') as HTMLInputElement;
+  const copilotToggle = document.getElementById('copilotToggle') as HTMLInputElement;
+
   if (enabledToggle) enabledToggle.checked = config.settings.enabled;
   if (emailOptInToggle && config.account) {
     emailOptInToggle.checked = config.account.emailOptIn;
@@ -57,6 +79,28 @@ export function updateSettingsUI(config: UserConfig | null) {
   if (emailInput && config.account?.email) {
     emailInput.value = config.account.email;
   }
+
+  // Update service toggles based on protectedDomains
+  // Match the same service domain logic used in handleServiceToggle
+  const domains = config.settings.protectedDomains || [];
+  if (chatgptToggle) {
+    chatgptToggle.checked = domains.includes('chat.openai.com') && domains.includes('chatgpt.com');
+  }
+  if (claudeToggle) {
+    claudeToggle.checked = domains.includes('claude.ai');
+  }
+  if (geminiToggle) {
+    geminiToggle.checked = domains.includes('gemini.google.com');
+  }
+  if (perplexityToggle) {
+    perplexityToggle.checked = domains.includes('perplexity.ai');
+  }
+  if (copilotToggle) {
+    copilotToggle.checked = domains.includes('copilot.microsoft.com');
+  }
+
+  // Update status indicator
+  updateStatusIndicator(config);
 }
 
 /**
@@ -66,6 +110,13 @@ async function handleEnabledToggle(event: Event) {
   const checkbox = event.target as HTMLInputElement;
   const store = useAppStore.getState();
   await store.updateSettings({ enabled: checkbox.checked });
+
+  // Update status indicator
+  const config = store.config;
+  if (config) {
+    updateStatusIndicator(config);
+  }
+
   console.log('[Settings] Protection enabled:', checkbox.checked);
 }
 
@@ -135,9 +186,7 @@ async function handleClearStats() {
           claude: { requests: 0, substitutions: 0 },
           gemini: { requests: 0, substitutions: 0 },
           perplexity: { requests: 0, substitutions: 0 },
-          poe: { requests: 0, substitutions: 0 },
           copilot: { requests: 0, substitutions: 0 },
-          you: { requests: 0, substitutions: 0 },
         },
         activityLog: [],
       },
@@ -146,6 +195,52 @@ async function handleClearStats() {
     console.log('[Settings] Stats cleared');
     alert('Stats cleared successfully!');
   }
+}
+
+/**
+ * Handle service toggle change
+ */
+async function handleServiceToggle(service: string, enabled: boolean) {
+  const store = useAppStore.getState();
+  const config = store.config;
+  if (!config) return;
+
+  // Define domain mappings for each service
+  const serviceDomains: Record<string, string[]> = {
+    chatgpt: ['chat.openai.com', 'chatgpt.com'],
+    claude: ['claude.ai'],
+    gemini: ['gemini.google.com'],
+    perplexity: ['perplexity.ai'],
+    copilot: ['copilot.microsoft.com'],
+  };
+
+  let updatedDomains = [...config.settings.protectedDomains];
+  const domainsToModify = serviceDomains[service] || [];
+
+  if (enabled) {
+    // Add domains if not present
+    domainsToModify.forEach(domain => {
+      if (!updatedDomains.includes(domain)) {
+        updatedDomains.push(domain);
+      }
+    });
+  } else {
+    // Remove domains
+    updatedDomains = updatedDomains.filter(d => !domainsToModify.includes(d));
+  }
+
+  console.log(`[Settings] ${service} ${enabled ? 'enabled' : 'disabled'}`, { updatedDomains });
+
+  // Update config
+  await store.updateSettings({ protectedDomains: updatedDomains });
+
+  // Refresh the entire settings UI to update all toggles and status
+  setTimeout(() => {
+    const updatedConfig = useAppStore.getState().config;
+    if (updatedConfig) {
+      updateSettingsUI(updatedConfig);
+    }
+  }, 0);
 }
 
 /**
@@ -219,8 +314,17 @@ const THEME_MODES: Record<string, 'dark' | 'light'> = {
  * Handle theme change
  */
 async function handleThemeChange(theme: ThemeName) {
+  console.log('[Theme Debug] 💾 User selected theme:', theme);
+
   const store = useAppStore.getState();
+  console.log('[Theme Debug] 📦 Current config before save:', {
+    hasConfig: !!store.config,
+    currentTheme: store.config?.settings?.theme
+  });
+
   await store.updateSettings({ theme });
+
+  console.log('[Theme Debug] ✅ Theme saved to storage:', theme);
 
   // Apply theme immediately
   applyTheme(theme);
@@ -294,8 +398,17 @@ export async function applyTheme(themeInput: ThemeName | string) {
  * Update theme UI from config
  */
 export function updateThemeUI(config: UserConfig | null) {
-  if (!config) return;
+  console.log('[Theme Debug] 🔄 updateThemeUI called:', {
+    hasConfig: !!config,
+    theme: config?.settings?.theme || 'none'
+  });
+
+  if (!config) {
+    console.warn('[Theme Debug] ⚠️ No config provided to updateThemeUI');
+    return;
+  }
 
   const theme = (config.settings.theme || 'classic-dark') as ThemeName;
+  console.log('[Theme Debug] 🎨 Applying theme from config:', theme);
   applyTheme(theme);
 }

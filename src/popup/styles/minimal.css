@@ -10,7 +10,8 @@
 
   /* Background gradient with glassmorphism overlay */
   background: var(--theme-bg-gradient);
-  color: white;
+  /* Dynamic text color: white for dark themes, black for light themes */
+  color: var(--text-primary);
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-lg);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);

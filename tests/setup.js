@@ -49,11 +49,27 @@ const mockCrypto = {
     return arr;
   },
   subtle: {
-    importKey: jest.fn(() => Promise.resolve({})),
-    deriveKey: jest.fn(() => Promise.resolve({})),
+    importKey: jest.fn((format, keyData, algorithm, extractable, usages) => {
+      // Return a mock CryptoKey object
+      return Promise.resolve({
+        type: 'secret',
+        extractable,
+        algorithm: typeof algorithm === 'string' ? { name: algorithm } : algorithm,
+        usages,
+      });
+    }),
+    deriveKey: jest.fn((algorithm, baseKey, derivedKeyAlgorithm, extractable, usages) => {
+      // Return a mock derived CryptoKey
+      return Promise.resolve({
+        type: 'secret',
+        extractable,
+        algorithm: derivedKeyAlgorithm,
+        usages,
+      });
+    }),
     encrypt: jest.fn((algorithm, key, data) => {
-      // Simple mock encryption: just return the data as-is
-      return Promise.resolve(data);
+      // Simple mock encryption: just return the data as-is (wrapped in ArrayBuffer)
+      return Promise.resolve(data.buffer || data);
     }),
     decrypt: jest.fn((algorithm, key, data) => {
       // Simple mock decryption: just return the data as-is
