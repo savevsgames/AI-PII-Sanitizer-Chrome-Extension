@@ -148,7 +148,12 @@ export const useAppStore = createStore<AppState>((set, get) => ({
 
   updateSettings: async (updates) => {
     const currentConfig = get().config;
-    if (!currentConfig) return;
+    if (!currentConfig) {
+      console.error('[Theme Debug] ❌ Cannot update settings: no config loaded');
+      return;
+    }
+
+    console.log('[Theme Debug] 💾 Updating settings in store:', updates);
 
     const newConfig = {
       ...currentConfig,
@@ -157,6 +162,11 @@ export const useAppStore = createStore<AppState>((set, get) => ({
 
     const storage = StorageManager.getInstance();
     await storage.saveConfig(newConfig);
+
+    console.log('[Theme Debug] ✅ Settings saved to chrome.storage.local:', {
+      theme: newConfig.settings.theme
+    });
+
     set({ config: newConfig });
   },
 
@@ -317,6 +327,7 @@ export const useAppStore = createStore<AppState>((set, get) => ({
 
   // Initialization
   initialize: async () => {
+    console.log('[Theme Debug] 🚀 Store initialization starting...');
     set({ isLoading: true });
 
     const storage = StorageManager.getInstance();
@@ -327,12 +338,20 @@ export const useAppStore = createStore<AppState>((set, get) => ({
       storage.loadConfig(),
     ]);
 
+    console.log('[Theme Debug] 📦 Config loaded from storage:', {
+      hasConfig: !!config,
+      theme: config?.settings?.theme || 'none',
+      enabled: config?.settings?.enabled
+    });
+
     set({
       profiles,
       config,
       activityLog: config?.stats.activityLog || [],
       isLoading: false,
     });
+
+    console.log('[Theme Debug] ✅ Store state updated with loaded config');
 
     console.log('[Store] Initialized with', profiles.length, 'profiles');
   },

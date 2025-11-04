@@ -22,16 +22,32 @@ import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/init
 // ========== INITIALIZATION ==========
 
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('[Theme Debug] 🎨 DOMContentLoaded event fired');
+
   initTabNavigation();
   initKeyboardShortcuts();
 
   // Load config FIRST to get saved theme before any UI renders
   const store = useAppStore.getState();
+  console.log('[Theme Debug] 📦 Store state before initialize:', {
+    hasConfig: !!store.config,
+    theme: store.config?.settings?.theme || 'none'
+  });
+
   await store.initialize();
+
+  // IMPORTANT: Get fresh store state after initialization
+  const freshState = useAppStore.getState();
+  console.log('[Theme Debug] ✅ Store initialized, config loaded:', {
+    hasConfig: !!freshState.config,
+    theme: freshState.config?.settings?.theme || 'none'
+  });
 
   // Now apply theme BEFORE showing UI (prevents white->black flash)
   initTheme();
-  updateThemeUI(store.config);
+  updateThemeUI(freshState.config);
+
+  console.log('[Theme Debug] 🎨 Theme applied from config:', freshState.config?.settings?.theme);
 
   await initUI(); // Wait for auth redirect check
   await loadInitialData();
