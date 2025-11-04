@@ -51,11 +51,13 @@
 - ✅ **User Profiles** - Firestore sync complete
 - ✅ **Tier System** - Free/PRO gating ready (payment pending)
 
-**Next Priority:** Security hardening & payment integration (see Phase 1 & 3 below)
+**Next Priority:** Security hardening & Chrome Web Store preparation
+
+**Launch Readiness:** See [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) for detailed Chrome Web Store submission plan.
 
 ---
 
-## 📅 REVISED Release Timeline
+## 📅 Release Timeline
 
 ### ✅ Phase 0: Development Phase (Complete)
 **Timeline:** October - November 2024
