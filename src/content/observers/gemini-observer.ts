@@ -5,6 +5,8 @@
 
 import type { Observer, AliasMapping } from './types';
 
+const DEBUG_MODE = false;
+
 export class GeminiObserver implements Observer {
   private observer: MutationObserver | null = null;
   private aliases: Map<string, string> = new Map(); // alias → real
@@ -266,13 +268,15 @@ export class GeminiObserver implements Observer {
           window.removeEventListener('message', handleMessage);
 
           const response = event.data.response;
-          console.log('[Gemini Observer] 🔍 Raw GET_PROFILES response:', response);
-          console.log('[Gemini Observer] 🔍 Response success?', response?.success);
-          console.log('[Gemini Observer] 🔍 Response data:', response?.data);
-          console.log('[Gemini Observer] 🔍 Response data type:', typeof response?.data);
-          console.log('[Gemini Observer] 🔍 Response data is array?', Array.isArray(response?.data));
-          if (response?.data && Array.isArray(response.data)) {
-            console.log('[Gemini Observer] 🔍 Number of profiles:', response.data.length);
+          if (DEBUG_MODE) {
+            console.log('[Gemini Observer] 🔍 Raw GET_PROFILES response:', response);
+            console.log('[Gemini Observer] 🔍 Response success?', response?.success);
+            console.log('[Gemini Observer] 🔍 Response data:', response?.data);
+            console.log('[Gemini Observer] 🔍 Response data type:', typeof response?.data);
+            console.log('[Gemini Observer] 🔍 Response data is array?', Array.isArray(response?.data));
+            if (response?.data && Array.isArray(response.data)) {
+              console.log('[Gemini Observer] 🔍 Number of profiles:', response.data.length);
+            }
           }
 
           if (response?.success && response.data) {
@@ -281,10 +285,12 @@ export class GeminiObserver implements Observer {
             // response.data is an array of AliasProfile objects (V2 structure)
             // Each profile has: { real: IdentityData, alias: IdentityData }
             response.data.forEach((profile: any, index: number) => {
-              console.log(`[Gemini Observer] 🔍 Processing profile ${index}:`, profile);
-              console.log(`[Gemini Observer] 🔍 Profile enabled?`, profile.enabled);
-              console.log(`[Gemini Observer] 🔍 Profile.real:`, profile.real);
-              console.log(`[Gemini Observer] 🔍 Profile.alias:`, profile.alias);
+              if (DEBUG_MODE) {
+                console.log(`[Gemini Observer] 🔍 Processing profile ${index}:`, profile);
+                console.log(`[Gemini Observer] 🔍 Profile enabled?`, profile.enabled);
+                console.log(`[Gemini Observer] 🔍 Profile.real:`, profile.real);
+                console.log(`[Gemini Observer] 🔍 Profile.alias:`, profile.alias);
+              }
               if (!profile.enabled) return; // Skip disabled profiles
 
               // Extract name aliases

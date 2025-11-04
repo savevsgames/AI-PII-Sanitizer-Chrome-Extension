@@ -413,6 +413,26 @@
         </div>
 
         <div class="settings-section">
+          <h3>Storage Usage</h3>
+          <div class="storage-usage-container">
+            <div class="storage-info">
+              <span class="storage-label">Used:</span>
+              <span class="storage-value" id="storageUsed">Loading...</span>
+            </div>
+            <div class="storage-progress-bar">
+              <div class="storage-progress-fill" id="storageProgressFill"></div>
+            </div>
+            <div class="storage-details">
+              <span class="storage-percent" id="storagePercent">0%</span>
+              <span class="storage-quota" id="storageQuota">of 10 MB</span>
+            </div>
+            <p class="setting-hint" id="storageHint">
+              ℹ️ Chrome extensions have a 10MB storage limit
+            </p>
+          </div>
+        </div>
+
+        <div class="settings-section">
           <h3>Advanced</h3>
           <div class="button-group">
             <button class="btn btn-secondary" id="clearStatsBtn">Clear All Stats</button>

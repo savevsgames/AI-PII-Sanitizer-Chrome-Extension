@@ -28,6 +28,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@peculiar/webcrypto": "^1.5.0",
     "@playwright/test": "^1.56.0",
     "@types/chrome": "^0.0.268",
     "@types/jest": "^29.5.12",

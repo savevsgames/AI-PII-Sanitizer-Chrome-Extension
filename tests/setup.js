@@ -4,6 +4,7 @@
  */
 
 const { TextEncoder, TextDecoder } = require('util');
+const { Crypto } = require('@peculiar/webcrypto');
 
 // Mock Chrome Storage API
 const mockStorageData = {};
@@ -37,46 +38,17 @@ const mockStorage = {
       Object.keys(mockStorageData).forEach((key) => delete mockStorageData[key]);
       return Promise.resolve();
     }),
+    getBytesInUse: jest.fn((keys) => {
+      // Mock implementation: calculate approximate size
+      const json = JSON.stringify(mockStorageData);
+      return Promise.resolve(json.length);
+    }),
+    QUOTA_BYTES: 10485760, // 10MB
   },
 };
 
-// Mock Web Crypto API with proper SubtleCrypto implementation
-const mockCrypto = {
-  getRandomValues: (arr) => {
-    for (let i = 0; i < arr.length; i++) {
-      arr[i] = Math.floor(Math.random() * 256);
-    }
-    return arr;
-  },
-  subtle: {
-    importKey: jest.fn((format, keyData, algorithm, extractable, usages) => {
-      // Return a mock CryptoKey object
-      return Promise.resolve({
-        type: 'secret',
-        extractable,
-        algorithm: typeof algorithm === 'string' ? { name: algorithm } : algorithm,
-        usages,
-      });
-    }),
-    deriveKey: jest.fn((algorithm, baseKey, derivedKeyAlgorithm, extractable, usages) => {
-      // Return a mock derived CryptoKey
-      return Promise.resolve({
-        type: 'secret',
-        extractable,
-        algorithm: derivedKeyAlgorithm,
-        usages,
-      });
-    }),
-    encrypt: jest.fn((algorithm, key, data) => {
-      // Simple mock encryption: just return the data as-is (wrapped in ArrayBuffer)
-      return Promise.resolve(data.buffer || data);
-    }),
-    decrypt: jest.fn((algorithm, key, data) => {
-      // Simple mock decryption: just return the data as-is
-      return Promise.resolve(data);
-    }),
-  },
-};
+// Setup Web Crypto API polyfill (real implementation for testing encryption)
+const crypto = new Crypto();
 
 // Setup global mocks BEFORE any imports
 global.chrome = {
@@ -86,9 +58,9 @@ global.chrome = {
   },
 };
 
-global.crypto = mockCrypto;
+global.crypto = crypto;
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
 // Export for tests that need to access mock data
-module.exports = { mockStorageData, mockStorage, mockCrypto };
+module.exports = { mockStorageData, mockStorage };

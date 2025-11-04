@@ -508,7 +508,7 @@ export function showAddRuleModal() {
 
     const validation = RedactionEngine.validatePattern(pattern);
     if (!validation.valid) {
-      resultDiv.innerHTML = `<div class="test-error">Invalid pattern: ${validation.error}</div>`;
+      resultDiv.innerHTML = `<div class="test-error">Invalid pattern: ${escapeHtml(validation.error || 'Unknown error')}</div>`;
       return;
     }
 
@@ -527,7 +527,7 @@ export function showAddRuleModal() {
     const result = RedactionEngine.testRule(testRule, testInput);
 
     if (result.error) {
-      resultDiv.innerHTML = `<div class="test-error">Test failed: ${result.error}</div>`;
+      resultDiv.innerHTML = `<div class="test-error">Test failed: ${escapeHtml(result.error)}</div>`;
       return;
     }
 
@@ -798,7 +798,7 @@ function handleTestPattern() {
   // Validate pattern
   const validation = RedactionEngine.validatePattern(pattern);
   if (!validation.valid) {
-    resultDiv.innerHTML = `<div class="test-result error">Invalid pattern: ${validation.error}</div>`;
+    resultDiv.innerHTML = `<div class="test-result error">Invalid pattern: ${escapeHtml(validation.error || 'Unknown error')}</div>`;
     return;
   }
 
@@ -818,7 +818,7 @@ function handleTestPattern() {
   const result = RedactionEngine.testRule(testRule, testInput);
 
   if (result.error) {
-    resultDiv.innerHTML = `<div class="test-result error">Error: ${result.error}</div>`;
+    resultDiv.innerHTML = `<div class="test-result error">Error: ${escapeHtml(result.error)}</div>`;
   } else if (result.matches.length === 0) {
     resultDiv.innerHTML = '<div class="test-result warning">No matches found</div>';
   } else {

@@ -8,6 +8,8 @@
 import { AliasProfile, SubstitutionResult, SubstitutionOptions, PIIType } from './types';
 import { StorageManager } from './storage';
 
+const DEBUG_MODE = false; // Set to true for development debugging
+
 interface PIIMapping {
   real: string;
   alias: string;
@@ -388,7 +390,9 @@ export class AliasEngine {
   ): Promise<void> {
     const storage = StorageManager.getInstance();
     await storage.incrementProfileUsage(profileId, service, piiType);
-    console.log('[AliasEngine] Updated usage for profile:', profileId, 'service:', service, 'type:', piiType);
+    if (DEBUG_MODE) {
+      console.log('[AliasEngine] Updated usage for profile:', profileId, 'service:', service, 'type:', piiType);
+    }
   }
 
   /**
