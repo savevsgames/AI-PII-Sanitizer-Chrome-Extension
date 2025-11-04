@@ -108,15 +108,16 @@ Based on comprehensive storage audit (2025-11-04), we identified critical issues
   - **Success Criteria:** Theme persists after closing/reopening popup
   - **Files:** src/popup/popup-v2.ts (lines 28-34), src/popup/components/settingsHandlers.ts (lines 221-300)
 
-- [ ] **Encrypt API Keys in Storage** (P0 - 2-4 hours)
-  - Apply AES-256-GCM encryption to `config.apiKeyVault.keys[]`
-  - Create `encryptAPIKeyVault()` and `decryptAPIKeyVault()` methods
-  - Update `saveConfig()` to encrypt API keys before storage
-  - Update `loadConfig()` to decrypt API keys after retrieval
-  - Use same encryption system as profiles (PBKDF2 + AES-GCM)
-  - Add migration for existing plaintext API keys
-  - **Success Criteria:** API keys stored encrypted in chrome.storage.local
-  - **Files:** src/lib/storage.ts (lines 324-336, 360-497, 952-1072)
+- [x] **Encrypt API Keys in Storage** (P0 - 2-4 hours) ✅ **COMPLETE**
+  - ✅ Created `encryptAPIKeyVault()` and `decryptAPIKeyVault()` methods
+  - ✅ Updated `saveConfig()` to encrypt API keys before storage
+  - ✅ Updated `loadConfig()` to decrypt API keys after retrieval
+  - ✅ Uses same AES-256-GCM encryption as profiles (PBKDF2 + 210k iterations)
+  - ✅ Added automatic migration for existing plaintext API keys
+  - ✅ Encrypted vault stored as `_encryptedApiKeyVault` field
+  - ✅ Plaintext keys cleared from storage after encryption
+  - **Success Criteria:** ✅ API keys now stored encrypted in chrome.storage.local
+  - **Files:** src/lib/storage.ts (lines 964-986, 325-355, 361-400, 930-975)
 
 - [ ] **Add Storage Quota Monitoring** (P1 - 1 hour)
   - Implement `getStorageUsage()` method
@@ -163,11 +164,11 @@ Based on comprehensive storage audit (2025-11-04), we identified critical issues
 **Deliverable:** 100% reliable storage with encrypted sensitive data
 
 **Success Criteria:**
-- ✅ Theme persists across popup sessions
-- ✅ API keys encrypted in chrome.storage.local
-- ✅ Storage usage visible to users
-- ✅ No data loss or corruption
-- ✅ All storage tests passing
+- ✅ Theme persists across popup sessions (COMPLETE 2025-11-04)
+- ✅ API keys encrypted in chrome.storage.local (COMPLETE 2025-11-04)
+- [ ] Storage usage visible to users
+- ✅ No data loss or corruption (verified)
+- [ ] All storage tests passing
 
 **Why This is P0 (Blocking Launch):**
 - API keys in plaintext = security vulnerability (could leak to malware)

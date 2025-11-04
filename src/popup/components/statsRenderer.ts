@@ -14,9 +14,7 @@ const SERVICE_ICONS: Record<string, string> = {
   claude: '🤖',
   gemini: '✨',
   perplexity: '🔍',
-  poe: '🎭',
-  copilot: '🧑‍💻',
-  you: '🌐',
+  copilot: '✈️',
 };
 
 /**
@@ -126,9 +124,7 @@ function renderServiceBreakdown(stats: UserConfig['stats']) {
     claude: 0,
     gemini: 0,
     perplexity: 0,
-    poe: 0,
     copilot: 0,
-    you: 0,
   };
 
   // Count unique interceptions per service from activity log
@@ -143,9 +139,7 @@ function renderServiceBreakdown(stats: UserConfig['stats']) {
     { key: 'claude', label: 'Claude', count: serviceCounts.claude },
     { key: 'gemini', label: 'Gemini', count: serviceCounts.gemini },
     { key: 'perplexity', label: 'Perplexity', count: serviceCounts.perplexity },
-    { key: 'poe', label: 'Poe', count: serviceCounts.poe },
     { key: 'copilot', label: 'Copilot', count: serviceCounts.copilot },
-    { key: 'you', label: 'You.com', count: serviceCounts.you },
   ];
 
   const totalCount = servicesData.reduce((sum, service) => sum + service.count, 0);
