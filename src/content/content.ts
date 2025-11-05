@@ -230,7 +230,7 @@ async function injectTemplateIntoChat(content: string): Promise<void> {
 
       // Create a <p> element for each paragraph
       // Within each paragraph, single newlines become <br> tags
-      paragraphs.forEach((paragraph, index) => {
+      paragraphs.forEach((paragraph) => {
         const p = document.createElement('p');
 
         // Replace single newlines with <br> within the paragraph
