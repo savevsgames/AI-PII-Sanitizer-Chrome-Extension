@@ -37,5 +37,6 @@ temp/
 *.zip
 
 # Firebase
-functions\.env.yaml
+functions/.env.yaml
 .env.yaml
+*.env.yaml
