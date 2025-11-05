@@ -73,7 +73,7 @@ describe('textProcessor - ChatGPT Format', () => {
         ],
       };
       const text = extractAllText(data);
-      expect(text).toBe('Hello GPT\n\nHello user');
+      expect(text).toBe('Hello GPT\n\n\nHello user');
     });
 
     test('extracts from nested parts format', () => {
@@ -129,7 +129,7 @@ describe('textProcessor - ChatGPT Format', () => {
         ],
       };
       const text = extractAllText(data);
-      expect(text).toBe('Hello\n\nWorld');
+      expect(text).toBe('Hello\n\n\nWorld');
     });
   });
 
@@ -167,7 +167,7 @@ describe('textProcessor - ChatGPT Format', () => {
           { role: 'assistant', content: 'Message 2' },
         ],
       };
-      const result = replaceAllText(data, 'New 1\n\nNew 2');
+      const result = replaceAllText(data, 'New 1\n\n\nNew 2');
       expect(result.messages[0].content).toBe('New 1');
       expect(result.messages[1].content).toBe('New 2');
     });
@@ -250,7 +250,7 @@ describe('textProcessor - Gemini Format', () => {
         ],
       };
       const text = extractAllText(data);
-      expect(text).toBe('Part 1\n\nPart 2');
+      expect(text).toBe('Part 1\n\n\nPart 2');
     });
 
     test('extracts from multiple parts', () => {
@@ -265,7 +265,7 @@ describe('textProcessor - Gemini Format', () => {
         ],
       };
       const text = extractAllText(data);
-      expect(text).toBe('Sentence 1\n\nSentence 2');
+      expect(text).toBe('Sentence 1\n\n\nSentence 2');
     });
 
     test('handles missing parts', () => {
@@ -306,7 +306,7 @@ describe('textProcessor - Gemini Format', () => {
           },
         ],
       };
-      const result = replaceAllText(data, 'New 1\n\nNew 2');
+      const result = replaceAllText(data, 'New 1\n\n\nNew 2');
       expect(result.contents[0].parts[0].text).toBe('New 1');
       expect(result.contents[0].parts[1].text).toBe('New 2');
     });
@@ -347,7 +347,7 @@ describe('textProcessor - Perplexity Format', () => {
         },
       };
       const text = extractAllText(data);
-      expect(text).toBe('Main query\n\nDSL query');
+      expect(text).toBe('Main query\n\n\nDSL query');
     });
 
     test('extracts from simple query format', () => {
@@ -384,7 +384,7 @@ describe('textProcessor - Perplexity Format', () => {
           dsl_query: 'DSL query',
         },
       };
-      const result = replaceAllText(data, 'New main\n\nNew DSL');
+      const result = replaceAllText(data, 'New main\n\n\nNew DSL');
       expect(result.query_str).toBe('New main');
       expect(result.params.dsl_query).toBe('New DSL');
     });
@@ -435,7 +435,7 @@ describe('textProcessor - Copilot Format', () => {
         ],
       };
       const text = extractAllText(data);
-      expect(text).toBe('Part 1\n\nPart 2');
+      expect(text).toBe('Part 1\n\n\nPart 2');
     });
 
     test('filters non-text content types', () => {
@@ -448,7 +448,7 @@ describe('textProcessor - Copilot Format', () => {
         ],
       };
       const text = extractAllText(data);
-      expect(text).toBe('Text content\n\nMore text');
+      expect(text).toBe('Text content\n\n\nMore text');
     });
 
     test('returns empty for non-send events', () => {
@@ -483,7 +483,7 @@ describe('textProcessor - Copilot Format', () => {
           { type: 'text', text: 'Part 2' },
         ],
       };
-      const result = replaceAllText(data, 'New 1\n\nNew 2');
+      const result = replaceAllText(data, 'New 1\n\n\nNew 2');
       expect(result.content[0].text).toBe('New 1');
       expect(result.content[1].text).toBe('New 2');
     });
