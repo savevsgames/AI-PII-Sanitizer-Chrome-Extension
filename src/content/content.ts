@@ -130,7 +130,7 @@ if (document.readyState === 'loading') {
   showActivationToast();
 }
 
-// Listen for messages from background (PING, WARN_API_KEY)
+// Listen for messages from background (PING, WARN_API_KEY, INJECT_TEMPLATE)
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.type === 'PING') {
     // Verify we can actually communicate with background script
@@ -142,6 +142,19 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       .catch(() => {
         // Extension context invalidated - don't respond
         sendResponse(null);
+      });
+    return true; // Will respond asynchronously
+  }
+
+  if (request.type === 'INJECT_TEMPLATE') {
+    // Inject prompt template into the chat's text area
+    injectTemplateIntoChat(request.payload.content)
+      .then(() => {
+        sendResponse({ success: true });
+      })
+      .catch((error: Error) => {
+        console.error('[Content] Failed to inject template:', error);
+        sendResponse({ success: false, error: error.message });
       });
     return true; // Will respond asynchronously
   }
@@ -160,6 +173,151 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
   return false; // Not handling this message
 });
+
+/**
+ * Inject template content into the active chat's text area
+ */
+async function injectTemplateIntoChat(content: string): Promise<void> {
+  // Find the textarea based on the current platform
+  const hostname = window.location.hostname;
+  let textarea: HTMLTextAreaElement | null = null;
+
+  // Platform-specific selectors
+  if (hostname.includes('chatgpt.com') || hostname.includes('chat.openai.com')) {
+    // ChatGPT: main prompt textarea (contenteditable div)
+    textarea = document.querySelector('#prompt-textarea') as HTMLTextAreaElement;
+    console.log('[Content] 🔍 ChatGPT textarea found:', textarea);
+    console.log('[Content] 🔍 Is contenteditable?', textarea?.contentEditable);
+    console.log('[Content] 🔍 Tag name:', textarea?.tagName);
+  } else if (hostname.includes('claude.ai')) {
+    // Claude: main prompt textarea
+    textarea = document.querySelector('div[contenteditable="true"]') as any;
+  } else if (hostname.includes('gemini.google.com')) {
+    // Gemini: rich text editor
+    textarea = document.querySelector('.ql-editor[contenteditable="true"]') as any;
+  } else if (hostname.includes('perplexity.ai')) {
+    // Perplexity: textarea
+    textarea = document.querySelector('textarea[placeholder*="Ask"]') as HTMLTextAreaElement;
+  } else if (hostname.includes('copilot.microsoft.com')) {
+    // Copilot: textarea
+    textarea = document.querySelector('textarea.textarea') as HTMLTextAreaElement;
+  }
+
+  if (!textarea) {
+    throw new Error('Could not find chat input field on this page');
+  }
+
+  console.log('[Content] 📝 Content to inject (length:', content.length, ')');
+  console.log('[Content] 📝 First 200 chars:', JSON.stringify(content.substring(0, 200)));
+  console.log('[Content] 📝 Contains \\n?', content.includes('\n'));
+  console.log('[Content] 📝 Contains \\n\\n?', content.includes('\n\n'));
+
+  // For contenteditable divs (Claude, Gemini, ChatGPT)
+  if (textarea.contentEditable === 'true') {
+    console.log('[Content] 🎨 Using contenteditable path');
+    const div = textarea as HTMLElement;
+
+    // Special handling for ChatGPT's ProseMirror editor
+    if (hostname.includes('chatgpt.com') || hostname.includes('chat.openai.com')) {
+      console.log('[Content] 🎨 ChatGPT ProseMirror - using <p> tags');
+
+      // ProseMirror expects structured content with <p> tags for paragraphs
+      // Split content by double newlines (paragraphs) and create <p> elements
+      const paragraphs = content.split('\n\n').filter(p => p.trim());
+
+      // Clear existing content
+      div.innerHTML = '';
+
+      // Create a <p> element for each paragraph
+      // Within each paragraph, single newlines become <br> tags
+      paragraphs.forEach((paragraph, index) => {
+        const p = document.createElement('p');
+
+        // Replace single newlines with <br> within the paragraph
+        const lines = paragraph.split('\n');
+        lines.forEach((line, lineIndex) => {
+          if (lineIndex > 0) {
+            p.appendChild(document.createElement('br'));
+          }
+          p.appendChild(document.createTextNode(line));
+        });
+
+        div.appendChild(p);
+      });
+
+      console.log('[Content] 🎨 Created', paragraphs.length, 'paragraphs');
+      console.log('[Content] 🎨 Div innerHTML (first 300):', div.innerHTML.substring(0, 300));
+
+      // Trigger input event to notify ProseMirror
+      div.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+      div.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+
+      // Focus the element
+      div.focus();
+
+      // Move cursor to end
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(div);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+
+      // Log what actually ended up in the div after ProseMirror processed it
+      setTimeout(() => {
+        console.log('[Content] 🔍 After ProseMirror processing:');
+        console.log('[Content] 🔍 Div innerHTML (first 300):', div.innerHTML.substring(0, 300));
+        console.log('[Content] 🔍 Div textContent (first 200):', div.textContent?.substring(0, 200));
+      }, 100);
+    } else {
+      // For Claude/Gemini - use HTML with <br> tags
+      console.log('[Content] 🎨 Claude/Gemini - using innerHTML with <br> tags');
+
+      const htmlContent = content
+        .split('\n\n')  // Split on double newlines (paragraphs)
+        .map(paragraph => {
+          // Within each paragraph, replace single newlines with <br>
+          return paragraph.split('\n').join('<br>');
+        })
+        .join('<br><br>');  // Join paragraphs with double <br>
+
+      console.log('[Content] 🎨 HTML content (first 200 chars):', htmlContent.substring(0, 200));
+      div.innerHTML = htmlContent;
+
+      // Trigger input event to notify the page
+      div.dispatchEvent(new Event('input', { bubbles: true }));
+      div.dispatchEvent(new Event('change', { bubbles: true }));
+
+      // Focus the element
+      div.focus();
+
+      // Move cursor to end
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(div);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  } else {
+    // For regular textareas (Perplexity, Copilot, legacy ChatGPT)
+    console.log('[Content] 📝 Using textarea path (value property)');
+    const ta = textarea as HTMLTextAreaElement;
+    ta.value = content;
+    console.log('[Content] 📝 Textarea value set, length:', ta.value.length);
+    console.log('[Content] 📝 Textarea value (first 200):', ta.value.substring(0, 200));
+
+    // Trigger input events
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    ta.dispatchEvent(new Event('change', { bubbles: true }));
+
+    // Focus and set cursor to end
+    ta.focus();
+    ta.setSelectionRange(content.length, content.length);
+  }
+
+  console.log('[Content] ✅ Template injected successfully');
+}
 
 // Listen for messages from inject.js (page context)
 window.addEventListener('message', async (event) => {

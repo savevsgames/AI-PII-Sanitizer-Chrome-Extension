@@ -5,7 +5,7 @@
 
 import { UserConfig, PromptTemplate } from '../../lib/types';
 import { useAppStore } from '../../lib/store';
-import { validateTemplate, previewTemplate, getUsedPlaceholders, SUPPORTED_PLACEHOLDERS } from '../../lib/templateEngine';
+import { validateTemplate, getUsedPlaceholders, SUPPORTED_PLACEHOLDERS } from '../../lib/templateEngine';
 import { escapeHtml } from './utils';
 
 let currentEditingTemplate: PromptTemplate | null = null;
@@ -35,7 +35,13 @@ export function initPromptTemplatesUI() {
       console.log('[Prompt Templates UI] Attaching click handler to addBtn');
       addBtn.addEventListener('click', (e) => {
         console.log('[Prompt Templates UI] Add button CLICKED!', e);
-        showTemplateModal();
+        try {
+          console.log('[Prompt Templates UI] About to call showTemplateModal...');
+          showTemplateModal();
+          console.log('[Prompt Templates UI] showTemplateModal call completed');
+        } catch (error) {
+          console.error('[Prompt Templates UI] ERROR calling showTemplateModal:', error);
+        }
       });
     }
 
@@ -43,7 +49,13 @@ export function initPromptTemplatesUI() {
       console.log('[Prompt Templates UI] Attaching click handler to addBtnEmpty');
       addBtnEmpty.addEventListener('click', (e) => {
         console.log('[Prompt Templates UI] Add button (empty) CLICKED!', e);
-        showTemplateModal();
+        try {
+          console.log('[Prompt Templates UI] About to call showTemplateModal...');
+          showTemplateModal();
+          console.log('[Prompt Templates UI] showTemplateModal call completed');
+        } catch (error) {
+          console.error('[Prompt Templates UI] ERROR calling showTemplateModal:', error);
+        }
       });
     }
 
@@ -196,12 +208,19 @@ function attachTemplateEventListeners(templates: PromptTemplate[]) {
  * Show template creation/editing modal
  */
 function showTemplateModal(template?: PromptTemplate) {
+  console.log('[Prompt Templates] 🎬 showTemplateModal called', {
+    isEditing: !!template,
+    templateId: template?.id
+  });
+
   currentEditingTemplate = template || null;
 
   // Create modal HTML
   const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
+  modal.className = 'modal';
   modal.id = 'promptTemplateModal';
+
+  console.log('[Prompt Templates] 📝 Modal element created');
 
   const isEditing = !!template;
   const store = useAppStore.getState();
@@ -300,9 +319,11 @@ function showTemplateModal(template?: PromptTemplate) {
   `;
 
   document.body.appendChild(modal);
+  console.log('[Prompt Templates] ✅ Modal added to DOM');
 
   // Add event listeners
   document.getElementById('closeTemplateModal')?.addEventListener('click', () => {
+    console.log('[Prompt Templates] ❌ Close button clicked');
     closeTemplateModal();
   });
 
@@ -479,8 +500,7 @@ async function handleSaveTemplate() {
 
 /**
  * Handle using a template
- * This will be called when user clicks "Use" button
- * For now, we'll copy to clipboard
+ * Shows preview modal with profile selection
  */
 async function handleUseTemplate(templateId: string) {
   const store = useAppStore.getState();
@@ -490,25 +510,42 @@ async function handleUseTemplate(templateId: string) {
   const template = config.promptTemplates.templates.find(t => t.id === templateId);
   if (!template) return;
 
-  // For now, just copy to clipboard
-  // In Phase 4, this will inject into the active chat
+  // Check if we have profiles
+  if (store.profiles.length === 0) {
+    alert('Please create an alias profile first before using templates.\n\nGo to the Aliases tab to create a profile.');
+    return;
+  }
+
   try {
-    await navigator.clipboard.writeText(template.content);
+    // Get the active tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.id) {
+      throw new Error('No active tab found');
+    }
 
-    // Increment usage
-    await store.incrementTemplateUsage(templateId);
+    // Check if we're on a supported AI chat platform
+    const url = tab.url || '';
+    const isSupportedPlatform = config.settings.protectedDomains.some(domain => url.includes(domain));
 
-    // Show feedback
-    showToast(`Template "${template.name}" copied to clipboard!`);
+    if (!isSupportedPlatform) {
+      alert('Please navigate to a supported AI chat platform (ChatGPT, Claude, Gemini, Perplexity, or Copilot) to use this template.');
+      return;
+    }
+
+    // Show preview modal (handles everything now)
+    await showTemplatePreviewModal(template, tab);
 
     // Refresh UI to show updated usage count
     const updatedConfig = store.config;
     if (updatedConfig) {
       renderPromptTemplates(updatedConfig);
     }
+
+    // Close the popup (optional - user can manually close)
+    // window.close();
   } catch (error) {
-    console.error('Failed to copy template:', error);
-    alert('Failed to copy template to clipboard');
+    console.error('Failed to use template:', error);
+    alert('Failed to insert template. Make sure you are on a supported AI chat platform.');
   }
 }
 
@@ -526,6 +563,230 @@ async function handleDeleteTemplate(templateId: string) {
   }
 
   console.log('[Prompt Templates] Deleted template:', templateId);
+}
+
+/**
+ * Show template preview modal with profile selection
+ */
+async function showTemplatePreviewModal(template: PromptTemplate, tab: chrome.tabs.Tab): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const store = useAppStore.getState();
+    const profiles = store.profiles;
+
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+
+    // Create modal content
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    content.style.maxWidth = '600px';
+    content.style.display = 'flex';
+    content.style.flexDirection = 'column';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'modal-header';
+    header.innerHTML = `
+      <div>
+        <h3 class="modal-title">Preview Template: ${escapeHtml(template.name)}</h3>
+        <p class="form-help" style="margin: 4px 0 0 0;">
+          Select a profile and preview how your template will appear with alias data
+        </p>
+      </div>
+      <button class="modal-close">&times;</button>
+    `;
+
+    // Profile selector
+    const selectorContainer = document.createElement('div');
+    selectorContainer.className = 'form-group';
+    selectorContainer.style.borderBottom = '1px solid var(--border-neutral)';
+    selectorContainer.style.paddingBottom = 'var(--space-md)';
+    selectorContainer.style.marginBottom = '0';
+
+    const selectorLabel = document.createElement('label');
+    selectorLabel.className = 'form-label';
+    selectorLabel.textContent = 'Select Alias Profile:';
+
+    const selector = document.createElement('select');
+    selector.id = 'template-profile-selector';
+    selector.className = 'form-input';
+    selector.style.cursor = 'pointer';
+
+    profiles.forEach(profile => {
+      const option = document.createElement('option');
+      option.value = profile.id;
+      option.textContent = profile.profileName;
+      selector.appendChild(option);
+    });
+
+    selectorContainer.appendChild(selectorLabel);
+    selectorContainer.appendChild(selector);
+
+    // Preview area
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'modal-body';
+    previewContainer.style.flex = '1';
+    previewContainer.style.overflowY = 'auto';
+
+    const previewGroup = document.createElement('div');
+    previewGroup.className = 'form-group';
+
+    const previewLabel = document.createElement('label');
+    previewLabel.className = 'form-label';
+    previewLabel.textContent = 'Preview with Alias Data:';
+
+    const previewBox = document.createElement('pre');
+    previewBox.id = 'template-preview-box';
+    previewBox.className = 'form-textarea';
+    previewBox.style.cssText = `
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+      min-height: 200px;
+    `;
+
+    previewGroup.appendChild(previewLabel);
+    previewGroup.appendChild(previewBox);
+    previewContainer.appendChild(previewGroup);
+
+    // Footer with buttons
+    const footer = document.createElement('div');
+    footer.className = 'modal-footer';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-secondary';
+    cancelBtn.textContent = 'Cancel';
+
+    const injectBtn = document.createElement('button');
+    injectBtn.className = 'btn btn-primary';
+    injectBtn.textContent = 'Use This Template';
+
+    footer.appendChild(cancelBtn);
+    footer.appendChild(injectBtn);
+
+    // Assemble modal
+    content.appendChild(header);
+    content.appendChild(selectorContainer);
+    content.appendChild(previewContainer);
+    content.appendChild(footer);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // Function to update preview
+    const updatePreview = () => {
+      const selectedProfileId = selector.value;
+      const profile = profiles.find(p => p.id === selectedProfileId);
+
+      if (!profile || !profile.alias) {
+        previewBox.textContent = 'Error: Profile not found or has no alias data';
+        return;
+      }
+
+      // Fill placeholders with alias data
+      let filledContent = template.content
+        .replace(/\{\{name\}\}/gi, profile.alias.name || '{{name}}')
+        .replace(/\{\{email\}\}/gi, profile.alias.email || '{{email}}')
+        .replace(/\{\{phone\}\}/gi, profile.alias.phone || '{{phone}}')
+        .replace(/\{\{cellPhone\}\}/gi, profile.alias.cellPhone || '{{cellPhone}}')
+        .replace(/\{\{address\}\}/gi, profile.alias.address || '{{address}}')
+        .replace(/\{\{company\}\}/gi, profile.alias.company || '{{company}}')
+        .replace(/\{\{jobTitle\}\}/gi, profile.alias.jobTitle || '{{jobTitle}}');
+
+      previewBox.textContent = filledContent;
+    };
+
+    // Initial preview
+    updatePreview();
+
+    // Update preview when profile changes
+    selector.addEventListener('change', updatePreview);
+
+    // Handle close button in header
+    const closeBtn = header.querySelector('.modal-close');
+    closeBtn?.addEventListener('click', () => {
+      modal.remove();
+      resolve();
+    });
+
+    // Handle cancel
+    cancelBtn.addEventListener('click', () => {
+      modal.remove();
+      resolve();
+    });
+
+    // Handle inject
+    injectBtn.addEventListener('click', async () => {
+      try {
+        const selectedProfileId = selector.value;
+        const profile = profiles.find(p => p.id === selectedProfileId);
+
+        if (!profile || !profile.alias) {
+          alert('Error: Selected profile not found');
+          return;
+        }
+
+        // Fill template with selected profile
+        let filledTemplate = template.content
+          .replace(/\{\{name\}\}/gi, profile.alias.name || '{{name}}')
+          .replace(/\{\{email\}\}/gi, profile.alias.email || '{{email}}')
+          .replace(/\{\{phone\}\}/gi, profile.alias.phone || '{{phone}}')
+          .replace(/\{\{cellPhone\}\}/gi, profile.alias.cellPhone || '{{cellPhone}}')
+          .replace(/\{\{address\}\}/gi, profile.alias.address || '{{address}}')
+          .replace(/\{\{company\}\}/gi, profile.alias.company || '{{company}}')
+          .replace(/\{\{jobTitle\}\}/gi, profile.alias.jobTitle || '{{jobTitle}}');
+
+        console.log('[Prompt Templates] 📤 Injecting template with profile:', profile.profileName);
+        console.log('[Prompt Templates] 📤 Filled content length:', filledTemplate.length);
+        console.log('[Prompt Templates] 📤 Has \\n?', filledTemplate.includes('\n'));
+
+        // Send to content script
+        if (!tab.id) {
+          throw new Error('Tab ID not found');
+        }
+
+        await chrome.tabs.sendMessage(tab.id, {
+          type: 'INJECT_TEMPLATE',
+          payload: {
+            content: filledTemplate,
+          },
+        });
+
+        // Increment usage
+        await store.incrementTemplateUsage(template.id);
+
+        // Close modal
+        modal.remove();
+        showToast('✅ Template injected!');
+        resolve();
+      } catch (error) {
+        console.error('[Prompt Templates] Error injecting template:', error);
+        alert('Failed to inject template. Please try again.');
+        reject(error);
+      }
+    });
+
+    // Close on background click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+        resolve();
+      }
+    });
+  });
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 /**

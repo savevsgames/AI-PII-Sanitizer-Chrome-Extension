@@ -233,7 +233,7 @@ export function getUsedPlaceholders(template: string): string[] {
  * Useful for displaying template in UI before filling
  */
 export function previewTemplate(template: string): string {
-  return template.replace(PLACEHOLDER_REGEX, (match, field) => {
+  return template.replace(PLACEHOLDER_REGEX, (_match, field) => {
     return `[${field.trim()}]`;
   });
 }
