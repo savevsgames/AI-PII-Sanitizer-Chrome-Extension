@@ -5,6 +5,35 @@
 
 // ========== V2 PROFILE TYPES ==========
 
+// ========== PROMPT TEMPLATE TYPES ==========
+
+/**
+ * Prompt template with placeholders for profile data
+ */
+export interface PromptTemplate {
+  id: string;                    // UUID
+  name: string;                  // "Professional Email Template"
+  description?: string;          // Optional description
+  content: string;               // Template text with {{placeholders}}
+  category?: string;             // "Email", "Code Review", "Research", etc.
+  tags?: string[];               // ["work", "formal", "intro"]
+  createdAt: number;             // Unix timestamp
+  updatedAt: number;             // Unix timestamp
+  usageCount: number;            // How many times used
+  lastUsed?: number;             // Last usage timestamp
+  profileId?: string;            // Which profile to use (optional, can select at use)
+}
+
+/**
+ * Prompt templates configuration
+ */
+export interface PromptTemplatesConfig {
+  templates: PromptTemplate[];
+  maxTemplates: number;          // 3 for FREE, unlimited for PRO
+  defaultProfile?: string;       // Default profile ID to use for placeholders
+  enableKeyboardShortcuts: boolean;
+}
+
 /**
  * Identity data container for real PII values
  */
@@ -15,6 +44,7 @@ export interface IdentityData {
   cellPhone?: string;
   address?: string;
   company?: string;
+  jobTitle?: string;
   custom?: Record<string, string>; // Extensible for future fields
 }
 
@@ -186,6 +216,9 @@ export interface UserConfig {
 
   // Custom Redaction Rules (PRO feature)
   customRules?: CustomRulesConfig;
+
+  // Prompt Templates (FREE + PRO feature)
+  promptTemplates?: PromptTemplatesConfig;
 }
 
 // ========== V1 LEGACY TYPES (for migration) ==========

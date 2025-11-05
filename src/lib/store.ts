@@ -57,6 +57,19 @@ interface AppState {
     substitutions: number;
   }) => Promise<void>;
 
+  // Actions - Prompt Templates
+  addPromptTemplate: (templateData: {
+    name: string;
+    content: string;
+    description?: string;
+    category?: string;
+    tags?: string[];
+    profileId?: string;
+  }) => Promise<void>;
+  updatePromptTemplate: (id: string, updates: Partial<import('./types').PromptTemplate>) => Promise<void>;
+  deletePromptTemplate: (id: string) => Promise<void>;
+  incrementTemplateUsage: (id: string) => Promise<void>;
+
   // Initialization
   initialize: () => Promise<void>;
 }
@@ -323,6 +336,48 @@ export const useAppStore = createStore<AppState>((set, get) => ({
     const storage = StorageManager.getInstance();
     await storage.saveConfig(updatedConfig);
     set({ config: updatedConfig });
+  },
+
+  // Prompt Template actions
+  addPromptTemplate: async (templateData) => {
+    const storage = StorageManager.getInstance();
+    try {
+      const newTemplate = await storage.addPromptTemplate(templateData);
+      // Reload config to get updated templates
+      const config = await storage.loadConfig();
+      set({ config });
+      console.log('[Store] Added prompt template:', newTemplate.name);
+    } catch (error: any) {
+      console.error('[Store] Error adding template:', error);
+      // Re-throw to let UI handle (e.g., show upgrade prompt)
+      throw error;
+    }
+  },
+
+  updatePromptTemplate: async (id, updates) => {
+    const storage = StorageManager.getInstance();
+    await storage.updatePromptTemplate(id, updates);
+    // Reload config to get updated templates
+    const config = await storage.loadConfig();
+    set({ config });
+    console.log('[Store] Updated prompt template:', id);
+  },
+
+  deletePromptTemplate: async (id) => {
+    const storage = StorageManager.getInstance();
+    await storage.removePromptTemplate(id);
+    // Reload config to get updated templates
+    const config = await storage.loadConfig();
+    set({ config });
+    console.log('[Store] Deleted prompt template:', id);
+  },
+
+  incrementTemplateUsage: async (id) => {
+    const storage = StorageManager.getInstance();
+    await storage.incrementTemplateUsage(id);
+    // Reload config to get updated templates
+    const config = await storage.loadConfig();
+    set({ config });
   },
 
   // Initialization
