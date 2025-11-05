@@ -237,6 +237,131 @@ export const EMAIL_DOMAINS: readonly string[] = [
 ] as const;
 
 /**
+ * Pool of 100 realistic US addresses
+ */
+export const ADDRESSES: readonly string[] = [
+  // Major Cities - Residential Streets
+  "123 Main Street, New York, NY 10001",
+  "456 Oak Avenue, Los Angeles, CA 90001",
+  "789 Maple Drive, Chicago, IL 60601",
+  "321 Pine Street, Houston, TX 77001",
+  "654 Elm Boulevard, Phoenix, AZ 85001",
+  "987 Cedar Lane, Philadelphia, PA 19101",
+  "147 Birch Road, San Antonio, TX 78201",
+  "258 Willow Court, San Diego, CA 92101",
+  "369 Spruce Way, Dallas, TX 75201",
+  "741 Ash Place, San Jose, CA 95101",
+
+  // Medium Cities
+  "852 Park Avenue, Austin, TX 78701",
+  "963 Lake Drive, Seattle, WA 98101",
+  "159 River Road, Denver, CO 80201",
+  "357 Hill Street, Boston, MA 02101",
+  "486 Valley Lane, Portland, OR 97201",
+  "572 Mountain View, Nashville, TN 37201",
+  "683 Ocean Boulevard, Miami, FL 33101",
+  "794 Forest Drive, Atlanta, GA 30301",
+  "815 Sunset Avenue, Charlotte, NC 28201",
+  "926 Harbor Road, Raleigh, NC 27601",
+
+  // Suburban Areas
+  "1234 Meadow Lane, Arlington, VA 22201",
+  "2345 Garden Court, Plano, TX 75024",
+  "3456 Highland Drive, Irvine, CA 92602",
+  "4567 Parkside Avenue, Scottsdale, AZ 85250",
+  "5678 Riverside Drive, Bellevue, WA 98004",
+  "6789 Lakeview Circle, Naperville, IL 60540",
+  "7890 Woodland Path, Sugar Land, TX 77478",
+  "8901 Hillcrest Road, Cary, NC 27511",
+  "9012 Brookfield Lane, Frisco, TX 75034",
+  "1023 Oakwood Drive, Gilbert, AZ 85233",
+
+  // More Residential
+  "2134 Franklin Street, Cambridge, MA 02138",
+  "3245 Washington Avenue, Alexandria, VA 22301",
+  "4356 Jefferson Drive, Berkeley, CA 94701",
+  "5467 Lincoln Boulevard, Santa Monica, CA 90401",
+  "6578 Madison Avenue, Brooklyn, NY 11201",
+  "7689 Adams Street, Queens, NY 11354",
+  "8790 Monroe Drive, Ann Arbor, MI 48103",
+  "9801 Jackson Road, Chapel Hill, NC 27514",
+  "1912 Taylor Lane, Boulder, CO 80301",
+  "2023 Harrison Court, Palo Alto, CA 94301",
+
+  // Numbered Streets
+  "100 1st Avenue, San Francisco, CA 94101",
+  "200 2nd Street, Seattle, WA 98104",
+  "300 3rd Avenue, Portland, OR 97204",
+  "400 4th Street, Austin, TX 78702",
+  "500 5th Avenue, New York, NY 10018",
+  "600 6th Street, Los Angeles, CA 90014",
+  "700 7th Avenue, Denver, CO 80202",
+  "800 8th Street, Chicago, IL 60605",
+  "900 9th Avenue, Nashville, TN 37203",
+  "1000 10th Street, Miami, FL 33130",
+
+  // Directional Streets
+  "2500 North Main Street, Dallas, TX 75201",
+  "3500 South Oak Avenue, Phoenix, AZ 85004",
+  "4500 East Maple Drive, Atlanta, GA 30308",
+  "5500 West Pine Street, Las Vegas, NV 89101",
+  "6500 Northwest Boulevard, Houston, TX 77002",
+  "7500 Southeast Avenue, Charlotte, NC 28202",
+  "8500 Northeast Drive, Raleigh, NC 27604",
+  "9500 Southwest Lane, Austin, TX 78704",
+  "1050 North Central Avenue, Philadelphia, PA 19102",
+  "1150 South State Street, Chicago, IL 60604",
+
+  // Named Streets
+  "421 Broadway Street, San Diego, CA 92101",
+  "532 Market Street, San Francisco, CA 94102",
+  "643 State Street, Boston, MA 02109",
+  "754 Church Street, Nashville, TN 37201",
+  "865 College Avenue, Berkeley, CA 94704",
+  "976 University Drive, Ann Arbor, MI 48104",
+  "1087 Spring Street, Seattle, WA 98101",
+  "1198 Summer Avenue, Portland, OR 97201",
+  "1209 Autumn Lane, Denver, CO 80202",
+  "1320 Winter Road, Austin, TX 78701",
+
+  // Avenues and Boulevards
+  "2431 Grand Avenue, Los Angeles, CA 90007",
+  "2542 Park Boulevard, San Diego, CA 92103",
+  "2653 Highland Avenue, Phoenix, AZ 85006",
+  "2764 Central Boulevard, Miami, FL 33131",
+  "2875 Ocean Avenue, Santa Monica, CA 90401",
+  "2986 Lake Boulevard, Chicago, IL 60611",
+  "3097 River Avenue, Nashville, TN 37204",
+  "3108 Mountain Boulevard, Denver, CO 80203",
+  "3219 Forest Avenue, Portland, OR 97202",
+  "3330 Valley Boulevard, Los Angeles, CA 90032",
+
+  // Lanes and Circles
+  "4441 Cherry Lane, Plano, TX 75075",
+  "4552 Peach Circle, Atlanta, GA 30309",
+  "4663 Apple Drive, San Jose, CA 95110",
+  "4774 Orange Avenue, Miami, FL 33132",
+  "4885 Lemon Street, San Diego, CA 92102",
+  "4996 Berry Lane, Seattle, WA 98102",
+  "5107 Plum Court, Portland, OR 97203",
+  "5218 Grape Drive, Denver, CO 80204",
+  "5329 Pear Avenue, Austin, TX 78702",
+  "5440 Fig Street, Phoenix, AZ 85007",
+
+  // Various Formats
+  "6551 Commerce Street, Dallas, TX 75202",
+  "6662 Industrial Boulevard, Houston, TX 77003",
+  "6773 Technology Drive, San Jose, CA 95111",
+  "6884 Innovation Way, Austin, TX 78703",
+  "6995 Enterprise Road, Seattle, WA 98103",
+  "7106 Business Park Drive, Phoenix, AZ 85008",
+  "7217 Executive Boulevard, Atlanta, GA 30310",
+  "7328 Corporate Drive, Charlotte, NC 28203",
+  "7439 Professional Plaza, Denver, CO 80205",
+  "7550 Metro Parkway, Miami, FL 33133"
+] as const;
+
+/**
  * Common area codes for phone number generation
  */
 export const AREA_CODES: readonly string[] = [
@@ -251,6 +376,7 @@ export type FirstName = typeof FIRST_NAMES[number];
 export type LastName = typeof LAST_NAMES[number];
 export type CompanyName = typeof COMPANY_NAMES[number];
 export type EmailDomain = typeof EMAIL_DOMAINS[number];
+export type Address = typeof ADDRESSES[number];
 export type AreaCode = typeof AREA_CODES[number];
 
 /**
@@ -261,5 +387,6 @@ export const POOL_STATS = {
   lastNames: LAST_NAMES.length,
   companyNames: COMPANY_NAMES.length,
   emailDomains: EMAIL_DOMAINS.length,
+  addresses: ADDRESSES.length,
   areaCodes: AREA_CODES.length,
 } as const;

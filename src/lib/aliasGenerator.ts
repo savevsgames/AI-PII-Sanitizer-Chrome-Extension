@@ -13,6 +13,7 @@ import {
   LAST_NAMES,
   COMPANY_NAMES,
   EMAIL_DOMAINS,
+  ADDRESSES,
   AREA_CODES,
 } from './data/namePools';
 import { FANTASY_FIRST_NAMES, FANTASY_LAST_NAMES, FANTASY_ORGANIZATIONS, FANTASY_DOMAINS } from './data/fantasyNames';
@@ -34,6 +35,8 @@ export interface GenerationTemplate {
   namePattern: string;        // e.g., "{{first}} {{last}}"
   emailPattern: string;       // e.g., "{{first}}.{{last}}@{{domain}}"
   phonePattern?: string;      // e.g., "({{areaCode}}) {{exchange}}-{{lineNumber}}"
+  cellPhonePattern?: string;  // e.g., "({{areaCode}}) {{exchange}}-{{lineNumber}}"
+  addressPattern?: string;    // e.g., "{{address}}"
   companyPattern?: string;    // e.g., "{{company}}"
 }
 
@@ -41,6 +44,8 @@ export interface GeneratedProfile {
   name: string;
   email: string;
   phone?: string;
+  cellPhone?: string;
+  address?: string;
   company?: string;
   template: string; // template ID used
   timestamp: number;
@@ -96,6 +101,8 @@ export const BUILTIN_TEMPLATES: GenerationTemplate[] = [
     namePattern: '{{first}} {{last}}',
     emailPattern: '{{first}}.{{last}}@{{domain}}',
     phonePattern: '({{areaCode}}) {{exchange}}-{{lineNumber}}',
+    cellPhonePattern: '({{areaCode}}) {{exchange}}-{{lineNumber}}',
+    addressPattern: '{{address}}',
     companyPattern: '{{company}}',
   },
 
@@ -218,6 +225,7 @@ function getPlaceholderValues(): Record<string, string> {
   const last = getRandomElement(LAST_NAMES);
   const company = getRandomElement(COMPANY_NAMES);
   const domain = getRandomElement(EMAIL_DOMAINS);
+  const address = getRandomElement(ADDRESSES);
   const areaCode = getRandomElement(AREA_CODES);
 
   // Fantasy pools
@@ -250,6 +258,7 @@ function getPlaceholderValues(): Record<string, string> {
     last,
     company,
     domain,
+    address,
     areaCode,
     exchange: generateExchange(),
     lineNumber: generateLineNumber(),
@@ -313,7 +322,7 @@ export function generateProfile(templateId: string): GeneratedProfile {
   const name = replacePlaceholders(template.namePattern, values);
 
   // Generate email (sanitize name parts)
-  const emailPattern = template.emailPattern.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+  const emailPattern = template.emailPattern.replace(/\{\{(\w+)\}\}/g, (_match, key) => {
     if (key === 'domain' || key.includes('Domain')) {
       return `{{${key}}}`; // Keep domain as-is
     }
@@ -328,6 +337,16 @@ export function generateProfile(templateId: string): GeneratedProfile {
     ? replacePlaceholders(template.phonePattern, values)
     : undefined;
 
+  // Generate cellPhone (optional)
+  const cellPhone = template.cellPhonePattern
+    ? replacePlaceholders(template.cellPhonePattern, values)
+    : undefined;
+
+  // Generate address (optional)
+  const address = template.addressPattern
+    ? replacePlaceholders(template.addressPattern, values)
+    : undefined;
+
   // Generate company (optional)
   const company = template.companyPattern
     ? replacePlaceholders(template.companyPattern, values)
@@ -337,6 +356,8 @@ export function generateProfile(templateId: string): GeneratedProfile {
     name,
     email,
     phone,
+    cellPhone,
+    address,
     company,
     template: templateId,
     timestamp: Date.now(),

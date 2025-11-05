@@ -9,18 +9,18 @@
   left: 0;
   right: 0;
   bottom: 0;
-  
-  /* Glass blur overlay */
-  background: rgba(26, 32, 44, 0.6);
+
+  /* Glass blur overlay - theme aware */
+  background: var(--overlay-bg, rgba(0, 0, 0, 0.5));
   backdrop-filter: var(--blur-heavy);
   -webkit-backdrop-filter: var(--blur-heavy);
-  
+
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   z-index: var(--z-modal);
-  
+
   animation: fadeIn 0.2s ease;
 }
 
@@ -137,20 +137,20 @@
 }
 
 .form-section:first-of-type {
-  background: rgba(102, 126, 234, 0.08);
-  border-color: rgba(102, 126, 234, 0.2);
+  background: var(--primary-bg-light, rgba(102, 126, 234, 0.08));
+  border-color: var(--primary-border, rgba(102, 126, 234, 0.2));
 }
 
 .form-section:nth-of-type(2) {
-  background: rgba(239, 68, 68, 0.05);
-  border-color: rgba(239, 68, 68, 0.2);
-  border-left: 3px solid #ef4444;
+  background: var(--danger-bg-light, rgba(239, 68, 68, 0.05));
+  border-color: var(--danger-border, rgba(239, 68, 68, 0.2));
+  border-left: 3px solid var(--danger-color, #ef4444);
 }
 
 .form-section:nth-of-type(3) {
-  background: rgba(34, 197, 94, 0.05);
-  border-color: rgba(34, 197, 94, 0.2);
-  border-left: 3px solid #22c55e;
+  background: var(--success-bg-light, rgba(34, 197, 94, 0.05));
+  border-color: var(--success-border, rgba(34, 197, 94, 0.2));
+  border-left: 3px solid var(--success-color, #22c55e);
 }
 
 .form-section h4 {
@@ -229,9 +229,9 @@
   margin-bottom: var(--space-sm);
   padding: var(--space-sm);
   font-size: var(--font-size-xs);
-  color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: var(--info-color, #3b82f6);
+  background: var(--info-bg-light, rgba(59, 130, 246, 0.1));
+  border: 1px solid var(--info-border, rgba(59, 130, 246, 0.3));
   border-radius: 6px;
   text-align: center;
 }
@@ -265,7 +265,7 @@
   outline: none;
   background: var(--card-bg);
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  box-shadow: var(--shadow-focus);
 }
 
 .form-input::placeholder,
@@ -291,7 +291,7 @@
   justify-content: space-between;
   margin-bottom: var(--space-sm);
   padding: var(--space-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--card-bg-light);
   border: 1px solid var(--border-neutral);
   border-radius: var(--radius-md);
 }
@@ -332,7 +332,7 @@
   border-color: var(--primary-color);
   color: white;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(100, 149, 237, 0.3);
+  box-shadow: var(--shadow-button-hover);
 }
 
 .btn-secondary:active {
@@ -393,7 +393,7 @@
   border: 1px solid var(--border-neutral);
   border-radius: var(--radius-md);
   padding: var(--space-md);
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--bg-secondary);
 }
 
 .variations-by-field {
@@ -457,7 +457,7 @@
 
 .variation-item:hover {
   border-color: var(--primary-color);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .variation-item.disabled {
@@ -526,7 +526,7 @@
 .variation-item-label {
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-tertiary);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   margin-left: var(--space-xs);
@@ -572,15 +572,15 @@
   gap: var(--space-xs);
   margin-top: var(--space-sm);
   padding: var(--space-sm);
-  background: rgba(100, 149, 237, 0.05);
-  border: 1px dashed rgba(100, 149, 237, 0.3);
+  background: var(--primary-bg-light, rgba(102, 126, 234, 0.05));
+  border: 1px dashed var(--primary-border, rgba(102, 126, 234, 0.3));
   border-radius: var(--radius-sm);
 }
 
 .add-variation-input {
   flex: 1;
   padding: var(--space-xs) var(--space-sm);
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--input-bg);
   border: 1px solid var(--border-neutral);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
