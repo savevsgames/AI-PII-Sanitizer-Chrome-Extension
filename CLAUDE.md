@@ -1,0 +1,1 @@
+- The Product is called Prompt Blocker - promptblocker.com is our site - NOT AI PII Sanitizer - THAT was the development title of the original concept project. PROMPTBLOCKER is the name
