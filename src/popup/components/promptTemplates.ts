@@ -11,6 +11,22 @@ import { escapeHtml } from './utils';
 let currentEditingTemplate: PromptTemplate | null = null;
 
 /**
+ * Get user-friendly description for each placeholder
+ */
+function getPlaceholderDescription(placeholder: string): string {
+  const descriptions: Record<string, string> = {
+    name: 'Full name',
+    email: 'Email address',
+    phone: 'Phone number',
+    cellPhone: 'Mobile number',
+    address: 'Street address',
+    company: 'Company name',
+    jobTitle: 'Job title/position',
+  };
+  return descriptions[placeholder] || placeholder;
+}
+
+/**
  * Initialize prompt templates UI handlers
  * This should be called AFTER renderPromptTemplates() so the buttons exist in the DOM
  */
@@ -84,7 +100,7 @@ export function renderPromptTemplates(config: UserConfig) {
   emptyState.style.display = 'none';
 
   // Render templates
-  templatesList.innerHTML = templates.map(template => renderTemplateCard(template, config)).join('');
+  templatesList.innerHTML = templates.map(template => renderTemplateCard(template)).join('');
 
   // Attach event listeners
   attachTemplateEventListeners(templates);
@@ -95,10 +111,13 @@ export function renderPromptTemplates(config: UserConfig) {
 /**
  * Render a single template card
  */
-function renderTemplateCard(template: PromptTemplate, config: UserConfig): string {
+function renderTemplateCard(template: PromptTemplate): string {
+  const store = useAppStore.getState();
   const placeholders = getUsedPlaceholders(template.content);
+
+  // Get profile name from store (not config)
   const profileName = template.profileId
-    ? config.profiles.find(p => p.id === template.profileId)?.profileName || 'Unknown Profile'
+    ? store.profiles.find(p => p.id === template.profileId)?.profileName || 'Unknown Profile'
     : 'Any Profile';
 
   const categoryBadge = template.category
@@ -117,14 +136,14 @@ function renderTemplateCard(template: PromptTemplate, config: UserConfig): strin
           ${categoryBadge}
         </div>
         <div class="template-card-actions">
-          <button class="btn-icon template-use-btn" data-template-id="${template.id}" title="Use template">
-            ▶️
+          <button class="btn btn-sm btn-primary template-use-btn" data-template-id="${template.id}" title="Use this template with an alias profile">
+            <span style="margin-right: 4px;">▶️</span> Use
           </button>
-          <button class="btn-icon template-edit-btn" data-template-id="${template.id}" title="Edit">
-            ✏️
+          <button class="btn btn-sm btn-secondary template-edit-btn" data-template-id="${template.id}" title="Edit this template">
+            <span style="margin-right: 4px;">✏️</span> Edit
           </button>
-          <button class="btn-icon template-delete-btn" data-template-id="${template.id}" title="Delete">
-            🗑️
+          <button class="btn btn-sm btn-secondary template-delete-btn" data-template-id="${template.id}" title="Delete this template" style="color: var(--danger);">
+            <span style="margin-right: 4px;">🗑️</span> Delete
           </button>
         </div>
       </div>
@@ -246,13 +265,28 @@ function showTemplateModal(template?: PromptTemplate) {
 
         <div class="form-group">
           <label for="templateContent">Template Content <span class="required">*</span></label>
+          <div style="margin-bottom: 8px; position: relative;">
+            <button type="button" class="btn btn-sm btn-secondary" id="insertVariableBtn">
+              <span style="margin-right: 4px;">➕</span> Insert Variable
+            </button>
+          </div>
+          <div id="variableDropdown" class="variable-dropdown-inline" style="display: none;">
+            <div class="variable-dropdown-header">Click a variable to insert:</div>
+            <div class="variable-dropdown-grid">
+              ${SUPPORTED_PLACEHOLDERS.map(ph => `
+                <button type="button" class="variable-dropdown-item-inline" data-placeholder="${ph}" title="${getPlaceholderDescription(ph)}">
+                  {{${ph}}}
+                </button>
+              `).join('')}
+            </div>
+          </div>
           <textarea
             id="templateContent"
             rows="8"
             placeholder="Write your prompt here. Use {{name}}, {{email}}, etc. for placeholders..."
           >${template ? escapeHtml(template.content) : ''}</textarea>
           <div class="form-hint">
-            Use double braces for placeholders: {{name}}, {{email}}, {{phone}}, etc.
+            Tip: Click "Insert Variable" above to add placeholders to your template
           </div>
         </div>
 
@@ -343,6 +377,40 @@ function showTemplateModal(template?: PromptTemplate) {
     });
   }
 
+  // Variable insertion dropdown
+  const insertVariableBtn = document.getElementById('insertVariableBtn');
+  const variableDropdown = document.getElementById('variableDropdown');
+
+  if (insertVariableBtn && variableDropdown) {
+    // Toggle dropdown on button click
+    insertVariableBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isVisible = variableDropdown.style.display === 'block';
+      variableDropdown.style.display = isVisible ? 'none' : 'block';
+    });
+
+    // Insert variable when dropdown item is clicked
+    const dropdownItems = variableDropdown.querySelectorAll('.variable-dropdown-item-inline');
+    dropdownItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const placeholder = (item as HTMLElement).getAttribute('data-placeholder');
+        if (placeholder && contentInput) {
+          insertPlaceholderAtCursor(contentInput, placeholder);
+          variableDropdown.style.display = 'none';
+          validateTemplateContent();
+        }
+      });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!insertVariableBtn.contains(e.target as Node) && !variableDropdown.contains(e.target as Node)) {
+        variableDropdown.style.display = 'none';
+      }
+    });
+  }
+
   // Initial validation if editing
   if (template) {
     validateTemplateContent();
@@ -354,6 +422,27 @@ function showTemplateModal(template?: PromptTemplate) {
       closeTemplateModal();
     }
   });
+}
+
+/**
+ * Insert placeholder at cursor position in textarea
+ */
+function insertPlaceholderAtCursor(textarea: HTMLTextAreaElement, placeholder: string) {
+  const startPos = textarea.selectionStart;
+  const endPos = textarea.selectionEnd;
+  const textBefore = textarea.value.substring(0, startPos);
+  const textAfter = textarea.value.substring(endPos);
+
+  const placeholderText = `{{${placeholder}}}`;
+  textarea.value = textBefore + placeholderText + textAfter;
+
+  // Set cursor position after inserted placeholder
+  const newCursorPos = startPos + placeholderText.length;
+  textarea.setSelectionRange(newCursorPos, newCursorPos);
+  textarea.focus();
+
+  // Trigger input event to update validation
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 /**
@@ -778,15 +867,6 @@ async function showTemplatePreviewModal(template: PromptTemplate, tab: chrome.ta
       }
     });
   });
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 /**

@@ -233,7 +233,8 @@ export function getUsedPlaceholders(template: string): string[] {
  * Useful for displaying template in UI before filling
  */
 export function previewTemplate(template: string): string {
-  return template.replace(PLACEHOLDER_REGEX, (_match, field) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  return template.replace(PLACEHOLDER_REGEX, (_match: string, field: string) => {
     return `[${field.trim()}]`;
   });
 }
