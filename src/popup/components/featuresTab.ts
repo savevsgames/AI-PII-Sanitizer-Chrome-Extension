@@ -7,6 +7,7 @@ import { UserConfig } from '../../lib/types';
 import { initAPIKeyVaultUI, renderAPIKeys } from './apiKeyVault';
 import { initCustomRulesUI, renderCustomRules } from './customRulesUI';
 import { initPromptTemplatesUI, renderPromptTemplates } from './promptTemplates';
+import { initQuickAliasGeneratorUI, renderQuickAliasGenerator } from './quickAliasGenerator';
 import { useAppStore } from '../../lib/store';
 
 // Feature definition
@@ -25,6 +26,15 @@ interface Feature {
 
 // Available features
 const FEATURES: Feature[] = [
+  {
+    id: 'quick-alias-generator',
+    name: 'Quick Alias Generator',
+    icon: '🎲',
+    description: 'Generate instant alias profiles with multiple themes and templates',
+    tier: 'free', // FREE with limits, PRO for themes & bulk
+    status: 'active',
+    stats: []
+  },
   {
     id: 'api-key-vault',
     name: 'API Key Vault',
@@ -171,6 +181,12 @@ function renderFeatureAction(isLocked: boolean, isComingSoon: boolean, isAccessi
  */
 function getFeatureStats(featureId: string, config: UserConfig): Array<{ icon: string; value: string | number; label: string }> {
   switch (featureId) {
+    case 'quick-alias-generator': {
+      return [
+        { icon: '🎭', value: '12', label: 'templates' },
+        { icon: '⚡', value: '1.25M', label: 'combinations' }
+      ];
+    }
     case 'api-key-vault': {
       const keyCount = config.apiKeyVault?.keys?.length || 0;
       const protectionCount = config.apiKeyVault?.keys?.reduce((sum, key) => sum + key.protectionCount, 0) || 0;
@@ -274,6 +290,8 @@ function setupBackButton() {
  */
 function renderFeatureContent(featureId: string): string {
   switch (featureId) {
+    case 'quick-alias-generator':
+      return '<div id="quickAliasGeneratorContainer"></div>';
     case 'api-key-vault':
       return `
         <div class="api-key-vault-detail">
@@ -469,6 +487,12 @@ function renderFeatureContent(featureId: string): string {
  */
 function initFeatureHandlers(featureId: string) {
   switch (featureId) {
+    case 'quick-alias-generator': {
+      renderQuickAliasGenerator();
+      initQuickAliasGeneratorUI();
+      console.log('[Features Tab] Quick Alias Generator handlers ready');
+      break;
+    }
     case 'api-key-vault': {
       initAPIKeyVaultUI();
       // Render keys from current config
