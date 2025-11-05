@@ -1,0 +1,254 @@
+================================================================================
+TIER UI ELEMENTS - VISUAL GUIDE
+================================================================================
+
+1. TIER BADGES - LOCATIONS
+================================================================================
+
+Header User Button: Line 50 in popup-v2.html
+Features Tab: Line 190 in popup-v2.html  
+Feature Details: Line 207 in popup-v2.html
+Dropdown Header: Line 924 in popup-v2.html
+
+Badge Colors:
+FREE:  Gray background, #9ca3af text
+PRO:   Gold gradient (#fbbf24 to #f59e0b), brown text, glow shadow
+
+
+2. USER DROPDOWN MENU
+================================================================================
+
+Position: Fixed at top 65px, right 16px
+Background: Dark #1a202c
+Z-index: 2147483647
+
+Menu Items:
+- Get Started (🚀) - WORKS
+- Account Settings (⚙️) - TODO
+- Manage Billing (💳) - TODO
+- Sign Out (🚪) - WORKS (red)
+
+Classes: .user-dropdown-item with hover effects
+
+
+3. TIER BADGE STYLING - DETAILED
+================================================================================
+
+FREE BADGE (.user-tier-badge.tier-free):
+  Background: rgba(156, 163, 175, 0.2)
+  Text: #9ca3af
+  Border: 1px solid rgba(156, 163, 175, 0.3)
+  Font-weight: 700
+  Padding: 0.2rem 0.5rem
+  Border-radius: 10px
+
+PRO BADGE (.user-tier-badge.tier-pro):
+  Background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)
+  Text: #78350f
+  Border: 1px solid #f59e0b
+  Box-shadow: 0 0 10px rgba(251, 191, 36, 0.3) (glow)
+  Font-weight: 700
+
+
+4. MODAL REUSABLE PATTERN
+================================================================================
+
+Base HTML Structure:
+<div class="modal hidden" id="modalId">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Title</h3>
+      <button class="modal-close">X</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section">Content</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary">Cancel</button>
+      <button class="btn btn-primary">Action</button>
+    </div>
+  </div>
+</div>
+
+Animation: slideUp 0.3s with scale effect
+
+Form Sections (auto-decorated with emojis):
+Section 1: Blue - emoji
+Section 2: Red - emoji
+Section 3: Green - emoji
+
+
+5. BUTTON STYLES
+================================================================================
+
+Primary: .btn-primary - Indigo gradient
+Secondary: .btn-secondary - Glass blur
+Danger: .btn-danger - Red gradient
+Success: .btn-success - Green gradient
+
+Sizes:
+.btn-sm: 6px 14px, 12px font
+.btn: 10px 20px, 13px font (base)
+.btn-lg: 14px 28px, 14px font
+
+All buttons: border-radius 20px (pill-shaped)
+Hover: translateY(-2px)
+Active: translateY(0)
+
+
+6. FEATURE TIER BADGE STYLING
+================================================================================
+
+FREE Badge (.tier-badge.free):
+  Background: Gradient green rgba(16, 185, 129, 0.15)
+  Text: #059669
+  Border: 1px solid rgba(5, 150, 105, 0.2)
+
+PRO Badge (.tier-badge.pro):
+  Background: Gradient purple rgba(139, 92, 246, 0.15)
+  Text: #8b5cf6
+  Border: 1px solid rgba(139, 92, 246, 0.2)
+
+Locked Badge (.tier-badge.locked):
+  Background: rgba(0, 0, 0, 0.05)
+  Text: var(--color-text-secondary)
+  Border: 1px solid rgba(0, 0, 0, 0.1)
+
+
+7. UPGRADE/LOCKED BUTTON STATE
+================================================================================
+
+Locked Feature Button (.feature-card-action.locked):
+  Icon: 🔒
+  Text: "Upgrade to PRO"
+  Background: var(--card-bg-light) - Faded
+  Text color: var(--text-secondary) - Dim
+  Cursor: not-allowed
+  No hover effect
+
+Parent card (.feature-card.locked):
+  Opacity: 0.7
+  No transform on hover
+
+
+8. TIER CHECKING LOGIC
+================================================================================
+
+Pattern:
+const userTier = config.account?.tier || 'free'
+const isAccessible = feature.tier === 'free' || userTier === 'pro'
+const isLocked = !isAccessible && feature.status === 'active'
+
+If isLocked: Show lock button and "Upgrade to PRO"
+If !isLocked: Show "Configure" button
+
+
+9. KEY CSS FILES
+================================================================================
+
+/src/popup/styles/auth.css (lines 167-272)
+  - .user-tier-badge styling
+  - .user-dropdown structure
+  - .user-profile-btn styling
+  - Form success states
+
+/src/popup/styles/features.css (lines 17-44)
+  - .tier-badge styling for all tiers
+  - .tier-badge.free
+  - .tier-badge.pro
+  - .tier-badge.locked
+
+/src/popup/styles/buttons.css
+  - .btn base styles
+  - .btn-primary, .btn-secondary, etc.
+  - Button sizes
+  - Icon button styles
+
+/src/popup/styles/modal.css
+  - .modal and .modal-content
+  - .modal-header, .modal-body, .modal-footer
+  - Form sections with colors
+  - Form elements
+
+
+10. IMPLEMENTATION PRIORITIES
+================================================================================
+
+TODO - Account Settings (userProfile.ts:71-76)
+  Replace: console.log()
+  With: Open modal or navigate to settings page
+
+TODO - Manage Billing (userProfile.ts:78-84)
+  Replace: console.log()
+  With: Open modal or navigate to billing page
+
+TODO - Upgrade CTA (featuresTab.ts:535-539)
+  Replace: alert('PRO upgrade coming soon!')
+  With: Real upgrade modal or payment page
+
+TODO - Feature Tier Values (featuresTab.ts:27-64)
+  Review: custom-rules tier (marked as TODO - should be 'pro')
+  Add: Feature limits for free tier
+
+
+11. FIREBASE TIER LOADING
+================================================================================
+
+Function: store.loadUserTier() in /src/lib/store.ts
+
+Process:
+1. Get firebaseUid from store.config.account.firebaseUid
+2. Query Firestore users/{uid} document
+3. Read tier field (default: 'free')
+4. Update store with tier value
+5. updateTierBadge() is called after signing in
+
+Supported tiers: 'free' | 'pro' | 'enterprise'
+
+
+12. DROPDOWN CLOSE MECHANISM
+================================================================================
+
+Dropdown closes when:
+1. Any menu item is clicked
+2. User clicks outside dropdown
+3. User clicks the menu button again
+
+Implementation: Uses .hidden class toggle
+Handled in userProfile.ts lines 51-55
+
+
+13. FORM SECTION BACKGROUNDS
+================================================================================
+
+Auto-applied based on position:
+:first-of-type - Primary blue bg
+:nth-of-type(2) - Danger red bg  
+:nth-of-type(3) - Success green bg
+
+Optional: Can override with custom styling
+
+
+14. QUICK FILE LOCATIONS
+================================================================================
+
+To edit badges:
+  HTML: popup-v2.html search "user-tier-badge"
+  JS: userProfile.ts updateTierBadge()
+  CSS: auth.css lines 167-187
+
+To edit dropdown:
+  HTML: popup-v2.html lines 920-950
+  JS: userProfile.ts lines 42-91
+  CSS: auth.css lines 189-272
+
+To edit features:
+  HTML: popup-v2.html lines 184-215
+  JS: featuresTab.ts lines 27-64 (FEATURES array)
+  CSS: features.css
+
+To add modals:
+  HTML: Add to popup-v2.html
+  CSS: Use modal.css base styles
+
