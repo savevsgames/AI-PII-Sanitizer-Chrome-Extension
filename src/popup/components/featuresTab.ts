@@ -532,10 +532,33 @@ function initFeatureHandlers(featureId: string) {
 /**
  * Handle upgrade CTA click
  */
-function handleUpgradeCTA() {
-  // TODO: Show upgrade modal or redirect to upgrade page
-  alert('PRO upgrade coming soon! This will unlock all advanced features.');
+async function handleUpgradeCTA() {
   console.log('[Features Tab] Upgrade CTA clicked');
+
+  // Simple plan selection (TODO: Replace with proper modal)
+  const plan = confirm(
+    'Choose your plan:\n\n' +
+    'Click OK for Monthly ($4.99/month)\n' +
+    'Click Cancel for Yearly ($49/year - Save 17%!)'
+  );
+
+  try {
+    // Dynamic import to avoid circular dependencies
+    const { upgradeToMonthly, upgradeToYearly } = await import('../../lib/stripe');
+
+    if (plan) {
+      // Monthly selected
+      console.log('[Features Tab] User selected Monthly plan');
+      await upgradeToMonthly();
+    } else {
+      // Yearly selected
+      console.log('[Features Tab] User selected Yearly plan');
+      await upgradeToYearly();
+    }
+  } catch (error) {
+    console.error('[Features Tab] Upgrade error:', error);
+    alert('Failed to start checkout. Please try again or contact support.');
+  }
 }
 
 /**
