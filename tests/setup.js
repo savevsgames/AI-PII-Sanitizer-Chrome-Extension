@@ -45,6 +45,11 @@ const mockStorage = {
     }),
     QUOTA_BYTES: 10485760, // 10MB
   },
+  onChanged: {
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    hasListener: jest.fn(() => false),
+  },
 };
 
 // Setup Web Crypto API polyfill (real implementation for testing encryption)
