@@ -1,0 +1,172 @@
+================================================================================
+CHROME EXTENSION FREE/PRO TIER UI - QUICK REFERENCE SUMMARY
+================================================================================
+
+TIER BADGES - Where They Appear:
+1. Header (user profile button) - Line 50 in popup-v2.html
+2. Features Tab - Line 190 in popup-v2.html  
+3. Feature Details View - Line 207 in popup-v2.html
+4. User Dropdown Menu - Line 924 in popup-v2.html
+
+TIER BADGE STYLING:
+- FREE: Gray background, #9ca3af text
+- PRO: Gold gradient (#fbbf24 to #f59e0b), #78350f text, glow shadow
+
+CSS FILES INVOLVED:
+- /src/popup/styles/auth.css (user tier badges)
+- /src/popup/styles/features.css (feature tier badges)
+- /src/popup/styles/buttons.css (button styles)
+- /src/popup/styles/modal.css (modal framework)
+
+================================================================================
+USER DROPDOWN MENU
+================================================================================
+
+HTML: /src/popup/popup-v2.html lines 920-950
+JS Logic: /src/popup/components/userProfile.ts
+
+Menu Items:
+1. Get Started (🚀) - WORKS - Opens promptblocker.com
+2. Account Settings (⚙️) - TODO - Just logs to console
+3. Manage Billing (💳) - TODO - Just logs to console  
+4. Sign Out (🚪) - WORKS - Shows confirmation modal
+
+All items use .user-dropdown-item class with hover states
+Sign out uses .user-dropdown-signout (red color)
+
+================================================================================
+EXISTING MODALS (Reusable patterns)
+================================================================================
+
+Modal CSS Base: /src/popup/styles/modal.css
+
+Pattern structure:
+.modal > .modal-overlay + .modal-content
+  .modal-header (close button)
+  .modal-body (content with form-sections)
+  .modal-footer (Cancel/Action buttons)
+
+Working Modals:
+- #authModal (Sign in)
+- #profileModal (Create/Edit profile)
+- #apiKeyModal (Add API keys)
+- #deleteModal (Delete confirmation)
+- #signOutModal (Sign out confirmation)
+
+Form section colors (optional):
+First section: Blue/Primary (#6366f1)
+Second section: Red/Danger (#ef4444)
+Third section: Green/Success (#22c55e)
+
+================================================================================
+BUTTON STYLES
+================================================================================
+
+Base classes: /src/popup/styles/buttons.css
+
+Primary: .btn-primary (indigo gradient)
+Secondary: .btn-secondary (glass blur)
+Danger: .btn-danger (red gradient)
+Success: .btn-success (green gradient)
+Warning: .btn-warning (amber gradient)
+
+Sizes:
+.btn-sm: 6px 14px padding
+.btn-lg: 14px 28px padding
+
+Special: .feature-card-action.locked (disabled upgrade button)
+
+================================================================================
+TIER CHECKING LOGIC
+================================================================================
+
+Type definitions: /src/lib/types.ts
+Feature definitions: /src/popup/components/featuresTab.ts
+Store methods: /src/lib/store.ts
+
+Pattern:
+const userTier = config.account?.tier || 'free'  // 'free' | 'pro' | 'enterprise'
+const isAccessible = feature.tier === 'free' || userTier === 'pro'
+const isLocked = !isAccessible && feature.status === 'active'
+
+Functions:
+- store.loadUserTier() - Loads from Firebase
+- store.updateAccount() - Updates local + Chrome storage
+- updateTierBadge() - Updates all badge displays
+
+================================================================================
+WHAT STILL NEEDS WORK
+================================================================================
+
+HIGH PRIORITY:
+1. Account Settings button handler (popup-v2.ts:934)
+2. Manage Billing button handler (popup-v2.ts:939)
+3. Upgrade CTA handler (featuresTab.ts:535) - Currently shows alert
+4. Some features should be PRO tier (custom-rules marked as TODO)
+
+IMPLEMENTATION NOTES:
+
+For Account Settings & Manage Billing:
+- Replace console.log() with actual modal/page navigation
+- Consider external URLs or new modals
+
+For Upgrade CTA:
+- Replace alert() with upgrade modal or payment page
+- Consider Stripe integration
+- Update handleUpgradeCTA() in featuresTab.ts
+
+For Feature Tier Limits:
+- Set correct tier values in FEATURES array
+- Add feature limit checks (e.g., max 3 templates for free)
+- Show upgrade prompts when limits reached
+
+================================================================================
+QUICK FILE REFERENCE
+================================================================================
+
+BADGE DISPLAY:
+/src/popup/popup-v2.html (HTML structure)
+/src/popup/components/userProfile.ts (updateTierBadge function)
+/src/popup/styles/auth.css (.user-tier-badge styles)
+/src/popup/styles/features.css (.tier-badge styles)
+
+DROPDOWN MENU:
+/src/popup/popup-v2.html (HTML, lines 920-950)
+/src/popup/components/userProfile.ts (Event handlers, lines 42-91)
+/src/popup/styles/auth.css (Styling, lines 189-272)
+
+MODALS:
+/src/popup/popup-v2.html (All modal HTML)
+/src/popup/styles/modal.css (Modal framework)
+
+BUTTONS:
+/src/popup/styles/buttons.css (All button styles)
+
+TIER LOGIC:
+/src/lib/types.ts (Type definitions)
+/src/lib/store.ts (Store methods)
+/src/popup/components/featuresTab.ts (Feature definitions)
+
+================================================================================
+KEY CSS VARIABLES (variables.css)
+================================================================================
+
+Tier Colors:
+--color-primary: #667eea (indigo)
+--color-success: #4caf50 (green)
+--color-danger: #ef4444 (red)
+
+Modal:
+--z-modal: 1000
+--modal-width: 600px
+
+Dropdown:
+z-index: 2147483647 (highest)
+position: fixed at top: 65px; right: 16px;
+
+Glass Effects:
+--blur-light: blur(10px)
+--blur-medium: blur(20px)
+--blur-heavy: blur(40px)
+
+================================================================================
