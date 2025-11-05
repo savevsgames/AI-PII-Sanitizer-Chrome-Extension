@@ -22,7 +22,7 @@ export function extractAllText(data: any): string {
       }
     });
     if (texts.length > 0) {
-      return texts.join('\n\n');
+      return texts.join('\n\n\n'); // Triple newline as message separator
     }
   }
 
@@ -36,7 +36,7 @@ export function extractAllText(data: any): string {
       queries.push(data.params.dsl_query);
     }
 
-    return queries.join('\n\n');
+    return queries.join('\n\n\n'); // Triple newline as field separator
   }
 
   // Perplexity format 2: { query: "..." }
@@ -68,7 +68,7 @@ export function extractAllText(data: any): string {
         return '';
       })
       .filter(Boolean)
-      .join('\n\n');
+      .join('\n\n\n'); // Triple newline as message separator (distinct from double newline in content)
   }
 
   // Claude format: { prompt: "..." } or { messages: [...] }
@@ -87,7 +87,7 @@ export function extractAllText(data: any): string {
           .map((p: any) => p.text);
       })
       .filter(Boolean)
-      .join('\n\n');
+      .join('\n\n\n'); // Triple newline as message separator (distinct from double newline in content)
   }
 
   return '';
@@ -102,7 +102,7 @@ export function replaceAllText(data: any, substitutedText: string): any {
 
   // Copilot WebSocket format: { event: "send", content: [{ type: "text", text: "..." }] }
   if (modified.event === 'send' && Array.isArray(modified.content)) {
-    const textParts = substitutedText.split('\n\n').filter(Boolean);
+    const textParts = substitutedText.split('\n\n\n').filter(Boolean);
     let partIndex = 0;
 
     modified.content.forEach((item: any) => {
@@ -118,7 +118,7 @@ export function replaceAllText(data: any, substitutedText: string): any {
   // Perplexity format 1: query_str + dsl_query
   if (modified.query_str && typeof modified.query_str === 'string') {
     // Split substituted text back into parts (if we combined multiple fields)
-    const textParts = substitutedText.split('\n\n');
+    const textParts = substitutedText.split('\n\n\n');
 
     modified.query_str = textParts[0] || substitutedText;
 
@@ -137,7 +137,8 @@ export function replaceAllText(data: any, substitutedText: string): any {
   }
 
   // Split substituted text back into messages
-  const textParts = substitutedText.split('\n\n').filter(Boolean);
+  // Use triple newline to split (matches the triple newline we used in extractAllText)
+  const textParts = substitutedText.split('\n\n\n').filter(Boolean);
   let partIndex = 0;
 
   // ChatGPT format

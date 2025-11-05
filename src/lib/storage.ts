@@ -10,7 +10,8 @@ import {
   AliasProfile,
   UserConfig,
   UserConfigV1,
-  IdentityData
+  IdentityData,
+  PromptTemplate
 } from './types';
 import { generateIdentityVariations } from './aliasVariations';
 
@@ -509,6 +510,18 @@ export class StorageManager {
       logsCount: config.stats?.activityLog?.length || 0,
       hasAccountEmail: !!config.account?.email
     });
+
+    // 5. Initialize prompt templates if missing (for existing users)
+    if (!config.promptTemplates) {
+      console.log('[Storage] 🆕 Adding starter prompt templates to existing config');
+      config.promptTemplates = {
+        templates: this.getStarterTemplates(),
+        maxTemplates: 10,
+        enableKeyboardShortcuts: true,
+      };
+      // Save the updated config
+      await this.saveConfig(config);
+    }
 
     // Cache the result
     this.configCache = config;
@@ -1026,7 +1039,90 @@ export class StorageManager {
         },
         activityLog: [],
       },
+      promptTemplates: {
+        templates: this.getStarterTemplates(),
+        maxTemplates: 10, // Free tier limit
+        enableKeyboardShortcuts: true,
+      },
     };
+  }
+
+  /**
+   * Get starter templates to help users understand the feature
+   */
+  private getStarterTemplates(): PromptTemplate[] {
+    const now = Date.now();
+
+    return [
+      {
+        id: `template-${now}-1`,
+        name: 'Professional Email',
+        description: 'Generate a professional email using your protected identity',
+        content: `Write a professional email with the following details:
+
+From: {{name}} ({{email}})
+Company: {{company}}
+Subject: [Your subject here]
+
+Please draft a polite, professional email that:
+- Introduces myself and my company
+- Clearly states the purpose
+- Includes a call to action
+- Ends with appropriate closing
+
+Tone: Professional and friendly`,
+        category: 'Email',
+        usageCount: 0,
+        createdAt: now,
+        updatedAt: now,
+        lastUsed: undefined,
+      },
+      {
+        id: `template-${now}-2`,
+        name: 'Code Review Request',
+        description: 'Request AI to review code as your developer persona',
+        content: `I'm {{name}}, a developer at {{company}}. Please review the following code:
+
+[Paste your code here]
+
+Specifically, please check for:
+- Security vulnerabilities
+- Performance issues
+- Code style and best practices
+- Potential bugs or edge cases
+
+Provide feedback as if you're conducting a professional code review.`,
+        category: 'Code Review',
+        usageCount: 0,
+        createdAt: now,
+        updatedAt: now,
+        lastUsed: undefined,
+      },
+      {
+        id: `template-${now}-3`,
+        name: 'Meeting Summary',
+        description: 'Create meeting notes using your work identity',
+        content: `Create professional meeting notes for:
+
+Attendee: {{name}} ({{email}})
+Company: {{company}}
+Date: [Today's date]
+Topic: [Meeting topic]
+
+Please help me structure meeting notes that include:
+- Key discussion points
+- Action items and owners
+- Decisions made
+- Next steps and timeline
+
+Keep it concise and professional, suitable for sharing with stakeholders.`,
+        category: 'Writing',
+        usageCount: 0,
+        createdAt: now,
+        updatedAt: now,
+        lastUsed: undefined,
+      },
+    ];
   }
 
   // ========== MIGRATION ==========
