@@ -10,8 +10,8 @@ import { app } from './firebase';
 const functions = getFunctions(app);
 
 // Price IDs from environment
-const STRIPE_PRICE_MONTHLY = import.meta.env.VITE_STRIPE_PRICE_MONTHLY;
-const STRIPE_PRICE_YEARLY = import.meta.env.VITE_STRIPE_PRICE_YEARLY;
+const STRIPE_PRICE_MONTHLY = process.env.STRIPE_PRICE_MONTHLY;
+const STRIPE_PRICE_YEARLY = process.env.STRIPE_PRICE_YEARLY;
 
 export interface CheckoutSessionResponse {
   sessionId: string;

@@ -59,28 +59,25 @@ export function initUserProfile() {
     userDropdown?.classList.add('hidden');
   };
 
-  // Get Started button - opens promptblocker.com
+  // Get Started button - opens getting started modal
   const getStartedBtn = document.getElementById('getStartedBtn');
   getStartedBtn?.addEventListener('click', () => {
     closeDropdown();
-    chrome.tabs.create({ url: 'https://promptblocker.com' });
-    console.log('[User Profile] Opening promptblocker.com');
+    openGettingStartedModal();
   });
 
-  // Account settings
+  // Account settings - opens account settings modal
   const accountSettingsBtn = document.getElementById('accountSettingsBtn');
   accountSettingsBtn?.addEventListener('click', () => {
     closeDropdown();
-    // TODO: Open account settings modal
-    console.log('[User Profile] Account settings clicked');
+    openAccountSettingsModal();
   });
 
-  // Manage billing
+  // Manage billing - opens Stripe Customer Portal
   const manageBillingBtn = document.getElementById('manageBillingBtn');
-  manageBillingBtn?.addEventListener('click', () => {
+  manageBillingBtn?.addEventListener('click', async () => {
     closeDropdown();
-    // TODO: Open billing management
-    console.log('[User Profile] Manage billing clicked');
+    await handleManageBilling();
   });
 
   // Sign-out button
@@ -478,4 +475,79 @@ function hideQuickStartButtons() {
   }
 
   console.log('[User Profile] Quick Start buttons hidden');
+}
+
+/**
+ * Handle Manage Billing - opens Stripe Customer Portal
+ */
+async function handleManageBilling() {
+  try {
+    // Import Stripe utilities
+    const { openCustomerPortal } = await import('../../lib/stripe');
+
+    // Open Stripe Customer Portal in new tab
+    await openCustomerPortal();
+    console.log('[User Profile] Opened Stripe Customer Portal');
+  } catch (error) {
+    console.error('[User Profile] Failed to open billing portal:', error);
+    alert('Failed to open billing portal. Please make sure you are signed in and have an active subscription.');
+  }
+}
+
+/**
+ * Open Account Settings Modal
+ */
+function openAccountSettingsModal() {
+  const modal = document.getElementById('accountSettingsModal');
+  if (!modal) {
+    console.error('[User Profile] Account Settings modal not found');
+    return;
+  }
+
+  // Update modal with current user data
+  const store = useAppStore.getState();
+  const user = currentUser;
+  const tier = store.config?.account?.tier || 'free';
+
+  // Update email display
+  const emailDisplay = document.getElementById('accountEmailDisplay');
+  if (emailDisplay && user?.email) {
+    emailDisplay.textContent = user.email;
+  }
+
+  // Update tier badge
+  const tierBadge = document.getElementById('accountTierBadge');
+  if (tierBadge) {
+    tierBadge.textContent = tier.toUpperCase();
+    tierBadge.className = 'user-tier-badge';
+    tierBadge.classList.add(`tier-${tier}`);
+  }
+
+  // Wire up the Manage Billing button inside the modal
+  const accountManageBillingBtn = document.getElementById('accountManageBillingBtn');
+  if (accountManageBillingBtn) {
+    accountManageBillingBtn.onclick = async () => {
+      // Close the account settings modal first
+      modal.classList.add('hidden');
+      // Then open billing
+      await handleManageBilling();
+    };
+  }
+
+  // Show modal
+  modal.classList.remove('hidden');
+  console.log('[User Profile] Account Settings modal opened');
+}
+
+/**
+ * Open Getting Started Modal
+ */
+function openGettingStartedModal() {
+  const modal = document.getElementById('gettingStartedModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    console.log('[User Profile] Getting Started modal opened');
+  } else {
+    console.error('[User Profile] Getting Started modal not found');
+  }
 }

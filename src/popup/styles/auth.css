@@ -192,13 +192,18 @@
   position: fixed;
   top: 65px;
   right: 16px;
-  background: #1a202c !important;
-  backdrop-filter: none !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+
+  /* Use theme-aware card background with SOLID opacity for no see-through */
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  border: 1px solid var(--border-neutral);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow-xl);
+
   min-width: 220px;
-  z-index: 2147483647 !important;
+  z-index: var(--z-popover);
   animation: slideDown 0.2s ease;
 }
 
@@ -215,7 +220,7 @@
 
 .user-dropdown-header {
   padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-neutral);
 }
 
 .user-dropdown-email {
@@ -227,7 +232,7 @@
 
 .user-dropdown-divider {
   height: 1px;
-  background: var(--border-color);
+  background: var(--border-neutral);
   margin: 0.5rem 0;
 }
 
@@ -247,7 +252,7 @@
 }
 
 .user-dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--card-bg-light);
 }
 
 .user-dropdown-item:first-child {
