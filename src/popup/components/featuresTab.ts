@@ -6,6 +6,7 @@
 import { UserConfig } from '../../lib/types';
 import { initAPIKeyVaultUI, renderAPIKeys } from './apiKeyVault';
 import { initCustomRulesUI, renderCustomRules } from './customRulesUI';
+import { initPromptTemplatesUI, renderPromptTemplates } from './promptTemplates';
 import { useAppStore } from '../../lib/store';
 
 // Feature definition
@@ -46,8 +47,9 @@ const FEATURES: Feature[] = [
     name: 'Prompt Templates',
     icon: '📋',
     description: 'Save and reuse common prompt templates with privacy built-in',
-    tier: 'free',
-    status: 'coming-soon',
+    tier: 'free', // FREE with limits (3), PRO for unlimited
+    status: 'active',
+    stats: []
   },
 ];
 
@@ -65,6 +67,11 @@ export function initFeaturesTab() {
  * Render features hub view
  */
 export function renderFeaturesHub(config: UserConfig) {
+  // Don't re-render if we're viewing a feature detail
+  if (currentFeature !== null) {
+    return;
+  }
+
   const hubView = document.getElementById('featuresHubView');
   const featuresGrid = document.getElementById('featuresGrid');
   const tierBadge = document.getElementById('currentTierBadge');
@@ -178,6 +185,14 @@ function getFeatureStats(featureId: string, config: UserConfig): Array<{ icon: s
       return ruleCount > 0 ? [
         { icon: '🎯', value: ruleCount, label: ruleCount === 1 ? 'rule' : 'rules' },
         { icon: '✅', value: totalMatches, label: 'matches' }
+      ] : [];
+    }
+    case 'prompt-templates': {
+      const templateCount = config.promptTemplates?.templates?.length || 0;
+      const totalUsage = config.promptTemplates?.templates?.reduce((sum, t) => sum + t.usageCount, 0) || 0;
+      return templateCount > 0 ? [
+        { icon: '📋', value: templateCount, label: templateCount === 1 ? 'template' : 'templates' },
+        { icon: '▶️', value: totalUsage, label: 'uses' }
       ] : [];
     }
     default:
@@ -416,6 +431,34 @@ function renderFeatureContent(featureId: string): string {
           </div>
         </div>
       `;
+    case 'prompt-templates':
+      return `
+        <div class="prompt-templates-detail">
+          <div class="tab-header">
+            <h3>Your Prompt Templates</h3>
+            <button class="btn btn-primary" id="addPromptTemplateBtn">+ Add Template</button>
+          </div>
+
+          <div class="prompt-templates-list" id="promptTemplatesList">
+            <!-- Templates will be rendered here -->
+          </div>
+
+          <div class="empty-state" id="promptTemplatesEmptyState">
+            <div class="empty-state-icon">📋</div>
+            <p class="empty-state-title">No templates yet</p>
+            <p class="empty-state-hint">Create reusable prompt templates with placeholders for your profile data</p>
+            <button class="btn btn-primary" id="addPromptTemplateBtnEmpty">Create Your First Template</button>
+          </div>
+
+          <div class="settings-section" style="margin-top: 20px;">
+            <h3>How to use templates</h3>
+            <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">
+              Templates support placeholders like {{name}}, {{email}}, {{phone}}, etc.
+              Click the "Use" button to copy a template to your clipboard, then paste it into any AI chat.
+            </p>
+          </div>
+        </div>
+      `;
     default:
       return `<p>Feature content coming soon...</p>`;
   }
@@ -444,6 +487,17 @@ function initFeatureHandlers(featureId: string) {
         renderCustomRules(customRulesState.config);
       }
       console.log('[Features Tab] Custom Rules handlers ready');
+      break;
+    }
+    case 'prompt-templates': {
+      // Render templates from current config FIRST
+      const templatesState = useAppStore.getState();
+      if (templatesState.config) {
+        renderPromptTemplates(templatesState.config);
+      }
+      // Then attach event handlers (after DOM is updated)
+      initPromptTemplatesUI();
+      console.log('[Features Tab] Prompt Templates handlers ready');
       break;
     }
     default:

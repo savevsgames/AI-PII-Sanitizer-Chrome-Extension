@@ -25,11 +25,21 @@ export class StorageManager {
   };
 
   // Cache to prevent excessive decryption
+  // Longer cache since each context (popup, background) has its own instance
   private configCache: UserConfig | null = null;
   private configCacheTimestamp: number = 0;
-  private readonly CACHE_TTL_MS = 1000; // 1 second cache
+  private readonly CACHE_TTL_MS = 5000; // 5 second cache (longer due to cross-context issues)
 
-  private constructor() {}
+  private constructor() {
+    // Listen for storage changes from OTHER contexts to invalidate cache
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'local' && changes[StorageManager.KEYS.CONFIG]) {
+        console.log('[Storage] 🔄 Config changed in another context, invalidating cache');
+        this.configCache = null;
+        this.configCacheTimestamp = 0;
+      }
+    });
+  }
 
   public static getInstance(): StorageManager {
     if (!StorageManager.instance) {
@@ -389,9 +399,10 @@ export class StorageManager {
     });
     console.log('[Storage] ✅ Config saved with all sensitive data encrypted');
 
-    // Invalidate cache since config was updated
-    this.configCache = null;
-    this.configCacheTimestamp = 0;
+    // Update cache with the new config instead of invalidating
+    // This prevents unnecessary re-decryption in the same context
+    this.configCache = config;
+    this.configCacheTimestamp = Date.now();
   }
 
   /**
@@ -403,11 +414,12 @@ export class StorageManager {
     // Check cache first
     const now = Date.now();
     if (this.configCache && (now - this.configCacheTimestamp) < this.CACHE_TTL_MS) {
-      console.log('[Storage] 📦 Returning cached config (age: ' + (now - this.configCacheTimestamp) + 'ms)');
+      // Silently return cached config (remove spam)
       return this.configCache;
     }
 
-    console.log('[Theme Debug] 📂 StorageManager.loadConfig called... (cache miss)');
+    // Cache miss - need to decrypt
+    console.log('[Storage] 📂 Loading config from storage (cache miss)');
     const data = await chrome.storage.local.get(StorageManager.KEYS.CONFIG);
     const config = data[StorageManager.KEYS.CONFIG] || null;
 
@@ -823,6 +835,149 @@ export class StorageManager {
 
     await this.saveConfig(config);
     console.log('[StorageManager] Updated custom rules settings');
+  }
+
+  // ========== PROMPT TEMPLATES MANAGEMENT ==========
+
+  /**
+   * Ensure config has prompt templates structure
+   */
+  private async ensurePromptTemplatesConfig(config: UserConfig): Promise<void> {
+    if (!config.promptTemplates) {
+      const userTier = config.account?.tier || 'free';
+      config.promptTemplates = {
+        templates: [],
+        maxTemplates: userTier === 'pro' || userTier === 'enterprise' ? -1 : 3, // -1 = unlimited
+        enableKeyboardShortcuts: true,
+      };
+    }
+  }
+
+  /**
+   * Add a new prompt template
+   */
+  async addPromptTemplate(templateData: {
+    name: string;
+    content: string;
+    description?: string;
+    category?: string;
+    tags?: string[];
+    profileId?: string;
+  }): Promise<import('./types').PromptTemplate> {
+    const config = await this.loadConfig();
+    if (!config) throw new Error('Config not initialized');
+
+    await this.ensurePromptTemplatesConfig(config);
+
+    // Check if limit reached (for FREE tier)
+    if (config.promptTemplates!.maxTemplates !== -1 &&
+        config.promptTemplates!.templates.length >= config.promptTemplates!.maxTemplates) {
+      throw new Error(`Template limit reached. FREE tier allows ${config.promptTemplates!.maxTemplates} templates. Upgrade to PRO for unlimited.`);
+    }
+
+    const newTemplate: import('./types').PromptTemplate = {
+      id: this.generateId(),
+      name: templateData.name,
+      content: templateData.content,
+      description: templateData.description,
+      category: templateData.category,
+      tags: templateData.tags,
+      profileId: templateData.profileId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      usageCount: 0,
+      lastUsed: undefined,
+    };
+
+    config.promptTemplates!.templates.push(newTemplate);
+    await this.saveConfig(config);
+    console.log('[StorageManager] Added prompt template:', newTemplate.name);
+
+    return newTemplate;
+  }
+
+  /**
+   * Remove a prompt template by ID
+   */
+  async removePromptTemplate(templateId: string): Promise<void> {
+    const config = await this.loadConfig();
+    if (!config || !config.promptTemplates) return;
+
+    config.promptTemplates.templates = config.promptTemplates.templates.filter(t => t.id !== templateId);
+    await this.saveConfig(config);
+    console.log('[StorageManager] Removed prompt template:', templateId);
+  }
+
+  /**
+   * Update a prompt template
+   */
+  async updatePromptTemplate(templateId: string, updates: Partial<import('./types').PromptTemplate>): Promise<void> {
+    const config = await this.loadConfig();
+    if (!config || !config.promptTemplates) return;
+
+    const template = config.promptTemplates.templates.find(t => t.id === templateId);
+    if (!template) {
+      console.error('[StorageManager] Template not found:', templateId);
+      return;
+    }
+
+    Object.assign(template, updates, { updatedAt: Date.now() });
+    await this.saveConfig(config);
+    console.log('[StorageManager] Updated prompt template:', templateId);
+  }
+
+  /**
+   * Get a single prompt template by ID
+   */
+  async getPromptTemplate(templateId: string): Promise<import('./types').PromptTemplate | null> {
+    const config = await this.loadConfig();
+    if (!config || !config.promptTemplates) return null;
+
+    return config.promptTemplates.templates.find(t => t.id === templateId) || null;
+  }
+
+  /**
+   * Get all prompt templates
+   */
+  async getAllPromptTemplates(): Promise<import('./types').PromptTemplate[]> {
+    const config = await this.loadConfig();
+    if (!config || !config.promptTemplates) return [];
+
+    return config.promptTemplates.templates;
+  }
+
+  /**
+   * Increment template usage counter
+   */
+  async incrementTemplateUsage(templateId: string): Promise<void> {
+    const config = await this.loadConfig();
+    if (!config || !config.promptTemplates) return;
+
+    const template = config.promptTemplates.templates.find(t => t.id === templateId);
+    if (template) {
+      template.usageCount++;
+      template.lastUsed = Date.now();
+      await this.saveConfig(config);
+      console.log('[StorageManager] Incremented template usage:', templateId);
+    }
+  }
+
+  /**
+   * Update prompt templates settings
+   */
+  async updatePromptTemplatesSettings(settings: Partial<import('./types').PromptTemplatesConfig>): Promise<void> {
+    const config = await this.loadConfig();
+    if (!config) return;
+
+    await this.ensurePromptTemplatesConfig(config);
+
+    config.promptTemplates = {
+      ...config.promptTemplates!,
+      ...settings
+    };
+
+    await this.saveConfig(config);
+    console.log('[StorageManager] Updated prompt templates settings');
   }
 
   /**
@@ -1459,5 +1614,14 @@ export class StorageManager {
    */
   private generateId(): string {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Clear internal cache (for testing purposes)
+   * @internal
+   */
+  clearCache(): void {
+    this.configCache = null;
+    this.configCacheTimestamp = 0;
   }
 }

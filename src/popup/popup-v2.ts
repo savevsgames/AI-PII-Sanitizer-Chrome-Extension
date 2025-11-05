@@ -90,15 +90,31 @@ async function loadInitialData() {
 
     // Store already initialized in DOMContentLoaded - skip re-initialization
 
-    // Subscribe to store updates
+    // Subscribe to store updates with selective rendering
+    let previousProfiles = useAppStore.getState().profiles;
+    let previousConfig = useAppStore.getState().config;
+    let previousActivityLog = useAppStore.getState().activityLog;
+
     useAppStore.subscribe((state) => {
-      renderProfiles(state.profiles);
-      renderStats(state.config, state.profiles);
-      renderActivityLog(state.activityLog);
-      updateMinimalView(state.config);
-      updateStatusIndicator(state.config);
-      if (state.config) {
-        renderFeaturesHub(state.config);
+      // Only re-render if the relevant data actually changed
+      if (state.profiles !== previousProfiles) {
+        renderProfiles(state.profiles);
+        previousProfiles = state.profiles;
+      }
+
+      if (state.config !== previousConfig) {
+        renderStats(state.config, state.profiles);
+        updateMinimalView(state.config);
+        updateStatusIndicator(state.config);
+        if (state.config) {
+          renderFeaturesHub(state.config);
+        }
+        previousConfig = state.config;
+      }
+
+      if (state.activityLog !== previousActivityLog) {
+        renderActivityLog(state.activityLog);
+        previousActivityLog = state.activityLog;
       }
     });
 
