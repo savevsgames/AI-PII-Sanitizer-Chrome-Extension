@@ -33,10 +33,14 @@ function showLockedState() {
 
   lockedOverlay.classList.remove('hidden');
 
-  // Setup sign-in button handler
+  // Setup sign-in button handler (remove old listener first to avoid duplicates)
   const signInBtn = document.getElementById('lockedSignInBtn');
   if (signInBtn) {
-    signInBtn.addEventListener('click', () => {
+    // Clone node to remove all existing event listeners
+    const newSignInBtn = signInBtn.cloneNode(true) as HTMLElement;
+    signInBtn.parentNode?.replaceChild(newSignInBtn, signInBtn);
+
+    newSignInBtn.addEventListener('click', () => {
       console.log('[Locked State] User clicked Sign In to Unlock');
       openAuthModal('signin');
     });
@@ -106,7 +110,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTabNavigation();
   initKeyboardShortcuts();
 
-  // Load config FIRST to get saved theme before any UI renders
+  // Setup Firebase auth state listener FIRST (before any data loading)
+  setupAuthStateListener();
+
+  // Check auth state immediately - if not signed in, show locked state
+  if (!auth.currentUser) {
+    console.log('[Popup Init] User not authenticated - showing locked state');
+    showLockedState();
+    // Don't initialize store yet - wait for sign-in
+    await initUI(); // Initialize UI components only
+    return; // Stop here until user signs in
+  }
+
+  // User is authenticated - proceed with normal initialization
+  console.log('[Popup Init] User authenticated - loading data');
+
+  // Load config to get saved theme before any UI renders
   const store = useAppStore.getState();
   console.log('[Theme Debug] 📦 Store state before initialize:', {
     hasConfig: !!store.config,
@@ -127,9 +146,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateThemeUI(freshState.config);
 
   console.log('[Theme Debug] 🎨 Theme applied from config:', freshState.config?.settings?.theme);
-
-  // Setup Firebase auth state listener (before loading data)
-  setupAuthStateListener();
 
   await initUI(); // Wait for auth redirect check
   await loadInitialData();
