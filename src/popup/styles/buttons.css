@@ -50,11 +50,11 @@
 }
 
 .btn-secondary:hover {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
+  background: var(--color-primary-alpha);
+  border-color: var(--color-primary);
+  color: var(--text-primary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(100, 149, 237, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
 /* Danger Button - Red gradient */

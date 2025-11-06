@@ -586,8 +586,54 @@ async function handleManageBilling() {
     console.log('[User Profile] Opened Stripe Customer Portal');
   } catch (error) {
     console.error('[User Profile] Failed to open billing portal:', error);
-    alert('Failed to open billing portal. Please try again or contact support if the issue persists.');
+
+    // Show custom error modal instead of browser alert
+    showCustomError(
+      'Unable to Open Billing Portal',
+      'We couldn\'t open the billing portal at this time. This could be due to a temporary network issue.\n\n' +
+      'Please try again in a few moments. If the problem persists, contact support at support@promptblocker.com'
+    );
   }
+}
+
+/**
+ * Show custom error modal
+ */
+function showCustomError(title: string, message: string) {
+  // Create modal elements
+  const modalOverlay = document.createElement('div');
+  modalOverlay.className = 'modal-overlay';
+  modalOverlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+
+  const modalContent = document.createElement('div');
+  modalContent.style.cssText = 'background: var(--card-bg); border-radius: 16px; padding: 2rem; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);';
+
+  const modalTitle = document.createElement('h3');
+  modalTitle.textContent = title;
+  modalTitle.style.cssText = 'margin: 0 0 1rem 0; color: var(--text-primary); font-size: 1.25rem;';
+
+  const modalMessage = document.createElement('p');
+  modalMessage.textContent = message;
+  modalMessage.style.cssText = 'margin: 0 0 1.5rem 0; color: var(--text-secondary); line-height: 1.6; white-space: pre-line;';
+
+  const okButton = document.createElement('button');
+  okButton.textContent = 'OK';
+  okButton.className = 'btn btn-primary';
+  okButton.style.width = '100%';
+  okButton.onclick = () => document.body.removeChild(modalOverlay);
+
+  modalContent.appendChild(modalTitle);
+  modalContent.appendChild(modalMessage);
+  modalContent.appendChild(okButton);
+  modalOverlay.appendChild(modalContent);
+  document.body.appendChild(modalOverlay);
+
+  // Close on overlay click
+  modalOverlay.onclick = (e) => {
+    if (e.target === modalOverlay) {
+      document.body.removeChild(modalOverlay);
+    }
+  };
 }
 
 /**
