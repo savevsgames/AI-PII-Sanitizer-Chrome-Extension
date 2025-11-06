@@ -105,7 +105,7 @@ Smart Matching
 • No hidden costs
 • No "freemium" limitations
 • No data monetization
-• Open source (MIT License)
+• Open source (AGPL-3.0 License)
 
 🛡️ Security & Trust
 
@@ -198,7 +198,7 @@ Free • Open Source • Privacy-First
 ---
 
 Developed with ❤️ by privacy-conscious developers
-Licensed under MIT License
+Licensed under GNU AGPL-3.0 License
 Contributions welcome on GitHub
 ```
 

@@ -86,7 +86,7 @@ README.md                    # Main project overview (PromptBlocker)
 CHANGELOG.md                 # Version history and release notes (NEW)
 CONTRIBUTING.md              # How to contribute (NEW)
 PRIVACY_POLICY.md            # Privacy policy ✅ Keep as-is
-LICENSE                      # Apache 2.0 or MIT (NEEDS DECISION)
+LICENSE                      # AGPL-3.0 (DECIDED)
 ```
 
 ### /docs (Technical Documentation)
@@ -337,7 +337,7 @@ We welcome contributions! See [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ## 📄 License
 
-[Apache 2.0 / MIT - NEEDS DECISION]
+[AGPL-3.0 - DECIDED]
 
 ## 🙏 Acknowledgments
 
@@ -393,7 +393,7 @@ Built with Claude Code by Anthropic.
 2. **Start Phase 1** - Archive development history
 3. **Make branding decisions:**
    - Confirm "PromptBlocker" as final name
-   - Decide on license (Apache 2.0 vs MIT)
+   - License decided: AGPL-3.0
    - Decide on Pro tier pricing/timeline
 4. **Proceed systematically** through phases
 

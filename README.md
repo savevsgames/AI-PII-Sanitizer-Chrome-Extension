@@ -1,6 +1,12 @@
-# AI PII Sanitizer
+# PromptBlocker (formerly AI PII Sanitizer)
 
 A Chrome extension that protects your privacy by replacing real personally identifiable information (PII) with aliases when using AI chat services like ChatGPT, Claude, Gemini, Perplexity, and Copilot.
+
+---
+
+**Copyright © 2025 PromptBlocker**
+Licensed under the GNU Affero General Public License v3.0
+See [LICENSE](LICENSE) for details.
 
 ## 🎉 Current Status: **PRODUCTION READY - 5 PLATFORMS!**
 
@@ -309,7 +315,18 @@ Contributions are welcome! Please read the [Product Design Document](docs/pii_sa
 
 ## License
 
-MIT
+PromptBlocker is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+This means:
+- You can use, modify, and distribute this software
+- If you modify and deploy it as a network service, you must make your source code available
+- Any modifications must also be licensed under AGPL-3.0
+- This prevents proprietary forks while keeping the software free and open
+
+See the [LICENSE](LICENSE) file for the full license text.
+
+**Why AGPL-3.0?** This license protects the open-source nature of PromptBlocker by requiring anyone who modifies and deploys the software (even as a web service) to share their improvements with the community.
+
 
 ## Support
 

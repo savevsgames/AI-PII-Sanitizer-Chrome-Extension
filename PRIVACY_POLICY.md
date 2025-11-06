@@ -170,7 +170,7 @@ If you have questions about this Privacy Policy:
 This extension is open source. You can review the code, report issues, or contribute:
 
 - **Repository**: [https://github.com/[YOUR_USERNAME]/ai-pii-sanitizer](https://github.com/[YOUR_USERNAME]/ai-pii-sanitizer)
-- **License**: MIT License
+- **License**: GNU Affero General Public License v3.0 (AGPL-3.0)
 
 ---
 

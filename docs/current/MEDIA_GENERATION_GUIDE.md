@@ -616,7 +616,7 @@ Create as many identity profiles as you need. Switch between them instantly.
 - No hidden costs
 - No "freemium" limitations
 - No data monetization
-- Open source (MIT License)
+- Open source (AGPL-3.0 License)
 
 ## 🛡️ Security & Trust
 
@@ -709,7 +709,7 @@ Install PromptBlocker now and chat with AI confidently. Your real identity stays
 ---
 
 *Developed with ❤️ by privacy-conscious developers*
-*Licensed under MIT License*
+*Licensed under GNU AGPL-3.0 License*
 *Contributions welcome on GitHub*
 ```
 

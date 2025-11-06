@@ -348,4 +348,4 @@ Your feedback helps make this extension better for everyone who values their dig
 **Version:** 0.1.0-beta
 **Build Date:** 2025-11-03
 **Status:** Beta Testing
-**License:** MIT
+**License:** AGPL-3.0
