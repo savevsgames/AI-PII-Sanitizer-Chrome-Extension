@@ -1,0 +1,315 @@
+# Stripe Integration - Next Steps
+
+**Last Updated:** November 6, 2025
+**Status:** ✅ Core functionality WORKING, security fixes needed
+
+---
+
+## 🎉 What's Working
+
+### Checkout Flow
+1. ✅ User clicks "Upgrade to PRO" → Opens Stripe Checkout
+2. ✅ User completes payment with test card
+3. ✅ Stripe processes payment successfully
+4. ✅ Webhook fires and updates Firestore `tier: "pro"`
+5. ✅ Extension automatically updates UI to show PRO badge
+6. ✅ Real-time Firestore listener detects tier changes
+
+### Billing Management
+1. ✅ User clicks "Manage Billing" → Opens Stripe Customer Portal
+2. ✅ User can view invoices, update payment method, cancel subscription
+3. ✅ Webhook handles `customer.subscription.deleted` and downgrades to FREE
+
+### Technical Implementation
+- ✅ Firebase Functions v2 deployed to Cloud Run
+- ✅ Firestore real-time listeners (`onSnapshot`) working
+- ✅ User dropdown shows correct tier badge
+- ✅ Account Settings modal wired up
+- ✅ Getting Started modal created
+
+---
+
+## 🔴 Critical Fixes Needed (Before Production)
+
+### 1. Re-enable Webhook Signature Verification
+
+**Current State:**
+```typescript
+// TEMPORARY: Skip signature verification to test the rest of the flow
+// TODO: Fix signature verification after confirming webhook logic works
+console.log('⚠️  TEMPORARILY skipping signature verification for testing');
+event = req.body as Stripe.Event;
+```
+
+**Why It's Disabled:**
+- Firebase Functions v2 `req.rawBody` was not accessible properly
+- Signature verification kept failing with "No signatures found matching the expected signature"
+
+**Solution:**
+Use the correct approach for Firebase Functions v2:
+
+```typescript
+import { onRequest } from 'firebase-functions/v2/https';
+
+export const stripeWebhook = onRequest(async (request, response) => {
+  const sig = request.headers['stripe-signature'];
+
+  // Firebase v2 provides rawBody directly
+  const event = stripe.webhooks.constructEvent(
+    request.rawBody,  // This should work in v2
+    sig,
+    process.env.STRIPE_WEBHOOK_SECRET
+  );
+
+  // Process event...
+});
+```
+
+**Reference:**
+- https://aronschueler.de/blog/2025/03/17/implementing-stripe-subscriptions-with-firebase-cloud-functions-and-firestore/
+- https://dev.to/thraizz/implementing-stripe-subscriptions-with-firebase-cloud-functions-and-firestore-4iji
+
+**Testing Plan:**
+1. Re-enable signature verification
+2. Deploy to Firebase
+3. Send test webhook from Stripe Dashboard
+4. Verify webhook processes successfully (200 OK)
+5. Complete test checkout to confirm end-to-end flow
+
+---
+
+## 🟡 High Priority Improvements
+
+### 2. Create Success/Cancel Pages
+
+**Current:**
+```typescript
+success_url: `https://promptblocker.com/success?session_id={CHECKOUT_SESSION_ID}`,
+cancel_url: `https://promptblocker.com/cancel`,
+```
+
+**Needed:**
+- Landing page at `promptblocker.com/success` welcoming new PRO users
+- Landing page at `promptblocker.com/cancel` offering help or retry
+- Both pages should have "Return to Extension" button
+
+**Design:**
+- Match promptblocker.com branding
+- Show next steps for PRO users (success page)
+- Show support options (cancel page)
+
+---
+
+### 3. Replace Browser Alerts with Custom Modals
+
+**Current Issues:**
+- Uses `alert()` and `confirm()` which look bad
+- Doesn't match extension theme/styling
+
+**Locations to Fix:**
+- `src/popup/components/userProfile.ts` - handleManageBilling confirm dialog
+- `src/popup/components/userProfile.ts` - handleUpgrade confirmation
+- Error messages throughout checkout flow
+
+**Solution:**
+Use existing modal system from `src/popup/styles/modal.css`:
+
+```typescript
+// Instead of:
+confirm('You are currently on the FREE tier...');
+
+// Use:
+showCustomModal({
+  title: 'Upgrade to PRO?',
+  message: 'You are currently on the FREE tier...',
+  buttons: [
+    { text: 'Upgrade Now', style: 'primary', onClick: handleUpgrade },
+    { text: 'Cancel', style: 'secondary', onClick: closeModal }
+  ]
+});
+```
+
+---
+
+### 4. Data Migration on Downgrade
+
+**Scenario:**
+User with 20 profiles cancels PRO subscription → tier changes to FREE
+
+**Problem:**
+FREE tier only allows 5 profiles, but user still has 20
+
+**Solution:**
+```typescript
+// In stripeWebhook.ts - customer.subscription.deleted handler
+if (tier === 'free') {
+  // Check if user exceeds FREE limits
+  const profiles = await db.collection('profiles')
+    .where('userId', '==', userId)
+    .get();
+
+  if (profiles.size > 5) {
+    // Archive excess profiles or mark as "PRO required"
+    // Keep 5 most recently used, disable the rest
+  }
+}
+```
+
+**UI:**
+Show warning in extension: "You have 20 profiles but FREE tier only allows 5. Upgrade to PRO to re-enable all profiles."
+
+---
+
+### 5. Add Yearly Plan Option
+
+**Current:**
+Only monthly plan shows in upgrade flow
+
+**Needed:**
+- Plan selection modal with Monthly ($4.99/mo) vs Yearly ($49/yr)
+- Show savings: "Save 17% with yearly plan"
+- Radio buttons or toggle switch
+
+**Implementation:**
+```typescript
+// Update upgradeToMonthly() to allow plan selection
+async function showUpgradeModal() {
+  const selectedPlan = await showPlanSelectionModal();
+
+  if (selectedPlan === 'monthly') {
+    await upgradeToMonthly();
+  } else if (selectedPlan === 'yearly') {
+    await upgradeToYearly();
+  }
+}
+```
+
+---
+
+## 🟢 Medium Priority
+
+### 6. Loading States
+Add spinners/loading indicators during:
+- Checkout session creation
+- Customer portal opening
+- Subscription status checks
+
+### 7. Better Error Handling
+- Network failures
+- Stripe API errors
+- Firebase timeout errors
+- User-friendly retry mechanisms
+
+### 8. Cancellation Flow
+When user cancels from Customer Portal:
+- Show "Sorry to see you go" message
+- Collect feedback (optional survey)
+- Offer pause subscription instead of cancel
+- Show what they'll lose (profiles, templates, etc.)
+
+### 9. Comprehensive Testing
+- [ ] Happy path: FREE → PRO upgrade
+- [ ] Cancelled subscription: PRO → FREE downgrade
+- [ ] Payment failure scenarios
+- [ ] Webhook retry logic
+- [ ] Multiple rapid upgrades/cancels
+- [ ] Edge cases (invalid customer ID, etc.)
+
+---
+
+## 🔵 Nice to Have
+
+### 10. Toast Notifications
+Replace console logs with toast messages:
+```
+🎉 Congratulations! Upgraded to PRO
+⚠️ Subscription cancelled - tier changed to FREE
+```
+
+### 11. Analytics
+Track conversion funnel:
+- Upgrade button clicks
+- Checkout started
+- Checkout completed
+- Checkout abandoned
+- Conversion rate by source
+
+### 12. Proration
+Handle mid-cycle changes:
+- Upgrade from FREE to PRO mid-month → pro-rate first charge
+- Downgrade from PRO to FREE → credit remaining days
+
+---
+
+## 🧪 Testing Checklist
+
+### Webhook Events to Test
+- [ ] `checkout.session.completed` - Upgrade to PRO
+- [ ] `customer.subscription.deleted` - Cancel subscription
+- [ ] `customer.subscription.updated` - Plan change
+- [ ] `invoice.payment_failed` - Payment failure
+
+### Stripe Test Cards
+- [ ] `4242 4242 4242 4242` - Successful payment
+- [ ] `4000 0000 0000 9995` - Declined card
+- [ ] `4000 0025 0000 3155` - Requires authentication
+
+### User Flows to Test
+- [ ] Sign in → Upgrade → Verify PRO badge shows
+- [ ] PRO user → Cancel → Verify FREE badge shows
+- [ ] PRO user → Manage Billing → Update payment method
+- [ ] FREE user → Click PRO feature → See upgrade prompt
+- [ ] Extension reloads → Tier persists correctly
+
+---
+
+## 📝 Documentation Updates Needed
+
+1. **Update ROADMAP.md** - Mark Stripe integration as complete
+2. **Update USER_MANAGEMENT.md** - Document tier change flows
+3. **Create DEPLOYMENT.md** - Stripe production setup checklist
+4. **Update README.md** - Add Stripe setup instructions
+
+---
+
+## 🚀 Production Deployment Checklist
+
+Before launching to production:
+
+### Stripe Configuration
+- [ ] Switch from test mode to live mode
+- [ ] Update Stripe API keys to production keys
+- [ ] Update webhook URL to production Firebase function
+- [ ] Re-enable webhook signature verification
+- [ ] Test all webhooks in live mode
+
+### Firebase Setup
+- [ ] Deploy all functions to production project
+- [ ] Set environment variables for production
+- [ ] Configure Firestore security rules for tier field
+- [ ] Test Firestore listeners in production
+
+### Extension Updates
+- [ ] Update success/cancel URLs to production domain
+- [ ] Replace all alerts with custom modals
+- [ ] Add loading states everywhere
+- [ ] Comprehensive error handling
+
+### Testing
+- [ ] End-to-end test with real credit card (small amount)
+- [ ] Verify webhook processes in production
+- [ ] Test tier updates in production extension
+- [ ] Cancel subscription and verify downgrade
+
+### Documentation
+- [ ] Update privacy policy with Stripe disclosure
+- [ ] Add billing FAQs to website
+- [ ] Create support documentation for common issues
+
+---
+
+**Next Session Focus:**
+1. Fix webhook signature verification (30 min)
+2. Create success/cancel pages (1 hour)
+3. Replace alerts with modals (1 hour)
+4. Test complete flow end-to-end (30 min)

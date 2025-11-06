@@ -8,10 +8,12 @@ import { auth } from '../../lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useAppStore } from '../../lib/store';
 import { openAuthModal, signOutUser } from './authModal';
+import { listenToUserTier } from '../../lib/firebaseService';
 
 const DEBUG_MODE = false;
 
 let currentUser: User | null = null;
+let unsubscribeTierListener: (() => void) | null = null;
 
 /**
  * Initialize user profile display
@@ -121,6 +123,28 @@ async function onUserSignedIn(user: User) {
 
     // Update tier badge
     updateTierBadge();
+
+    // Start listening for real-time tier changes from Stripe webhooks
+    if (unsubscribeTierListener) {
+      unsubscribeTierListener(); // Clean up previous listener
+    }
+
+    unsubscribeTierListener = listenToUserTier(user.uid, async (tier) => {
+      console.log('[User Profile] 🔔 Tier updated from Firestore:', tier);
+
+      // Update store
+      await store.updateAccount({ tier });
+
+      // Update UI immediately
+      updateTierBadge();
+
+      // Show console log for upgrade
+      if (tier === 'pro') {
+        console.log('[User Profile] 🎉 Congratulations! Upgraded to PRO!');
+      }
+    });
+
+    console.log('[User Profile] ✅ Tier listener started for user:', user.uid);
   } catch (error) {
     console.error('[User Profile] Error syncing user:', error);
   }
@@ -131,6 +155,13 @@ async function onUserSignedIn(user: User) {
  */
 function onUserSignedOut() {
   console.log('[User Profile] User signed out');
+
+  // Stop tier listener
+  if (unsubscribeTierListener) {
+    unsubscribeTierListener();
+    unsubscribeTierListener = null;
+    console.log('[User Profile] Tier listener stopped');
+  }
 
   // Update UI to show sign-in button
   showUnauthenticatedUI();
@@ -478,9 +509,51 @@ function hideQuickStartButtons() {
 }
 
 /**
+ * Handle Upgrade - opens Stripe checkout for monthly subscription
+ */
+async function handleUpgrade() {
+  try {
+    // Import Stripe utilities
+    const { upgradeToMonthly } = await import('../../lib/stripe');
+
+    // Open Stripe Checkout in new tab
+    await upgradeToMonthly();
+    console.log('[User Profile] Opened Stripe Checkout for monthly subscription');
+  } catch (error) {
+    console.error('[User Profile] Failed to open checkout:', error);
+    alert('Failed to open checkout. Please make sure you are signed in and try again.');
+  }
+}
+
+/**
  * Handle Manage Billing - opens Stripe Customer Portal
  */
 async function handleManageBilling() {
+  // Check if user has a tier (signed in)
+  if (!currentUser) {
+    alert('Please sign in to manage billing.');
+    return;
+  }
+
+  // Check if user is already a PRO subscriber
+  const store = useAppStore.getState();
+  const tier = store.config?.account?.tier || 'free';
+
+  if (tier === 'free') {
+    // User is on free tier - offer to upgrade instead
+    const wantsUpgrade = confirm(
+      'You are currently on the FREE tier.\n\n' +
+      'To manage billing, you need an active PRO subscription.\n\n' +
+      'Would you like to upgrade to PRO now?'
+    );
+
+    if (wantsUpgrade) {
+      await handleUpgrade();
+    }
+    return;
+  }
+
+  // User is PRO - open billing portal
   try {
     // Import Stripe utilities
     const { openCustomerPortal } = await import('../../lib/stripe');
@@ -490,7 +563,7 @@ async function handleManageBilling() {
     console.log('[User Profile] Opened Stripe Customer Portal');
   } catch (error) {
     console.error('[User Profile] Failed to open billing portal:', error);
-    alert('Failed to open billing portal. Please make sure you are signed in and have an active subscription.');
+    alert('Failed to open billing portal. Please try again or contact support if the issue persists.');
   }
 }
 
@@ -521,6 +594,17 @@ function openAccountSettingsModal() {
     tierBadge.textContent = tier.toUpperCase();
     tierBadge.className = 'user-tier-badge';
     tierBadge.classList.add(`tier-${tier}`);
+  }
+
+  // Wire up the Upgrade button inside the modal
+  const accountUpgradeBtn = document.getElementById('accountUpgradeBtn');
+  if (accountUpgradeBtn) {
+    accountUpgradeBtn.onclick = async () => {
+      // Close the account settings modal first
+      modal.classList.add('hidden');
+      // Then open upgrade flow
+      await handleUpgrade();
+    };
   }
 
   // Wire up the Manage Billing button inside the modal

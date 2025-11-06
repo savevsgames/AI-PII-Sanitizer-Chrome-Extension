@@ -11,6 +11,7 @@ import {
   getDoc,
   updateDoc,
   serverTimestamp,
+  onSnapshot,
   Timestamp,
 } from 'firebase/firestore';
 import { User } from 'firebase/auth';
@@ -125,6 +126,39 @@ export async function getUserData(userId: string): Promise<FirestoreUser | null>
     console.error('[Firebase Service] Error loading user data:', error);
     return null;
   }
+}
+
+/**
+ * Listen to user tier changes in real-time
+ * Returns an unsubscribe function
+ */
+export function listenToUserTier(
+  userId: string,
+  onTierChange: (tier: 'free' | 'pro') => void
+): () => void {
+  const userRef = doc(db, `users/${userId}`);
+
+  console.log('[Firebase Service] Starting tier listener for user:', userId);
+
+  const unsubscribe = onSnapshot(
+    userRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const userData = snapshot.data() as FirestoreUser;
+        const tier = userData.tier || 'free';
+        console.log('[Firebase Service] Tier changed:', tier);
+        onTierChange(tier);
+      } else {
+        console.warn('[Firebase Service] User document does not exist');
+        onTierChange('free');
+      }
+    },
+    (error) => {
+      console.error('[Firebase Service] Error in tier listener:', error);
+    }
+  );
+
+  return unsubscribe;
 }
 
 /**
