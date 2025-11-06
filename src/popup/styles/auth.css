@@ -252,7 +252,8 @@
 }
 
 .user-dropdown-item:hover {
-  background: var(--card-bg-light);
+  background: var(--color-primary-alpha);
+  color: var(--text-primary);
 }
 
 .user-dropdown-item:first-child {

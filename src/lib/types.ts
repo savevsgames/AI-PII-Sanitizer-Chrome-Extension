@@ -22,6 +22,8 @@ export interface PromptTemplate {
   usageCount: number;            // How many times used
   lastUsed?: number;             // Last usage timestamp
   profileId?: string;            // Which profile to use (optional, can select at use)
+  isStarter?: boolean;           // True if this is a starter template (provided by us)
+  readonly?: boolean;            // True if template cannot be edited (for FREE users on starter templates)
 }
 
 /**

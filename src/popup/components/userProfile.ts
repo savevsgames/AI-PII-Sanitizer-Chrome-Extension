@@ -9,6 +9,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { useAppStore } from '../../lib/store';
 import { openAuthModal, signOutUser } from './authModal';
 import { listenToUserTier } from '../../lib/firebaseService';
+import { handleDowngrade, handleDatabaseUpgrade } from '../../lib/tierMigration';
 
 const DEBUG_MODE = false;
 
@@ -132,14 +133,36 @@ async function onUserSignedIn(user: User) {
     unsubscribeTierListener = listenToUserTier(user.uid, async (tier) => {
       console.log('[User Profile] 🔔 Tier updated from Firestore:', tier);
 
+      const previousTier = store.config?.account?.tier;
+
       // Update store
       await store.updateAccount({ tier });
+
+      // Handle tier changes
+      if (previousTier && previousTier !== tier) {
+        if (previousTier === 'pro' && tier === 'free') {
+          // DOWNGRADE: PRO → FREE
+          await handleDowngrade(user.uid);
+          console.log('[User Profile] ⬇️  Downgraded to FREE - data migration complete');
+          // TODO: Show downgrade notification modal to user
+        } else if (previousTier === 'free' && tier === 'pro') {
+          // UPGRADE: FREE → PRO
+          const upgradeInfo = await handleDatabaseUpgrade(user.uid);
+          console.log('[User Profile] ⬆️  Upgraded to PRO!');
+
+          if (upgradeInfo.hasArchive) {
+            // User has archived data - show restoration prompt
+            console.log('[User Profile] 📦 Found archived data from:', upgradeInfo.archiveInfo?.archivedAt);
+            // TODO: Show restoration modal with option to restore or start fresh
+          }
+        }
+      }
 
       // Update UI immediately
       updateTierBadge();
 
-      // Show console log for upgrade
-      if (tier === 'pro') {
+      // Show console log for upgrade (first time)
+      if (!previousTier && tier === 'pro') {
         console.log('[User Profile] 🎉 Congratulations! Upgraded to PRO!');
       }
     });
@@ -596,26 +619,49 @@ function openAccountSettingsModal() {
     tierBadge.classList.add(`tier-${tier}`);
   }
 
-  // Wire up the Upgrade button inside the modal
+  // Show/hide appropriate sections based on tier
+  const upgradeSection = document.getElementById('accountUpgradeSection');
+  const billingSection = document.getElementById('accountManageBillingSection');
   const accountUpgradeBtn = document.getElementById('accountUpgradeBtn');
-  if (accountUpgradeBtn) {
-    accountUpgradeBtn.onclick = async () => {
-      // Close the account settings modal first
-      modal.classList.add('hidden');
-      // Then open upgrade flow
-      await handleUpgrade();
-    };
+  const accountManageBillingBtn = document.getElementById('accountManageBillingBtn');
+
+  if (tier === 'pro') {
+    // PRO user - show Manage Billing section only
+    if (upgradeSection) upgradeSection.style.display = 'none';
+    if (billingSection) billingSection.style.display = 'block';
+    if (accountManageBillingBtn) {
+      accountManageBillingBtn.onclick = async () => {
+        modal.classList.add('hidden');
+        await handleManageBilling();
+      };
+    }
+  } else {
+    // FREE user - show Upgrade section
+    if (upgradeSection) upgradeSection.style.display = 'block';
+    if (billingSection) billingSection.style.display = 'none';
+    if (accountUpgradeBtn) {
+      accountUpgradeBtn.onclick = async () => {
+        modal.classList.add('hidden');
+        await handleUpgrade();
+      };
+    }
   }
 
-  // Wire up the Manage Billing button inside the modal
-  const accountManageBillingBtn = document.getElementById('accountManageBillingBtn');
-  if (accountManageBillingBtn) {
-    accountManageBillingBtn.onclick = async () => {
-      // Close the account settings modal first
-      modal.classList.add('hidden');
-      // Then open billing
-      await handleManageBilling();
-    };
+  // Wire up close buttons
+  const closeBtn = modal.querySelector('.modal-close') as HTMLElement;
+  const closeButton = modal.querySelector('.btn-secondary') as HTMLElement;
+  const overlay = modal.querySelector('.modal-overlay') as HTMLElement;
+
+  const closeModal = () => modal.classList.add('hidden');
+
+  if (closeBtn) {
+    closeBtn.onclick = closeModal;
+  }
+  if (closeButton) {
+    closeButton.onclick = closeModal;
+  }
+  if (overlay) {
+    overlay.onclick = closeModal;
   }
 
   // Show modal

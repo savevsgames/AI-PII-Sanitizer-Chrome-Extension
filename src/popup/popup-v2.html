@@ -999,11 +999,11 @@
 
   <!-- Account Settings Modal -->
   <div class="modal hidden" id="accountSettingsModal">
-    <div class="modal-overlay" onclick="document.getElementById('accountSettingsModal').classList.add('hidden')"></div>
+    <div class="modal-overlay"></div>
     <div class="modal-content">
       <div class="modal-header">
         <h3>⚙️ Account Settings</h3>
-        <button class="modal-close" onclick="document.getElementById('accountSettingsModal').classList.add('hidden')">&times;</button>
+        <button class="modal-close">&times;</button>
       </div>
 
       <div class="modal-body">
@@ -1023,7 +1023,7 @@
           </div>
         </div>
 
-        <div style="margin-bottom: 1.5rem;">
+        <div style="margin-bottom: 1.5rem;" id="accountUpgradeSection">
           <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: var(--font-size-md);">Upgrade Options</h4>
           <div style="padding: 1rem; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: var(--radius-md); border: 1px solid var(--color-primary);">
             <p style="margin: 0 0 1rem 0; color: var(--text-primary); font-size: var(--font-size-sm);">
@@ -1041,20 +1041,20 @@
           </div>
         </div>
 
-        <div>
+        <div style="margin-bottom: 1.5rem; display: none;" id="accountManageBillingSection">
           <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: var(--font-size-md);">Billing & Subscription</h4>
           <p style="margin: 0 0 0.75rem 0; color: var(--text-secondary); font-size: var(--font-size-sm);">
-            Manage your subscription, update payment method, or view invoices.
+            Manage your subscription, update payment method, view invoices, or cancel your membership.
           </p>
           <button class="btn btn-secondary" style="width: 100%;" id="accountManageBillingBtn">
             <span style="margin-right: 0.5rem;">💳</span>
-            <span>Manage Billing</span>
+            <span>Manage Billing & Cancel Subscription</span>
           </button>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('accountSettingsModal').classList.add('hidden')">Close</button>
+        <button type="button" class="btn btn-secondary">Close</button>
       </div>
     </div>
   </div>

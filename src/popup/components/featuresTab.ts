@@ -49,7 +49,7 @@ const FEATURES: Feature[] = [
     name: 'Custom Redaction Rules',
     icon: '🎯',
     description: 'Create custom patterns to detect and replace domain-specific PII',
-    tier: 'free', // TODO: Change back to 'pro' after testing
+    tier: 'pro',
     status: 'active',
   },
   {
