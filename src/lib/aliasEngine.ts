@@ -29,19 +29,53 @@ export class AliasEngine {
   public static async getInstance(): Promise<AliasEngine> {
     if (!AliasEngine.instance) {
       AliasEngine.instance = new AliasEngine();
-      await AliasEngine.instance.loadProfiles();
+
+      // Only load profiles if not in service worker context
+      // In service worker, profiles will be sent via SET_PROFILES message
+      const isServiceWorker = typeof document === 'undefined';
+      if (!isServiceWorker) {
+        await AliasEngine.instance.loadProfiles();
+      } else {
+        console.log('[AliasEngine] Service worker context - waiting for profiles via SET_PROFILES');
+      }
     }
     return AliasEngine.instance;
   }
 
   /**
    * Load profiles from storage and build lookup maps
+   * Handles service worker context gracefully (where encryption may not be available)
    */
   async loadProfiles(): Promise<void> {
-    const storage = StorageManager.getInstance();
-    this.profiles = await storage.loadProfiles();
+    try {
+      const storage = StorageManager.getInstance();
+      this.profiles = await storage.loadProfiles();
+      this.buildLookupMaps();
+      console.log('[AliasEngine] Loaded', this.profiles.length, 'profiles');
+    } catch (error) {
+      // In service worker context, encrypted profiles may not be accessible
+      // This is expected - profiles will be empty until accessed from popup
+      if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+        console.log('[AliasEngine] Running in service worker context - profiles unavailable (encrypted)');
+        console.log('[AliasEngine] Profiles will load once user opens popup and authenticates');
+        this.profiles = [];
+        this.buildLookupMaps();
+      } else {
+        console.error('[AliasEngine] Failed to load profiles:', error);
+        this.profiles = [];
+        this.buildLookupMaps();
+      }
+    }
+  }
+
+  /**
+   * Set profiles directly (used by popup to send decrypted profiles to service worker)
+   * This bypasses encryption issues in service worker context
+   */
+  setProfiles(profiles: AliasProfile[]): void {
+    this.profiles = profiles;
     this.buildLookupMaps();
-    console.log('[AliasEngine] Loaded', this.profiles.length, 'profiles');
+    console.log('[AliasEngine] Profiles set directly:', this.profiles.length, 'profiles');
   }
 
   /**

@@ -331,6 +331,9 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
     case 'RELOAD_PROFILES':
       return handleReloadProfiles();
 
+    case 'SET_PROFILES':
+      return handleSetProfiles(message.payload);
+
     case 'GET_ALIASES':
       return handleGetAliases();
 
@@ -820,6 +823,18 @@ async function handleGetConfig() {
     console.error('[Background] Error loading config:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
+}
+
+/**
+ * Set profiles directly from popup (bypasses encryption in service worker)
+ * Called when popup loads profiles with Firebase auth
+ */
+async function handleSetProfiles(profiles: any[]) {
+  console.log('[Background] Receiving', profiles.length, 'profiles from popup');
+  const aliasEngine = await AliasEngine.getInstance();
+  aliasEngine.setProfiles(profiles);
+  console.log('[Background] ✅ Profiles loaded:', profiles.length, 'active profiles');
+  return { success: true, profileCount: profiles.length };
 }
 
 /**

@@ -96,8 +96,9 @@ export const useAppStore = createStore<AppState>((set, get) => ({
       profiles: [...state.profiles, newProfile],
     }));
 
-    // Notify background script to reload profiles
-    chrome.runtime.sendMessage({ type: 'RELOAD_PROFILES', payload: {} });
+    // Send updated profiles to background worker
+    const updatedProfiles = get().profiles;
+    chrome.runtime.sendMessage({ type: 'SET_PROFILES', payload: updatedProfiles });
   },
 
   updateProfile: async (id, updates) => {
@@ -111,8 +112,9 @@ export const useAppStore = createStore<AppState>((set, get) => ({
       ),
     }));
 
-    // Notify background script to reload profiles
-    chrome.runtime.sendMessage({ type: 'RELOAD_PROFILES', payload: {} });
+    // Send updated profiles to background worker
+    const updatedProfiles = get().profiles;
+    chrome.runtime.sendMessage({ type: 'SET_PROFILES', payload: updatedProfiles });
   },
 
   deleteProfile: async (id) => {
@@ -122,8 +124,9 @@ export const useAppStore = createStore<AppState>((set, get) => ({
       profiles: state.profiles.filter((p) => p.id !== id),
     }));
 
-    // Notify background script to reload profiles
-    chrome.runtime.sendMessage({ type: 'RELOAD_PROFILES', payload: {} });
+    // Send updated profiles to background worker
+    const updatedProfiles = get().profiles;
+    chrome.runtime.sendMessage({ type: 'SET_PROFILES', payload: updatedProfiles });
   },
 
   toggleProfile: async (id) => {
@@ -135,8 +138,9 @@ export const useAppStore = createStore<AppState>((set, get) => ({
       ),
     }));
 
-    // Notify background script to reload profiles
-    chrome.runtime.sendMessage({ type: 'RELOAD_PROFILES', payload: {} });
+    // Send updated profiles to background worker
+    const updatedProfiles = get().profiles;
+    chrome.runtime.sendMessage({ type: 'SET_PROFILES', payload: updatedProfiles });
   },
 
   // Config actions

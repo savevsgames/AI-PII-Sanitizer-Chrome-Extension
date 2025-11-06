@@ -48,9 +48,17 @@ export class StorageManager {
   /**
    * Setup Firebase auth state listener to invalidate cache when user signs in/out
    * This ensures fresh data loading when authentication state changes
+   * NOTE: Only works in popup/content contexts, not in service worker (no DOM)
    */
   private setupAuthListener() {
+    // Check if we're in a service worker context (no document object)
+    if (typeof document === 'undefined') {
+      console.log('[Storage] Running in service worker context - skipping auth listener setup');
+      return;
+    }
+
     // Dynamically import Firebase to avoid circular dependencies
+    // This only runs in popup/content contexts where DOM is available
     import('./firebase').then(({ auth }) => {
       auth.onAuthStateChanged((user) => {
         console.log('[Storage] 🔐 Auth state changed:', user ? 'Signed in' : 'Signed out');
@@ -74,8 +82,12 @@ export class StorageManager {
    * Initialize storage with default values
    * Handles v1 to v2 migration if needed
    * Gracefully handles unauthenticated state (returns empty data)
+   * In service worker context, skips profile loading (profiles sent from popup)
    */
   async initialize(): Promise<void> {
+    // Check if we're in service worker context
+    const isServiceWorker = typeof document === 'undefined';
+
     try {
       // Check for v1 data and migrate if needed
       await this.migrateV1ToV2IfNeeded();
@@ -86,6 +98,13 @@ export class StorageManager {
       const config = await this.loadConfig();
       if (!config) {
         await this.saveConfig(this.getDefaultConfig());
+      }
+
+      // Skip profile loading in service worker - profiles will be sent from popup
+      if (isServiceWorker) {
+        console.log('[StorageManager] Service worker context - skipping profile initialization');
+        console.log('[StorageManager] Profiles will be sent from popup via SET_PROFILES message');
+        return;
       }
 
       const profiles = await this.loadProfiles();
@@ -132,6 +151,21 @@ export class StorageManager {
       return JSON.parse(decrypted);
 
     } catch (error) {
+      // Check if legacy key material exists
+      const legacyKeyData = await chrome.storage.local.get('_encryptionKeyMaterial');
+      const hasLegacyKey = !!legacyKeyData['_encryptionKeyMaterial'];
+
+      if (!hasLegacyKey) {
+        // No legacy key = already migrated
+        console.log('[StorageManager] Aliases already migrated to Firebase UID');
+
+        if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+          throw error;
+        }
+
+        return []; // Return empty if can't decrypt
+      }
+
       console.warn('[StorageManager] Aliases: Firebase UID decryption failed, attempting legacy migration...');
 
       try {
@@ -140,7 +174,19 @@ export class StorageManager {
         const decrypted = await this.decryptWithKey(encryptedData, legacyKey);
         const aliases = JSON.parse(decrypted);
 
-        console.log('[StorageManager] ✅ Legacy aliases decrypted - migrating to Firebase UID...');
+        console.log('[StorageManager] ✅ Legacy aliases decrypted');
+
+        // Check if we're in service worker context
+        const isServiceWorker = typeof document === 'undefined';
+
+        if (isServiceWorker) {
+          // In service worker, can't re-encrypt (no Firebase auth)
+          console.log('[StorageManager] ⏭️ Running in service worker - skipping aliases migration');
+          return aliases;
+        }
+
+        // In popup/content context - proceed with migration
+        console.log('[StorageManager] 🔄 Migrating aliases to Firebase UID...');
 
         // Re-encrypt with Firebase UID
         await this.saveAliases(aliases);
@@ -237,7 +283,26 @@ export class StorageManager {
       return profiles;
 
     } catch (error) {
-      console.warn('[StorageManager] Firebase UID decryption failed, attempting legacy key migration...');
+      // Check if legacy key material exists (indicates data not yet migrated)
+      const legacyKeyData = await chrome.storage.local.get('_encryptionKeyMaterial');
+      const hasLegacyKey = !!legacyKeyData['_encryptionKeyMaterial'];
+
+      console.log('[StorageManager] Legacy key check:', { hasLegacyKey });
+
+      if (!hasLegacyKey) {
+        // No legacy key = already migrated to Firebase UID
+        // If we're in service worker, we can't decrypt Firebase UID encrypted data
+        console.log('[StorageManager] Data already migrated to Firebase UID (no legacy key found)');
+
+        // Re-throw the original error (likely ENCRYPTION_KEY_UNAVAILABLE in service worker)
+        if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+          throw error;
+        }
+
+        throw new Error('DECRYPTION_FAILED: Profiles encrypted with Firebase UID. Authentication required.');
+      }
+
+      console.warn('[StorageManager] Legacy key found - attempting legacy key migration...');
 
       try {
         // Fall back to legacy random key material
@@ -245,7 +310,20 @@ export class StorageManager {
         const decrypted = await this.decryptWithKey(encryptedData, legacyKey);
         const profiles = JSON.parse(decrypted);
 
-        console.log('[StorageManager] ✅ Legacy decryption successful - migrating to Firebase UID...');
+        console.log('[StorageManager] ✅ Legacy decryption successful');
+
+        // Check if we're in service worker context
+        const isServiceWorker = typeof document === 'undefined';
+
+        if (isServiceWorker) {
+          // In service worker, can't re-encrypt (no Firebase auth)
+          // Just return the decrypted profiles, migration will happen in popup
+          console.log('[StorageManager] ⏭️ Running in service worker - skipping migration (will happen in popup)');
+          return profiles;
+        }
+
+        // In popup/content context - proceed with migration
+        console.log('[StorageManager] 🔄 Migrating to Firebase UID encryption...');
 
         // Re-encrypt with Firebase UID key
         await this.saveProfiles(profiles); // Uses Firebase UID automatically
@@ -1677,12 +1755,24 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
    */
   private async getFirebaseKeyMaterial(): Promise<string> {
     try {
+      // Check if we're in a service worker context (no DOM)
+      const isServiceWorker = typeof document === 'undefined';
+
+      if (isServiceWorker) {
+        // In service worker, Firebase auth won't work (no DOM)
+        // Immediately throw auth unavailable error
+        throw new Error(
+          'ENCRYPTION_KEY_UNAVAILABLE: Firebase auth not available in service worker context. ' +
+          'Encrypted data can only be accessed from popup/content contexts.'
+        );
+      }
+
       const { auth } = await import('./firebase');
 
-      // Wait for Firebase to initialize if needed (max 300ms for background, instant if already loaded)
-      // This handles cases where auth is still initializing in background worker
+      // Wait for Firebase to initialize if needed (max 300ms, instant if already loaded)
+      // This handles cases where auth is still initializing in popup
       if (!auth.currentUser) {
-        const maxWaitTime = 300; // 300ms max wait (reduced from 500ms)
+        const maxWaitTime = 300; // 300ms max wait
         const startTime = Date.now();
 
         await new Promise<void>((resolve) => {
@@ -1724,7 +1814,10 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
       if (error instanceof Error && error.message.includes('ENCRYPTION_KEY')) {
         throw error; // Re-throw our custom errors (don't log, already descriptive)
       }
-      // Unexpected error during Firebase import/access
+      // Unexpected error during Firebase import/access (e.g., document not defined)
+      if (error instanceof Error && error.message.includes('document is not defined')) {
+        throw new Error('ENCRYPTION_KEY_UNAVAILABLE: Cannot access encrypted data in service worker context.');
+      }
       console.error('[StorageManager] Unexpected error accessing Firebase auth:', error);
       throw new Error('ENCRYPTION_KEY_UNAVAILABLE: Authentication required to access encrypted data.');
     }

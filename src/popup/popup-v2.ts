@@ -91,6 +91,13 @@ function setupAuthStateListener() {
           renderFeaturesHub(state.config);
         }
 
+        // Send decrypted profiles to background worker (service worker can't decrypt)
+        console.log('[Popup] Sending', state.profiles.length, 'profiles to background worker');
+        chrome.runtime.sendMessage({
+          type: 'SET_PROFILES',
+          payload: state.profiles
+        }).catch(err => console.error('[Popup] Failed to send profiles to background:', err));
+
         console.log('[Auth State] ✅ Data reloaded with Firebase UID encryption');
 
       } catch (error) {
@@ -167,6 +174,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await initUI(); // Wait for auth redirect check
   await loadInitialData();
+
+  // Send decrypted profiles to background worker after initial load
+  const finalState = useAppStore.getState();
+  if (finalState.profiles.length > 0) {
+    console.log('[Popup] Sending', finalState.profiles.length, 'profiles to background worker');
+    chrome.runtime.sendMessage({
+      type: 'SET_PROFILES',
+      payload: finalState.profiles
+    }).catch(err => console.error('[Popup] Failed to send profiles to background:', err));
+  }
 
   // TEMPORARY: Test Firebase connection
   // TODO: Remove after verification
