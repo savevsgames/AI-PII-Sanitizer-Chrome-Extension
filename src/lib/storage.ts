@@ -83,7 +83,8 @@ export class StorageManager {
   }
 
   /**
-   * Load and decrypt aliases
+   * Load and decrypt aliases (legacy v1 data)
+   * Supports automatic migration from legacy encryption to Firebase UID
    */
   async loadAliases(): Promise<AliasEntry[]> {
     const data = await chrome.storage.local.get(StorageManager.KEYS.ALIASES);
@@ -91,12 +92,39 @@ export class StorageManager {
       return [];
     }
 
+    const encryptedData = data[StorageManager.KEYS.ALIASES];
+
     try {
-      const decrypted = await this.decrypt(data[StorageManager.KEYS.ALIASES]);
+      // Try Firebase UID key first (new method)
+      const decrypted = await this.decrypt(encryptedData);
       return JSON.parse(decrypted);
+
     } catch (error) {
-      console.error('Failed to decrypt aliases:', error);
-      return [];
+      console.warn('[StorageManager] Aliases: Firebase UID decryption failed, attempting legacy migration...');
+
+      try {
+        // Fall back to legacy key
+        const legacyKey = await this.getLegacyEncryptionKey();
+        const decrypted = await this.decryptWithKey(encryptedData, legacyKey);
+        const aliases = JSON.parse(decrypted);
+
+        console.log('[StorageManager] ✅ Legacy aliases decrypted - migrating to Firebase UID...');
+
+        // Re-encrypt with Firebase UID
+        await this.saveAliases(aliases);
+
+        return aliases;
+
+      } catch (legacyError) {
+        console.error('[StorageManager] Failed to decrypt aliases:', legacyError);
+
+        // Re-throw auth errors for UI handling
+        if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+          throw error;
+        }
+
+        return [];
+      }
     }
   }
 
@@ -158,6 +186,7 @@ export class StorageManager {
 
   /**
    * Load and decrypt profiles
+   * Supports automatic migration from legacy encryption (random key material) to Firebase UID
    */
   async loadProfiles(): Promise<AliasProfile[]> {
     const data = await chrome.storage.local.get(StorageManager.KEYS.PROFILES);
@@ -165,12 +194,48 @@ export class StorageManager {
       return [];
     }
 
+    const encryptedData = data[StorageManager.KEYS.PROFILES];
+
     try {
-      const decrypted = await this.decrypt(data[StorageManager.KEYS.PROFILES]);
-      return JSON.parse(decrypted);
+      // Try Firebase UID key first (new method)
+      console.log('[StorageManager] Attempting decryption with Firebase UID key...');
+      const decrypted = await this.decrypt(encryptedData);
+      const profiles = JSON.parse(decrypted);
+      console.log('[StorageManager] ✅ Firebase UID decryption successful');
+      return profiles;
+
     } catch (error) {
-      console.error('[StorageManager] Failed to decrypt profiles:', error);
-      return [];
+      console.warn('[StorageManager] Firebase UID decryption failed, attempting legacy key migration...');
+
+      try {
+        // Fall back to legacy random key material
+        const legacyKey = await this.getLegacyEncryptionKey();
+        const decrypted = await this.decryptWithKey(encryptedData, legacyKey);
+        const profiles = JSON.parse(decrypted);
+
+        console.log('[StorageManager] ✅ Legacy decryption successful - migrating to Firebase UID...');
+
+        // Re-encrypt with Firebase UID key
+        await this.saveProfiles(profiles); // Uses Firebase UID automatically
+
+        // Clean up old key material (no longer needed)
+        await chrome.storage.local.remove('_encryptionKeyMaterial');
+        console.log('[StorageManager] ✅ Migration complete - old key material removed');
+        console.log('[StorageManager] 🔐 Data now encrypted with Firebase UID');
+
+        return profiles;
+
+      } catch (legacyError) {
+        console.error('[StorageManager] Both decryption methods failed:', legacyError);
+        console.error('[StorageManager] Original error:', error);
+
+        // Check if it's an authentication error
+        if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+          throw error; // Re-throw auth error for UI to handle
+        }
+
+        throw new Error('DECRYPTION_FAILED: Cannot decrypt profiles. Data may be corrupted or authentication required.');
+      }
     }
   }
 
@@ -1516,17 +1581,17 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
   }
 
   /**
-   * Get or generate encryption key
-   * Uses randomly generated per-user key material stored in chrome.storage
-   * This is more secure than using chrome.runtime.id (which is public/predictable)
+   * Get encryption key using Firebase UID as key material
+   * SECURITY: Key material is NOT stored locally - derived from Firebase auth session
+   * This provides true key separation: encrypted data in chrome.storage, key material in Firebase
    */
   private async getEncryptionKey(): Promise<CryptoKey> {
     const encoder = new TextEncoder();
 
-    // Get or generate unique key material for this user
-    const keyMaterial = await this.getOrGenerateKeyMaterial();
+    // Get Firebase UID as key material (throws if not authenticated)
+    const keyMaterial = await this.getFirebaseKeyMaterial();
 
-    // Import raw key material
+    // Import Firebase UID as PBKDF2 key
     const importedKey = await crypto.subtle.importKey(
       'raw',
       encoder.encode(keyMaterial),
@@ -1535,15 +1600,15 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
       ['deriveKey']
     );
 
-    // Get or generate unique salt for this user
+    // Get or generate unique salt (salt can be public - stored in chrome.storage is OK)
     const salt = await this.getOrGenerateSalt();
 
-    // Derive AES key with strong parameters
+    // Derive AES-256-GCM key with 210k iterations
     return crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
         salt: encoder.encode(salt),
-        iterations: 210000, // Increased from 100k (OWASP 2023 recommendation)
+        iterations: 210000, // OWASP 2023 recommendation
         hash: 'SHA-256',
       },
       importedKey,
@@ -1551,6 +1616,93 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
       false,
       ['encrypt', 'decrypt']
     );
+  }
+
+  /**
+   * Get Firebase UID as encryption key material
+   * SECURITY: Never stored locally - only available when user is authenticated
+   * @throws Error if user is not authenticated
+   */
+  private async getFirebaseKeyMaterial(): Promise<string> {
+    try {
+      const { auth } = await import('./firebase');
+
+      // Check if user is authenticated
+      if (!auth.currentUser) {
+        throw new Error(
+          'ENCRYPTION_KEY_UNAVAILABLE: Please sign in to access encrypted data. ' +
+          'Your data is locked and requires authentication.'
+        );
+      }
+
+      const uid = auth.currentUser.uid;
+
+      if (!uid || uid.trim() === '') {
+        throw new Error('ENCRYPTION_KEY_INVALID: Firebase UID is missing or empty.');
+      }
+
+      console.log('[StorageManager] Using Firebase UID for encryption key derivation');
+      return uid;
+
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('ENCRYPTION_KEY')) {
+        throw error; // Re-throw our custom errors
+      }
+      console.error('[StorageManager] Failed to get Firebase UID:', error);
+      throw new Error('ENCRYPTION_KEY_UNAVAILABLE: Authentication required to access encrypted data.');
+    }
+  }
+
+  /**
+   * Get legacy encryption key (uses random key material from chrome.storage)
+   * DEPRECATED: Only used for migration from old encryption method
+   * Will be removed in v2.0
+   */
+  private async getLegacyEncryptionKey(): Promise<CryptoKey> {
+    const encoder = new TextEncoder();
+
+    // Get old random key material
+    const keyMaterial = await this.getOrGenerateKeyMaterial();
+
+    const importedKey = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(keyMaterial),
+      'PBKDF2',
+      false,
+      ['deriveKey']
+    );
+
+    const salt = await this.getOrGenerateSalt();
+
+    return crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: encoder.encode(salt),
+        iterations: 210000,
+        hash: 'SHA-256',
+      },
+      importedKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  /**
+   * Decrypt data with a specific key (used for migration)
+   */
+  private async decryptWithKey(encryptedData: string, key: CryptoKey): Promise<string> {
+    const combined = this.base64ToArrayBuffer(encryptedData);
+    const iv = combined.slice(0, 12);
+    const data = combined.slice(12);
+
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      data
+    );
+
+    return new TextDecoder().decode(decrypted);
   }
 
   /**

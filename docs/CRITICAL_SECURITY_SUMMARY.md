@@ -2,8 +2,8 @@
 
 **Date:** 2025-11-06
 **Severity:** CRITICAL (P0)
-**Status:** BLOCKER FOR LAUNCH
-**Estimated Fix Time:** 2-3 days
+**Status:** ✅ PHASE 1 IMPLEMENTATION COMPLETE - READY FOR TESTING
+**Implementation Time:** Completed in 1 day
 
 ---
 
@@ -73,30 +73,41 @@ chrome.storage.local:
 
 ## 🚀 Implementation Plan
 
-### Phase 1: Firebase UID Encryption (REQUIRED - 2-3 days)
+### Phase 1: Firebase UID Encryption ✅ COMPLETE
 
-**Changes Required:**
+**Changes Completed:**
 
-1. **Update key derivation** (`src/lib/storage.ts`)
-   - Use `auth.currentUser.uid` instead of `_encryptionKeyMaterial`
+1. ✅ **Update key derivation** (`src/lib/storage.ts`)
+   - Using `auth.currentUser.uid` instead of `_encryptionKeyMaterial`
    - Firebase UID only available when authenticated
    - Never stored locally
+   - Added `getFirebaseKeyMaterial()` method (lines 1561-1589)
+   - Updated `getEncryptionKey()` method (lines 1523-1554)
 
-2. **Handle signed-out state** (`src/popup/popup-v2.ts`)
+2. ✅ **Handle signed-out state** (`src/popup/popup-v2.ts`)
    - Show "locked" UI when user not authenticated
    - Prompt to sign in to unlock data
    - Auto-lock on sign out
+   - Added `showLockedState()` and `hideLockedState()` functions
+   - Added `setupAuthStateListener()` with Firebase `onAuthStateChanged`
 
-3. **Migration for existing users**
+3. ✅ **Migration for existing users**
    - Try Firebase UID first
    - Fall back to old key material
    - Re-encrypt with Firebase UID
    - Delete old key material
+   - Implemented in `loadProfiles()` (lines 163-212) and `loadAliases()` (lines 241-290)
 
-4. **Testing**
-   - New user flow (sign in → create profile → sign out → sign in)
-   - Existing user migration
-   - Signed-out state UI
+4. ✅ **Locked State UI**
+   - Created `popup-v2.html` locked overlay (lines 1062-1086)
+   - Created `locked-state.css` with glassmorphism design
+   - Sign-in button integrated with auth modal
+
+5. ✅ **Build Status**
+   - Build completed successfully with no errors
+   - Only warnings about bundle size (expected)
+
+**Next Step: Testing** (see Testing Checklist below)
 
 ### Phase 2: Passphrase Option (OPTIONAL - Post-launch PRO feature)
 
@@ -194,28 +205,86 @@ A: Great idea! That's Phase 2 (post-launch PRO feature). Implement Firebase UID 
 
 ---
 
-## 🚦 Next Steps
+## 🚦 Testing Checklist
 
-1. **Read the full implementation plan:**
-   - [Firebase UID Encryption Plan](./development/FIREBASE_UID_ENCRYPTION.md)
+**Phase 1 implementation is complete. Manual testing required:**
 
-2. **Start implementation:**
-   - Update `src/lib/storage.ts` (key derivation)
-   - Update `src/popup/popup-v2.ts` (locked state UI)
-   - Add migration logic
-   - Test thoroughly
+### Test 1: New User Flow
+- [ ] Load extension in Chrome (chrome://extensions → Developer mode → Load unpacked → `/dist`)
+- [ ] Open popup - should see locked overlay with "Sign In to Unlock" button
+- [ ] Click "Sign In to Unlock" - auth modal should open
+- [ ] Sign in with Google
+- [ ] Verify locked overlay disappears
+- [ ] Create a new profile
+- [ ] Check console logs for "Using Firebase UID for encryption"
+- [ ] Inspect chrome.storage.local - verify NO `_encryptionKeyMaterial` key exists
+- [ ] Sign out
+- [ ] Verify locked overlay appears immediately
+- [ ] Sign back in
+- [ ] Verify profile is still accessible (decrypted successfully)
 
-3. **Timeline:**
-   - Day 1: Key derivation + locked state UI
-   - Day 2: Migration + testing
-   - Day 3: Final testing + documentation
+### Test 2: Existing User Migration (if you have old data)
+- [ ] Load extension with existing encrypted data
+- [ ] Sign in with Firebase
+- [ ] Check console logs for "Legacy decryption successful - migrating to Firebase UID"
+- [ ] Check console logs for "Migration complete - old key material removed"
+- [ ] Verify all profiles are still accessible
+- [ ] Inspect chrome.storage.local - verify `_encryptionKeyMaterial` has been deleted
+- [ ] Sign out and sign back in
+- [ ] Verify data decrypts successfully with Firebase UID (no migration message this time)
 
-4. **After fix is deployed:**
-   - Resume PRO feature work (alias variations, etc.)
-   - Continue toward launch
+### Test 3: Error Handling
+- [ ] With locked overlay visible, click browser back button - should stay on locked state
+- [ ] Try to access features tab while signed out - should be locked
+- [ ] Try to create profile while signed out - should be locked
 
 ---
 
-**This is your #1 priority. Everything else can wait.**
+## 📊 Implementation Summary
 
-**Last Updated:** 2025-11-06
+**What Was Changed:**
+
+1. **`src/lib/storage.ts`** (348 lines modified)
+   - New `getFirebaseKeyMaterial()` method
+   - Updated `getEncryptionKey()` to use Firebase UID
+   - Added `getLegacyEncryptionKey()` for migration
+   - Added `decryptWithKey()` helper
+   - Modified `loadProfiles()` and `loadAliases()` with migration logic
+
+2. **`src/popup/popup-v2.ts`** (99 lines added)
+   - Auth state listener with `onAuthStateChanged`
+   - Locked state management functions
+   - Auto-reload data after sign-in
+
+3. **`src/popup/popup-v2.html`** (25 lines added)
+   - Locked overlay HTML structure
+
+4. **`src/popup/styles/locked-state.css`** (NEW - 176 lines)
+   - Glassmorphism locked state design
+   - Animations and responsive layout
+
+**Security Improvements:**
+
+- 🔐 Encryption key material NO LONGER stored in chrome.storage.local
+- 🔐 Firebase UID used as key material (only available when authenticated)
+- 🔐 Data auto-locks when user signs out
+- 🔐 Attack surface reduced: attacker now needs both local + remote access
+- 🔐 Remote revocation possible (revoke Firebase session = lock data)
+
+---
+
+## 🎯 After Testing
+
+**If tests pass:**
+1. ✅ Update ROADMAP.md to remove BLOCKER status
+2. ✅ Resume PRO feature work (alias variations, Stripe integration, etc.)
+3. ✅ Continue toward launch
+
+**If tests fail:**
+1. ❌ Debug issues found
+2. ❌ Fix and rebuild
+3. ❌ Re-test until all tests pass
+
+---
+
+**Last Updated:** 2025-11-06 (Phase 1 Implementation Complete)

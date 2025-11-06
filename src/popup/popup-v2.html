@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="styles/custom-rules.css">
   <link rel="stylesheet" href="styles/auth.css">
   <link rel="stylesheet" href="styles/quick-alias-generator.css">
+  <link rel="stylesheet" href="styles/locked-state.css">
 </head>
 <body>
   <!-- Minimal Mode -->
@@ -1055,6 +1056,32 @@
 
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Locked State Overlay (shown when user is signed out) -->
+  <div class="locked-overlay hidden" id="lockedOverlay">
+    <div class="locked-container">
+      <div class="locked-icon">🔒</div>
+      <h2 class="locked-title">Data Locked</h2>
+      <p class="locked-message">
+        Your profiles and settings are encrypted with your Firebase account for maximum security.
+      </p>
+      <p class="locked-submessage">
+        Sign in to unlock your data and access PromptBlocker features.
+      </p>
+      <button class="btn btn-primary btn-lg" id="lockedSignInBtn">
+        <span>🔑</span>
+        <span>Sign In to Unlock</span>
+      </button>
+      <div class="locked-info">
+        <p class="locked-hint">
+          🔐 Your data is secure with AES-256 encryption using your Firebase User ID as the encryption key.
+        </p>
+        <p class="locked-hint">
+          ℹ️  Data is automatically locked when you sign out for your protection.
+        </p>
       </div>
     </div>
   </div>

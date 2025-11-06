@@ -14,11 +14,89 @@ import { initMinimalMode, loadModePreference, updateMinimalView } from './compon
 import { initPageStatus } from './components/pageStatus';
 import { initFeaturesTab, renderFeaturesHub } from './components/featuresTab';
 import { initAPIKeyModal } from './components/apiKeyModal';
-import { initAuthModal } from './components/authModal';
+import { initAuthModal, openAuthModal } from './components/authModal';
 import { initUserProfile } from './components/userProfile';
 import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/initUI';
 import { updateStatusIndicator } from './components/statusIndicator';
+import { auth } from '../lib/firebase';
 // import { testFirebaseConnection } from './test-firebase-popup'; // Disabled - interferes with auth
+
+// ========== FIREBASE AUTH STATE MANAGEMENT ==========
+
+/**
+ * Show locked state overlay when user is signed out
+ * Data is encrypted with Firebase UID and cannot be accessed without authentication
+ */
+function showLockedState() {
+  const lockedOverlay = document.getElementById('lockedOverlay');
+  if (!lockedOverlay) return;
+
+  lockedOverlay.classList.remove('hidden');
+
+  // Setup sign-in button handler
+  const signInBtn = document.getElementById('lockedSignInBtn');
+  if (signInBtn) {
+    signInBtn.addEventListener('click', () => {
+      console.log('[Locked State] User clicked Sign In to Unlock');
+      openAuthModal('signin');
+    });
+  }
+
+  console.log('[Locked State] 🔒 Data locked - authentication required');
+}
+
+/**
+ * Hide locked state overlay when user is authenticated
+ */
+function hideLockedState() {
+  const lockedOverlay = document.getElementById('lockedOverlay');
+  if (!lockedOverlay) return;
+
+  lockedOverlay.classList.add('hidden');
+  console.log('[Locked State] 🔓 Data unlocked - user authenticated');
+}
+
+/**
+ * Handle Firebase authentication state changes
+ * Shows/hides locked overlay based on auth state
+ */
+function setupAuthStateListener() {
+  auth.onAuthStateChanged(async (user) => {
+    console.log('[Auth State] Firebase auth state changed:', user ? `Signed in as ${user.email}` : 'Signed out');
+
+    if (!user) {
+      // User signed out - show locked state
+      showLockedState();
+    } else {
+      // User signed in - hide locked state and reload data
+      hideLockedState();
+
+      try {
+        // Reload data now that we have Firebase UID for decryption
+        const store = useAppStore.getState();
+        await store.initialize();
+
+        // Re-render UI with decrypted data
+        const state = useAppStore.getState();
+        renderProfiles(state.profiles);
+        renderStats(state.config, state.profiles);
+        renderActivityLog(state.activityLog);
+        updateSettingsUI(state.config);
+        updateStatusIndicator(state.config);
+        if (state.config) {
+          renderFeaturesHub(state.config);
+        }
+
+        console.log('[Auth State] ✅ Data reloaded with Firebase UID encryption');
+
+      } catch (error) {
+        console.error('[Auth State] Failed to reload data after sign in:', error);
+      }
+    }
+  });
+
+  console.log('[Auth State] Firebase auth state listener initialized');
+}
 
 // ========== INITIALIZATION ==========
 
@@ -49,6 +127,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateThemeUI(freshState.config);
 
   console.log('[Theme Debug] 🎨 Theme applied from config:', freshState.config?.settings?.theme);
+
+  // Setup Firebase auth state listener (before loading data)
+  setupAuthStateListener();
 
   await initUI(); // Wait for auth redirect check
   await loadInitialData();
