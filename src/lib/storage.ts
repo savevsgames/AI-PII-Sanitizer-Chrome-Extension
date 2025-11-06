@@ -186,6 +186,14 @@ export class StorageManager {
   }): Promise<AliasProfile> {
     const profiles = await this.loadProfiles();
 
+    // Check FREE tier limit (1 profile max)
+    const config = await this.loadConfig();
+    const isFree = config?.account?.tier === 'free';
+
+    if (isFree && profiles.length >= 1) {
+      throw new Error('FREE_TIER_LIMIT: You can only create 1 profile on the FREE tier. Upgrade to PRO for unlimited profiles.');
+    }
+
     // Generate variations for both real and alias identities
     const realVariations = generateIdentityVariations(profileData.real);
     const aliasVariations = generateIdentityVariations(profileData.alias);
@@ -367,7 +375,7 @@ export class StorageManager {
     }
 
     // 3. Encrypt activity logs if they exist
-    if (configToSave.stats && configToSave.stats.activityLog.length > 0) {
+    if (configToSave.stats && configToSave.stats.activityLog && configToSave.stats.activityLog.length > 0) {
       console.log('[Storage] 🔐 Encrypting activity logs...');
       encryptedData._encryptedActivityLogs = await this.encryptActivityLogs(configToSave.stats.activityLog);
       configToSave.stats = { ...configToSave.stats, activityLog: [] };
@@ -472,7 +480,7 @@ export class StorageManager {
         console.error('[Storage] ❌ Failed to decrypt activity logs:', error);
         // Keep empty logs if decryption fails
       }
-    } else if (config.stats && config.stats.activityLog.length > 0) {
+    } else if (config.stats && config.stats.activityLog && config.stats.activityLog.length > 0) {
       console.warn('[Storage] ⚠️ Found plaintext activity logs - will encrypt on next save');
     }
 
@@ -737,6 +745,12 @@ export class StorageManager {
 
     await this.ensureCustomRulesConfig(config);
 
+    // Check PRO tier requirement
+    const isFree = config.account?.tier === 'free';
+    if (isFree) {
+      throw new Error('PRO_FEATURE: Custom redaction rules are a PRO feature. Upgrade to PRO to create custom rules.');
+    }
+
     const ruleId = crypto.randomUUID();
     const newRule: import('./types').CustomRule = {
       id: ruleId,
@@ -882,10 +896,10 @@ export class StorageManager {
 
     await this.ensurePromptTemplatesConfig(config);
 
-    // Check if limit reached (for FREE tier)
-    if (config.promptTemplates!.maxTemplates !== -1 &&
-        config.promptTemplates!.templates.length >= config.promptTemplates!.maxTemplates) {
-      throw new Error(`Template limit reached. FREE tier allows ${config.promptTemplates!.maxTemplates} templates. Upgrade to PRO for unlimited.`);
+    // FREE users cannot create custom templates (starter templates are always free)
+    const isFree = config.account?.tier === 'free';
+    if (isFree) {
+      throw new Error('PRO_FEATURE: Creating custom templates requires PRO tier. Upgrade to unlock unlimited templates.');
     }
 
     const newTemplate: import('./types').PromptTemplate = {
@@ -932,6 +946,12 @@ export class StorageManager {
     if (!template) {
       console.error('[StorageManager] Template not found:', templateId);
       return;
+    }
+
+    // FREE users cannot edit starter templates
+    const isFree = config.account?.tier === 'free';
+    if (isFree && template.isStarter) {
+      throw new Error('PRO_FEATURE: Editing templates requires PRO tier. Upgrade to unlock.');
     }
 
     Object.assign(template, updates, { updatedAt: Date.now() });
@@ -1055,7 +1075,9 @@ export class StorageManager {
 
     return [
       {
-        id: `template-${now}-1`,
+        id: `starter-professional-email`,
+        isStarter: true,
+        readonly: false, // Will be set dynamically based on tier
         name: 'Professional Email',
         description: 'Generate a professional email using your protected identity',
         content: `Write a professional email with the following details:
@@ -1078,7 +1100,9 @@ Tone: Professional and friendly`,
         lastUsed: undefined,
       },
       {
-        id: `template-${now}-2`,
+        id: `starter-code-review`,
+        isStarter: true,
+        readonly: false, // Will be set dynamically based on tier
         name: 'Code Review Request',
         description: 'Request AI to review code as your developer persona',
         content: `I'm {{name}}, a developer at {{company}}. Please review the following code:
@@ -1099,7 +1123,9 @@ Provide feedback as if you're conducting a professional code review.`,
         lastUsed: undefined,
       },
       {
-        id: `template-${now}-3`,
+        id: `starter-meeting-summary`,
+        isStarter: true,
+        readonly: false, // Will be set dynamically based on tier
         name: 'Meeting Summary',
         description: 'Create meeting notes using your work identity',
         content: `Create professional meeting notes for:
@@ -1342,12 +1368,12 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
     }
 
     // 3. Migrate activity logs
-    const hasPlaintextLogs = config.stats && config.stats.activityLog.length > 0;
+    const hasPlaintextLogs = config.stats && config.stats.activityLog && config.stats.activityLog.length > 0;
     const hasEncryptedLogs = !!configWithEncrypted._encryptedActivityLogs;
 
     if (hasPlaintextLogs && !hasEncryptedLogs) {
       console.log('[StorageManager] 🔐 Migrating plaintext activity logs to encrypted storage...');
-      console.log(`[StorageManager] Found ${config.stats.activityLog.length} plaintext activity log entries`);
+      console.log(`[StorageManager] Found ${config.stats!.activityLog!.length} plaintext activity log entries`);
 
       try {
         const encryptedLogs = await this.encryptActivityLogs(config.stats.activityLog);
@@ -1436,7 +1462,7 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
   /**
    * Simple encryption using Web Crypto API
    */
-  private async encrypt(data: string): Promise<string> {
+  async encrypt(data: string): Promise<string> {
     const encoder = new TextEncoder();
     const dataBuffer = encoder.encode(data);
 
@@ -1460,7 +1486,7 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
   /**
    * Decrypt data
    */
-  private async decrypt(encryptedData: string): Promise<string> {
+  async decrypt(encryptedData: string): Promise<string> {
     const combined = this.base64ToArrayBuffer(encryptedData);
     const iv = combined.slice(0, 12);
     const data = combined.slice(12);
