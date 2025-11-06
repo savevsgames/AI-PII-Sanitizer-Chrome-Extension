@@ -1,13 +1,24 @@
 # PromptBlocker - Product Roadmap
 
 **Last Updated:** 2025-11-06
-**Current Version:** 1.0.0-beta (Tier System Implementation Complete)
-**Status:** ✅ **TIER LIMITS IMPLEMENTED - READY FOR PRODUCTION TESTING**
+**Current Version:** 1.0.0-beta (Critical Security Issue Identified)
+**Status:** 🚨 **CRITICAL SECURITY FIX REQUIRED - BLOCKER FOR LAUNCH**
+
+**🚨 CRITICAL SECURITY ISSUE IDENTIFIED (2025-11-06):**
+- ❌ **Encryption key material stored alongside encrypted data** - This defeats the purpose of encryption!
+- 🔴 **Attack scenario**: Malicious extension with chrome.storage access can extract both key and data
+- 🔐 **Solution required**: Firebase UID-based encryption (2-3 days to implement)
+- 📋 **Documentation created**: [Firebase UID Encryption Plan](./docs/development/FIREBASE_UID_ENCRYPTION.md)
+- ⚠️ **ALL FEATURE WORK PAUSED** until this security hole is plugged
 
 **Recent Updates:**
+- ✅ **Alias Variations PRO Gating** (2025-11-06) - Variations now PRO-only, FREE users don't get auto-generated variations
+- ✅ **Bidirectional Decode UI** (2025-11-06) - Added per-profile decode toggle with "Decode ON/OFF" buttons
+- ✅ **Theme-Aware Button Colors** (2025-11-06) - Fixed all buttons to work in light/dark themes (no more white text on light backgrounds)
+- ✅ **Test Suite Enhanced** (2025-11-06) - Added 15 tier system tests (414 total tests, 99.8% pass rate)
 - ✅ **Tier Limits Implemented** (2025-11-06) - FREE: 1 profile, 3 starter templates (read-only), PRO: Unlimited
 - ✅ **Downgrade/Archive System** (2025-11-06) - 90-day encrypted archive with restoration on re-subscription
-- ✅ **Account Settings Modal Fixed** (2025-11-06) - PRO users see billing options, close buttons working, theme-aware hover colors
+- ✅ **Account Settings Modal Fixed** (2025-11-06) - PRO users see billing options, custom error modals, theme-aware hover colors
 - ✅ **Stripe Payment Flow Working** (2025-11-06) - Checkout, webhooks, real-time tier updates all functional
 - ✅ **Custom Rules PRO-Only** (2025-11-06) - FREE users blocked from creating custom redaction rules
 - ✅ **Template System Updated** (2025-11-06) - Starter templates free/read-only, custom templates PRO-only
@@ -764,9 +775,43 @@ All core payment integration and tier system features are implemented and workin
 
 ---
 
-### 💎 Phase 3A: PRO Feature Expansion (NEW - Week 6-7)
+### ✅ Phase 3.1: Bidirectional Decode UI (COMPLETE - November 6, 2024)
+**Completed:** November 6, 2024
+**Status:** ✅ **COMPLETE**
+**Actual Time:** 2 hours
+
+**Goal:** Add UI to control bidirectional aliasing (decode responses feature)
+
+**Achievements:**
+- [x] Added decode status indicator to each profile card ("🔄 Decode ON" / "🔒 Decode OFF")
+- [x] Added toggle button per profile card ("Turn ON" / "Turn OFF")
+- [x] Toggle updates global `decodeResponses` setting
+- [x] Help text explains feature: "AI responses with aliases will be converted back to your real info"
+- [x] Theme-aware button styling (works in light and dark themes)
+- [x] Custom error modals instead of browser alerts
+- [x] Fixed all `.btn-secondary` hover colors to use CSS variables
+- [x] Debug logging added for troubleshooting decode functionality
+
+**Files Modified:**
+- `src/popup/components/profileRenderer.ts` - Added decode toggle UI and handler
+- `src/popup/styles/profile-card.css` - Styled decode toggle section
+- `src/popup/styles/buttons.css` - Fixed theme-aware hover colors
+- `src/popup/styles/modal.css` - Fixed theme-aware hover colors
+- `src/popup/components/userProfile.ts` - Custom error modal function
+- `src/background/serviceWorker.ts` - Enhanced decode logging
+- `src/lib/aliasEngine.ts` - Added map debugging for decode mode
+
+**User Benefits:**
+- Clear visual indicator of decode status on each profile
+- One-click toggle without going to settings
+- Better privacy control (can keep aliases in responses if preferred)
+- Works seamlessly in both light and dark themes
+
+---
+
+### 💎 Phase 3A: PRO Feature Expansion (NEXT - Week 6-7)
 **Target Date:** November 7-14, 2024
-**Status:** 📋 **NEXT PRIORITY**
+**Status:** 📋 **NEXT PRIORITY - READY TO START**
 **Estimated Time:** 2-3 days
 
 **Goal:** Add more value to PRO tier before public launch

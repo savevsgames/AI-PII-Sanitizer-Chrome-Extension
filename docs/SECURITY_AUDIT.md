@@ -115,50 +115,85 @@ element.textContent = userInput; // No HTML rendering
 
 ---
 
-### HIGH: Encryption Key Derivation (Priority: P1)
+### CRITICAL: Encryption Key Material Co-Located with Encrypted Data (Priority: P0) 🚨
 
-**Issue:** Encryption key derived from `chrome.runtime.id` (extension ID)
+**Issue:** Encryption key material stored alongside encrypted data in chrome.storage.local
 
-**Location:** `src/lib/storage.ts:914-940`
+**Location:** `src/lib/storage.ts:1669-1688` (key material), `src/lib/storage.ts:153-156` (encrypted data)
+
 ```typescript
-private async getEncryptionKey(): Promise<CryptoKey> {
-  // Use extension ID as key material
-  const keyMaterial = chrome.runtime.id; // ⚠️ PREDICTABLE
-  // ...
-}
+// CRITICAL VULNERABILITY:
+// 1. Key material stored in chrome.storage.local
+await chrome.storage.local.set({ '_encryptionKeyMaterial': randomKey }); // 🔴 INSECURE
+
+// 2. Salt stored in chrome.storage.local
+await chrome.storage.local.set({ '_encryptionSalt': randomSalt }); // 🔴 INSECURE
+
+// 3. Encrypted profiles ALSO in chrome.storage.local
+await chrome.storage.local.set({ 'profiles': encryptedProfiles }); // 🔴 INSECURE
+
+// Result: Attacker with chrome.storage access has BOTH key and data!
 ```
 
-**Why This is Problematic:**
-- Extension ID is public knowledge (visible in Chrome Web Store URL)
-- Attacker with extension ID can derive same key
-- No per-user key isolation
+**Why This is CRITICAL:**
+- **Defeats Purpose of Encryption**: Like locking your house and leaving the key under the doormat
+- **Single Point of Compromise**: Malicious extension with chrome.storage access gets everything
+- **No Key Separation**: Key material and ciphertext in same security boundary
+- **Attack Scenario:**
+  1. Malicious extension reads chrome.storage.local
+  2. Extracts `_encryptionKeyMaterial` and `_encryptionSalt`
+  3. Derives AES-256 key using PBKDF2 (same algorithm we use)
+  4. Decrypts all profiles, API keys, custom rules
 
-**Impact:** MEDIUM - Encrypted data can be decrypted if attacker knows extension ID
+**Impact:** CRITICAL - Complete bypass of encryption. User PII fully exposed to attackers with chrome.storage access.
 
-**Fix Required:**
-1. [ ] Generate per-user random key on first install
-2. [ ] Store key in chrome.storage.local (still local-only, but unique per install)
-3. [ ] Use PBKDF2 with per-user salt
-4. [ ] Consider hardware-backed keys (chrome.identity token as salt)
+**Current State:**
+- ⚠️ Random key material implemented (better than chrome.runtime.id)
+- ⚠️ Per-user unique keys (good)
+- ⚠️ 210k PBKDF2 iterations (good)
+- ❌ **But key material stored with encrypted data (CRITICAL FLAW)**
 
-**Example Fix:**
+**Fix Required: Firebase UID-Based Encryption** 🔐
+
+**Solution:** Use Firebase User ID as key material (never stored locally)
+
 ```typescript
-// Generate random key on first install
-async function initializeUserKey(): Promise<void> {
-  const existing = await chrome.storage.local.get('userKey');
-  if (!existing.userKey) {
-    const randomKey = crypto.getRandomValues(new Uint8Array(32));
-    await chrome.storage.local.set({ userKey: Array.from(randomKey) });
+// SECURE IMPLEMENTATION:
+private async getEncryptionKey(): Promise<CryptoKey> {
+  const { auth } = await import('./firebase');
+
+  // Key material = Firebase UID (NOT stored in chrome.storage!)
+  if (!auth.currentUser?.uid) {
+    throw new Error('ENCRYPTION_KEY_UNAVAILABLE: Sign in to access encrypted data');
   }
-}
 
-// Use user key instead of extension ID
-private async getEncryptionKey(): Promise<CryptoKey> {
-  const data = await chrome.storage.local.get('userKey');
-  const keyData = new Uint8Array(data.userKey);
-  // ... derive key from user-specific random data
+  const keyMaterial = auth.currentUser.uid; // ✅ SECURE: Only in memory
+
+  // Salt can be public (stored in chrome.storage.local is OK)
+  const salt = await this.getOrGenerateSalt();
+
+  // Derive AES-256 key
+  return await this.deriveKey(keyMaterial, salt);
 }
 ```
+
+**Benefits:**
+1. ✅ **Key Separation**: Firebase UID never stored locally
+2. ✅ **Auto-Locking**: User logs out → Firebase UID unavailable → data locked
+3. ✅ **Two-Factor Protection**: Attacker needs BOTH chrome.storage AND Firebase session
+4. ✅ **Remote Revocation**: User can revoke Firebase session → immediately locks data
+5. ✅ **Per-User Isolation**: Each Firebase user has unique UID
+
+**Action Items:**
+1. [ ] **BLOCKER**: Implement Firebase UID-based encryption (2-3 days)
+2. [ ] Add migration for existing users with random key material
+3. [ ] Handle signed-out state (show locked UI)
+4. [ ] Test encryption/decryption with Firebase auth flow
+5. [ ] Document security model in user-facing docs
+
+**See Also:** [Firebase UID Encryption Plan](./development/FIREBASE_UID_ENCRYPTION.md) (comprehensive implementation guide)
+
+**Status:** 🚨 **BLOCKER FOR LAUNCH** - Must be fixed before Chrome Web Store submission
 
 ---
 

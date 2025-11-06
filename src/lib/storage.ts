@@ -194,9 +194,16 @@ export class StorageManager {
       throw new Error('FREE_TIER_LIMIT: You can only create 1 profile on the FREE tier. Upgrade to PRO for unlimited profiles.');
     }
 
-    // Generate variations for both real and alias identities
-    const realVariations = generateIdentityVariations(profileData.real);
-    const aliasVariations = generateIdentityVariations(profileData.alias);
+    // Generate variations ONLY for PRO users (PRO feature)
+    let variations: AliasProfile['variations'] | undefined;
+    if (!isFree) {
+      const realVariations = generateIdentityVariations(profileData.real);
+      const aliasVariations = generateIdentityVariations(profileData.alias);
+      variations = {
+        real: realVariations,
+        alias: aliasVariations,
+      };
+    }
 
     const newProfile: AliasProfile = {
       id: this.generateId(),
@@ -205,10 +212,7 @@ export class StorageManager {
       enabled: profileData.enabled ?? true,
       real: profileData.real,
       alias: profileData.alias,
-      variations: {
-        real: realVariations,
-        alias: aliasVariations,
-      },
+      variations, // Only populated for PRO users
       metadata: {
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -238,7 +242,7 @@ export class StorageManager {
         autoReplace: true,
         highlightInUI: true,
         activeServices: ['chatgpt', 'claude', 'gemini'],
-        enableVariations: true, // Enable by default
+        enableVariations: !isFree, // PRO only: Enable variations for PRO users, disable for FREE
       },
     };
 
@@ -270,15 +274,25 @@ export class StorageManager {
         },
       };
 
-      // Regenerate variations if real or alias identity changed
+      // Regenerate variations if real or alias identity changed (PRO only)
       if (updates.real || updates.alias) {
-        const realVariations = generateIdentityVariations(updatedProfile.real);
-        const aliasVariations = generateIdentityVariations(updatedProfile.alias);
-        updatedProfile.variations = {
-          real: realVariations,
-          alias: aliasVariations,
-        };
-        console.log('[StorageManager] Regenerated variations for profile:', updatedProfile.profileName);
+        const config = await this.loadConfig();
+        const isFree = config?.account?.tier === 'free';
+
+        if (!isFree) {
+          // PRO feature: Generate variations
+          const realVariations = generateIdentityVariations(updatedProfile.real);
+          const aliasVariations = generateIdentityVariations(updatedProfile.alias);
+          updatedProfile.variations = {
+            real: realVariations,
+            alias: aliasVariations,
+          };
+          console.log('[StorageManager] Regenerated variations for profile:', updatedProfile.profileName);
+        } else {
+          // FREE tier: No variations
+          updatedProfile.variations = undefined;
+          console.log('[StorageManager] Variations disabled for FREE tier profile:', updatedProfile.profileName);
+        }
       }
 
       profiles[index] = updatedProfile;

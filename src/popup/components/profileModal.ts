@@ -72,9 +72,19 @@ export function initProfileModal() {
   const generateVariationsBtn = document.getElementById('generateVariationsBtn');
   generateVariationsBtn?.addEventListener('click', regenerateVariations);
 
-  // Enable variations toggle - show/hide management section
+  // Enable variations toggle - show/hide management section (PRO only)
   const enableVariationsCheckbox = document.getElementById('enableVariations') as HTMLInputElement;
   enableVariationsCheckbox?.addEventListener('change', (e) => {
+    const store = useAppStore.getState();
+    const isFree = store.config?.account?.tier === 'free';
+
+    // PRO Feature Gating: Prevent FREE users from enabling
+    if (isFree) {
+      (e.target as HTMLInputElement).checked = false;
+      alert('⭐ Alias Variations is a PRO feature!\n\nUpgrade to PRO to unlock auto-generated name and email variations for better coverage.');
+      return;
+    }
+
     const enabled = (e.target as HTMLInputElement).checked;
     const managementSection = document.getElementById('variationsManagementSection');
     if (enabled && currentEditingProfileId) {
@@ -102,6 +112,21 @@ export function openProfileModal(mode: 'create' | 'edit', profile?: AliasProfile
   // Set editing mode
   currentEditingProfileId = profile?.id || null;
 
+  // Check tier for PRO features
+  const store = useAppStore.getState();
+  const isFree = store.config?.account?.tier === 'free';
+  const variationsToggleWrapper = document.querySelector('.toggle-label:has(#enableVariations)') as HTMLElement;
+  const enableVariationsCheckbox = document.getElementById('enableVariations') as HTMLInputElement;
+
+  // PRO Feature Gating: Hide variations toggle for FREE users
+  if (isFree) {
+    variationsToggleWrapper?.classList.add('hidden');
+    enableVariationsCheckbox.checked = false; // Force disable for FREE
+    variationsManagementSection?.classList.add('hidden');
+  } else {
+    variationsToggleWrapper?.classList.remove('hidden');
+  }
+
   // Update modal UI based on mode
   if (mode === 'create') {
     modalTitle.textContent = 'Create Profile';
@@ -109,7 +134,7 @@ export function openProfileModal(mode: 'create' | 'edit', profile?: AliasProfile
     form.reset();
     // Default enable toggles to checked
     (document.getElementById('profileEnabled') as HTMLInputElement).checked = true;
-    (document.getElementById('enableVariations') as HTMLInputElement).checked = true;
+    enableVariationsCheckbox.checked = !isFree; // PRO only
     // Hide variations management section in create mode
     variationsManagementSection?.classList.add('hidden');
   } else {
@@ -125,7 +150,7 @@ export function openProfileModal(mode: 'create' | 'edit', profile?: AliasProfile
 
   // Show modal
   modal.classList.remove('hidden');
-  console.log(`[Profile Modal] Opened in ${mode} mode`);
+  console.log(`[Profile Modal] Opened in ${mode} mode (tier: ${isFree ? 'FREE' : 'PRO'})`);
 }
 
 /**
@@ -168,12 +193,19 @@ function populateForm(profile: AliasProfile) {
 
   // Enable toggles
   (document.getElementById('profileEnabled') as HTMLInputElement).checked = profile.enabled;
-  (document.getElementById('enableVariations') as HTMLInputElement).checked =
-    profile.settings?.enableVariations ?? true;
 
-  // Show variations management section if variations enabled
+  // Check tier for PRO features
+  const store = useAppStore.getState();
+  const isFree = store.config?.account?.tier === 'free';
+
+  (document.getElementById('enableVariations') as HTMLInputElement).checked =
+    !isFree && (profile.settings?.enableVariations ?? true); // PRO only
+
+  // Show variations management section if variations enabled AND PRO user
   const variationsManagementSection = document.getElementById('variationsManagementSection');
-  if (profile.settings?.enableVariations ?? true) {
+  const showVariations = !isFree && (profile.settings?.enableVariations ?? true);
+
+  if (showVariations) {
     variationsManagementSection?.classList.remove('hidden');
     // Always render variations management (even if empty, user can generate)
     renderVariationsManagement(profile);
