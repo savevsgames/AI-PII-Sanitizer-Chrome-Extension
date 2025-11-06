@@ -104,16 +104,34 @@ function setupAuthStateListener() {
 
 // ========== INITIALIZATION ==========
 
+/**
+ * Wait for Firebase auth to initialize and restore session
+ * Firebase auth.currentUser is null initially, even if user is signed in
+ */
+async function waitForAuthInit(): Promise<void> {
+  return new Promise((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged(() => {
+      unsubscribe(); // Unsubscribe after first call
+      resolve();
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[Theme Debug] 🎨 DOMContentLoaded event fired');
+  console.log('[Popup Init] 🎨 DOMContentLoaded event fired');
 
   initTabNavigation();
   initKeyboardShortcuts();
 
-  // Setup Firebase auth state listener FIRST (before any data loading)
+  // Wait for Firebase to initialize and restore auth session
+  console.log('[Popup Init] Waiting for Firebase auth to initialize...');
+  await waitForAuthInit();
+  console.log('[Popup Init] Firebase auth initialized, currentUser:', auth.currentUser?.email || 'Not signed in');
+
+  // Setup Firebase auth state listener for future changes
   setupAuthStateListener();
 
-  // Check auth state immediately - if not signed in, show locked state
+  // Check auth state - if not signed in, show locked state
   if (!auth.currentUser) {
     console.log('[Popup Init] User not authenticated - showing locked state');
     showLockedState();

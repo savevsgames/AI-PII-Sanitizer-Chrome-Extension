@@ -52,23 +52,34 @@ export class StorageManager {
   /**
    * Initialize storage with default values
    * Handles v1 to v2 migration if needed
+   * Gracefully handles unauthenticated state (returns empty data)
    */
   async initialize(): Promise<void> {
-    // Check for v1 data and migrate if needed
-    await this.migrateV1ToV2IfNeeded();
+    try {
+      // Check for v1 data and migrate if needed
+      await this.migrateV1ToV2IfNeeded();
 
-    // Migrate plaintext API keys to encrypted storage if needed
-    await this.migrateAPIKeysToEncryptedIfNeeded();
+      // Migrate plaintext API keys to encrypted storage if needed
+      await this.migrateAPIKeysToEncryptedIfNeeded();
 
-    const config = await this.loadConfig();
-    if (!config) {
-      await this.saveConfig(this.getDefaultConfig());
-    }
+      const config = await this.loadConfig();
+      if (!config) {
+        await this.saveConfig(this.getDefaultConfig());
+      }
 
-    const profiles = await this.loadProfiles();
-    if (!profiles || profiles.length === 0) {
-      // Initialize with empty profiles array
-      await this.saveProfiles([]);
+      const profiles = await this.loadProfiles();
+      if (!profiles || profiles.length === 0) {
+        // Initialize with empty profiles array
+        await this.saveProfiles([]);
+      }
+    } catch (error) {
+      // If user not authenticated, skip initialization (data locked)
+      if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+        console.log('[StorageManager] User not authenticated - skipping data initialization');
+        return;
+      }
+      // Re-throw other errors
+      throw error;
     }
   }
 
@@ -526,7 +537,12 @@ export class StorageManager {
         config.apiKeyVault = decryptedVault;
         console.log('[Storage] ✅ API key vault decrypted');
       } catch (error) {
-        console.error('[Storage] ❌ Failed to decrypt API key vault:', error);
+        // User not authenticated - expected, don't spam console
+        if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+          console.log('[Storage] 🔒 API key vault locked (user not authenticated)');
+        } else {
+          console.error('[Storage] ❌ Failed to decrypt API key vault:', error);
+        }
         // Keep the empty vault if decryption fails
       }
     } else if (config.apiKeyVault && config.apiKeyVault.keys.length > 0) {
@@ -541,7 +557,12 @@ export class StorageManager {
         config.customRules = decryptedRules;
         console.log('[Storage] ✅ Custom rules decrypted');
       } catch (error) {
-        console.error('[Storage] ❌ Failed to decrypt custom rules:', error);
+        // User not authenticated - expected, don't spam console
+        if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+          console.log('[Storage] 🔒 Custom rules locked (user not authenticated)');
+        } else {
+          console.error('[Storage] ❌ Failed to decrypt custom rules:', error);
+        }
         // Keep the empty rules if decryption fails
       }
     } else if (config.customRules && config.customRules.rules.length > 0) {
@@ -556,7 +577,12 @@ export class StorageManager {
         config.stats.activityLog = decryptedLogs;
         console.log('[Storage] ✅ Activity logs decrypted');
       } catch (error) {
-        console.error('[Storage] ❌ Failed to decrypt activity logs:', error);
+        // User not authenticated - expected, don't spam console
+        if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+          console.log('[Storage] 🔒 Activity logs locked (user not authenticated)');
+        } else {
+          console.error('[Storage] ❌ Failed to decrypt activity logs:', error);
+        }
         // Keep empty logs if decryption fails
       }
     } else if (config.stats && config.stats.activityLog && config.stats.activityLog.length > 0) {
@@ -577,7 +603,12 @@ export class StorageManager {
         };
         console.log('[Storage] ✅ Account data decrypted');
       } catch (error) {
-        console.error('[Storage] ❌ Failed to decrypt account data:', error);
+        // User not authenticated - expected, don't spam console
+        if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+          console.log('[Storage] 🔒 Account data locked (user not authenticated)');
+        } else {
+          console.error('[Storage] ❌ Failed to decrypt account data:', error);
+        }
         // Keep empty account data if decryption fails
       }
     } else if (config.account && (config.account.email || config.account.displayName)) {
