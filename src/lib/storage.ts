@@ -1677,9 +1677,10 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
 
     } catch (error) {
       if (error instanceof Error && error.message.includes('ENCRYPTION_KEY')) {
-        throw error; // Re-throw our custom errors
+        throw error; // Re-throw our custom errors (don't log, already descriptive)
       }
-      console.error('[StorageManager] Failed to get Firebase UID:', error);
+      // Unexpected error during Firebase import/access
+      console.error('[StorageManager] Unexpected error accessing Firebase auth:', error);
       throw new Error('ENCRYPTION_KEY_UNAVAILABLE: Authentication required to access encrypted data.');
     }
   }
@@ -1759,7 +1760,10 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
       const json = await this.decrypt(encryptedVault);
       return JSON.parse(json);
     } catch (error) {
-      console.error('[StorageManager] Failed to decrypt API key vault:', error);
+      // Don't log ENCRYPTION_KEY_UNAVAILABLE as error (expected when not authenticated)
+      if (!(error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE'))) {
+        console.error('[StorageManager] Failed to decrypt API key vault:', error);
+      }
       throw error;
     }
   }
@@ -1786,7 +1790,10 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
       const json = await this.decrypt(encryptedRules);
       return JSON.parse(json);
     } catch (error) {
-      console.error('[StorageManager] Failed to decrypt custom rules:', error);
+      // Don't log ENCRYPTION_KEY_UNAVAILABLE as error (expected when not authenticated)
+      if (!(error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE'))) {
+        console.error('[StorageManager] Failed to decrypt custom rules:', error);
+      }
       throw error;
     }
   }
@@ -1813,7 +1820,10 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
       const json = await this.decrypt(encryptedLogs);
       return JSON.parse(json);
     } catch (error) {
-      console.error('[StorageManager] Failed to decrypt activity logs:', error);
+      // Don't log ENCRYPTION_KEY_UNAVAILABLE as error (expected when not authenticated)
+      if (!(error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE'))) {
+        console.error('[StorageManager] Failed to decrypt activity logs:', error);
+      }
       throw error;
     }
   }
@@ -1840,7 +1850,10 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
       const json = await this.decrypt(encryptedAccount);
       return JSON.parse(json);
     } catch (error) {
-      console.error('[StorageManager] Failed to decrypt account data:', error);
+      // Don't log ENCRYPTION_KEY_UNAVAILABLE as error (expected when not authenticated)
+      if (!(error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE'))) {
+        console.error('[StorageManager] Failed to decrypt account data:', error);
+      }
       throw error;
     }
   }
