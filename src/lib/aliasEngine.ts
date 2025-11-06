@@ -199,13 +199,7 @@ export class AliasEngine {
   ): SubstitutionResult {
     const map = direction === 'encode' ? this.realToAliasMap : this.aliasToRealMap;
 
-    // Debug logging for decode direction
-    if (direction === 'decode') {
-      console.log(`[AliasEngine] Decode mode - aliasToRealMap has ${map.size} entries`);
-      if (map.size > 0 && map.size < 20) {
-        console.log('[AliasEngine] Map contents:', Array.from(map.entries()).map(([k, v]) => `"${k}" → "${v.real}"`));
-      }
-    }
+    // Removed verbose decode logging for production (too noisy)
 
     const substitutions: Array<{
       from: string;

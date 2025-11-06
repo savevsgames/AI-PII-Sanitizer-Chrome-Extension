@@ -631,14 +631,14 @@ export class StorageManager {
     // 1. Decrypt API key vault if it exists
     if (configWithEncrypted._encryptedApiKeyVault) {
       try {
-        console.log('[Storage] 🔓 Decrypting API key vault...');
+        // Removed verbose logging for production
         const decryptedVault = await this.decryptAPIKeyVault(configWithEncrypted._encryptedApiKeyVault);
         config.apiKeyVault = decryptedVault;
         console.log('[Storage] ✅ API key vault decrypted');
       } catch (error) {
         // User not authenticated - expected, don't spam console
         if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
-          console.log('[Storage] 🔒 API key vault locked (user not authenticated)');
+          // Locked state is expected in service worker
         } else {
           console.error('[Storage] ❌ Failed to decrypt API key vault:', error);
         }
@@ -651,14 +651,14 @@ export class StorageManager {
     // 2. Decrypt custom rules if they exist
     if (configWithEncrypted._encryptedCustomRules) {
       try {
-        console.log('[Storage] 🔓 Decrypting custom rules...');
+        // Removed verbose logging for production
         const decryptedRules = await this.decryptCustomRules(configWithEncrypted._encryptedCustomRules);
         config.customRules = decryptedRules;
         console.log('[Storage] ✅ Custom rules decrypted');
       } catch (error) {
         // User not authenticated - expected, don't spam console
         if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
-          console.log('[Storage] 🔒 Custom rules locked (user not authenticated)');
+          // Locked state is expected in service worker
         } else {
           console.error('[Storage] ❌ Failed to decrypt custom rules:', error);
         }
@@ -671,14 +671,14 @@ export class StorageManager {
     // 3. Decrypt activity logs if they exist
     if (configWithEncrypted._encryptedActivityLogs) {
       try {
-        console.log('[Storage] 🔓 Decrypting activity logs...');
+        // Removed verbose logging for production
         const decryptedLogs = await this.decryptActivityLogs(configWithEncrypted._encryptedActivityLogs);
         config.stats.activityLog = decryptedLogs;
         console.log('[Storage] ✅ Activity logs decrypted');
       } catch (error) {
         // User not authenticated - expected, don't spam console
         if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
-          console.log('[Storage] 🔒 Activity logs locked (user not authenticated)');
+          // Locked state is expected in service worker
         } else {
           console.error('[Storage] ❌ Failed to decrypt activity logs:', error);
         }
@@ -691,7 +691,7 @@ export class StorageManager {
     // 4. Decrypt account data if it exists
     if (configWithEncrypted._encryptedAccountData) {
       try {
-        console.log('[Storage] 🔓 Decrypting account data...');
+        // Removed verbose logging for production
         const decryptedAccount = await this.decryptAccountData(configWithEncrypted._encryptedAccountData);
         config.account = {
           ...config.account,
@@ -704,7 +704,7 @@ export class StorageManager {
       } catch (error) {
         // User not authenticated - expected, don't spam console
         if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
-          console.log('[Storage] 🔒 Account data locked (user not authenticated)');
+          // Locked state is expected in service worker
         } else {
           console.error('[Storage] ❌ Failed to decrypt account data:', error);
         }

@@ -715,14 +715,12 @@ async function handleSubstituteResponse(payload: { text: string }): Promise<any>
     // Apply reverse substitution (alias → real)
     const aliasEngine = await AliasEngine.getInstance();
 
-    console.log('[Response Decode] Starting decode with text:', text.substring(0, 200));
+    // Only log when substitutions are made (reduce noise)
     const decoded = aliasEngine.substitute(text, 'decode');
 
-    console.log('[Response Decode] ✅ Decoded:', decoded.substitutions.length, 'replacements');
     if (decoded.substitutions.length > 0) {
+      console.log('[Response Decode] ✅ Decoded:', decoded.substitutions.length, 'replacements');
       console.log('[Response Decode] Replacements made:', decoded.substitutions);
-    } else {
-      console.log('[Response Decode] ⚠️ No substitutions made - aliasToRealMap may be empty or text didnt match');
     }
 
     return {
