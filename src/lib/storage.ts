@@ -40,6 +40,27 @@ export class StorageManager {
         this.configCacheTimestamp = 0;
       }
     });
+
+    // Setup Firebase auth state listener to invalidate cache on sign in/out
+    this.setupAuthListener();
+  }
+
+  /**
+   * Setup Firebase auth state listener to invalidate cache when user signs in/out
+   * This ensures fresh data loading when authentication state changes
+   */
+  private setupAuthListener() {
+    // Dynamically import Firebase to avoid circular dependencies
+    import('./firebase').then(({ auth }) => {
+      auth.onAuthStateChanged((user) => {
+        console.log('[Storage] 🔐 Auth state changed:', user ? 'Signed in' : 'Signed out');
+        console.log('[Storage] 🔄 Invalidating cache due to auth state change');
+        this.configCache = null;
+        this.configCacheTimestamp = 0;
+      });
+    }).catch(error => {
+      console.error('[Storage] Failed to setup auth listener:', error);
+    });
   }
 
   public static getInstance(): StorageManager {
@@ -1658,7 +1679,31 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
     try {
       const { auth } = await import('./firebase');
 
-      // Check if user is authenticated
+      // Wait for Firebase to initialize if needed (max 300ms for background, instant if already loaded)
+      // This handles cases where auth is still initializing in background worker
+      if (!auth.currentUser) {
+        const maxWaitTime = 300; // 300ms max wait (reduced from 500ms)
+        const startTime = Date.now();
+
+        await new Promise<void>((resolve) => {
+          const unsubscribe = auth.onAuthStateChanged(() => {
+            unsubscribe();
+            resolve();
+          });
+
+          // Timeout fallback - resolve immediately if auth doesn't fire
+          setTimeout(() => {
+            resolve();
+          }, maxWaitTime);
+        });
+
+        const waitTime = Date.now() - startTime;
+        if (auth.currentUser) {
+          console.log(`[StorageManager] Firebase auth initialized after ${waitTime}ms wait`);
+        }
+      }
+
+      // Check if user is authenticated after waiting
       if (!auth.currentUser) {
         throw new Error(
           'ENCRYPTION_KEY_UNAVAILABLE: Please sign in to access encrypted data. ' +

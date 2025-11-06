@@ -105,7 +105,20 @@ async function checkAndUpdateBadge(tabId: number, url?: string): Promise<void> {
 
     // Check if extension is enabled
     const storage = StorageManager.getInstance();
-    const config = await storage.loadConfig();
+    let config: Awaited<ReturnType<typeof storage.loadConfig>> = null;
+
+    try {
+      config = await storage.loadConfig();
+    } catch (error) {
+      // If config loading fails due to auth, assume extension is disabled
+      // This prevents errors from spamming when user isn't signed in
+      if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+        console.log(`[Badge] Tab ${tabId}: Data locked (user not authenticated)`);
+        await updateBadge(tabId, 'disabled');
+        return;
+      }
+      throw error; // Re-throw other errors
+    }
 
     if (DEBUG_MODE) {
       console.log(`[Badge] Config check for tab ${tabId}:`, {
@@ -162,14 +175,27 @@ chrome.runtime.onStartup.addListener(async () => {
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('AI PII Sanitizer installed:', details.reason);
   const storage = StorageManager.getInstance();
-  await storage.initialize();
 
-  // Ensure extension is enabled on install/update
-  const config = await storage.loadConfig();
-  if (config && !config.settings.enabled) {
-    console.log('[Background] Extension was disabled - enabling it now');
-    config.settings.enabled = true;
-    await storage.saveConfig(config);
+  try {
+    await storage.initialize();
+
+    // Ensure extension is enabled on install/update
+    const config = await storage.loadConfig();
+    if (config && !config.settings.enabled) {
+      console.log('[Background] Extension was disabled - enabling it now');
+      config.settings.enabled = true;
+      await storage.saveConfig(config);
+    }
+  } catch (error) {
+    // If user not authenticated, skip initialization
+    // Data will be initialized when user signs in through popup
+    if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+      console.log('[Background] User not authenticated - skipping data initialization');
+      console.log('[Background] Extension will initialize when user signs in');
+    } else {
+      // Re-throw other errors
+      console.error('[Background] Failed to initialize on install:', error);
+    }
   }
 
   // Auto-reload AI service tabs on extension update/reload (dev mode)
@@ -772,9 +798,28 @@ async function handleUpdateConfig(payload: any) {
  * Get configuration
  */
 async function handleGetConfig() {
-  const storage = StorageManager.getInstance();
-  const config = await storage.loadConfig();
-  return { success: true, data: config };
+  try {
+    const storage = StorageManager.getInstance();
+    const config = await storage.loadConfig();
+    return { success: true, data: config };
+  } catch (error) {
+    // If config loading fails due to auth, return a default disabled config
+    if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+      console.log('[Background] Config requested but user not authenticated - returning default config');
+      // Return a safe default config
+      return {
+        success: true,
+        data: {
+          settings: { enabled: false },
+          features: {},
+          stats: { totalSubstitutions: 0, totalInterceptions: 0, byService: {} },
+          account: { tier: 'free' }
+        }
+      };
+    }
+    console.error('[Background] Error loading config:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
 }
 
 /**
