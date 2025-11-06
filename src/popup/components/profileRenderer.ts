@@ -23,6 +23,10 @@ export function renderProfiles(profiles: AliasProfile[]) {
     return;
   }
 
+  // Get decodeResponses setting from config
+  const store = useAppStore.getState();
+  const decodeEnabled = store.config?.settings?.decodeResponses || false;
+
   emptyState.classList.add('hidden');
   profileList.innerHTML = profiles
     .map((profile) => {
@@ -109,7 +113,24 @@ export function renderProfiles(profiles: AliasProfile[]) {
             ${mappings.join('')}
           </div>
           <div class="profile-meta">
-            ${variationsText}
+            <div class="profile-meta-row">
+              <span>${variationsText}</span>
+            </div>
+            <div class="profile-meta-row decode-toggle-row">
+              <span class="decode-status ${decodeEnabled ? 'decode-enabled' : 'decode-disabled'}">
+                ${decodeEnabled ? '🔄 Decode ON' : '🔒 Decode OFF'}
+              </span>
+              <button class="btn-xs btn-secondary decode-toggle-btn"
+                      data-action="toggle-decode"
+                      title="${decodeEnabled ? 'Turn off response decoding (aliases stay in responses)' : 'Turn on response decoding (aliases converted back to real names)'}">
+                ${decodeEnabled ? 'Turn OFF' : 'Turn ON'}
+              </button>
+            </div>
+            <div class="decode-help-text">
+              ${decodeEnabled
+                ? '↩️ AI responses with aliases will be converted back to your real info'
+                : '🔐 AI responses will keep aliases (more private)'}
+            </div>
           </div>
         </div>
       `;
@@ -119,6 +140,11 @@ export function renderProfiles(profiles: AliasProfile[]) {
   // Attach event listeners to profile action buttons
   profileList.querySelectorAll('.icon-btn, .btn-sm').forEach((btn) => {
     btn.addEventListener('click', handleProfileAction);
+  });
+
+  // Attach event listeners to decode toggle buttons
+  profileList.querySelectorAll('.decode-toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', handleDecodeToggle);
   });
 }
 
@@ -151,4 +177,36 @@ async function handleProfileAction(event: Event) {
       showDeleteConfirmation(profileId);
       break;
   }
+}
+
+/**
+ * Handle decode toggle button
+ * Toggles the global decodeResponses setting
+ */
+async function handleDecodeToggle(event: Event) {
+  event.stopPropagation();
+
+  const store = useAppStore.getState();
+  const config = store.config;
+
+  if (!config) {
+    console.error('[Profile Renderer] No config found');
+    return;
+  }
+
+  // Toggle the decodeResponses setting
+  const newDecodeState = !config.settings.decodeResponses;
+
+  console.log(`[Profile Renderer] Toggling decode responses: ${config.settings.decodeResponses} → ${newDecodeState}`);
+
+  // Update settings using store method
+  await store.updateSettings({
+    decodeResponses: newDecodeState,
+  });
+
+  // Re-render profiles to update UI
+  renderProfiles(store.profiles);
+
+  // Show feedback
+  console.log(`✅ Response decoding ${newDecodeState ? 'enabled' : 'disabled'}`);
 }

@@ -191,19 +191,75 @@
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.3);
-  
+
   font-size: 12px;
   color: var(--text-tertiary);
-  
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-meta-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .profile-meta-item {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* Decode Toggle Section */
+.decode-toggle-row {
+  padding: 10px 12px;
+  background: var(--card-bg-light);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.decode-status {
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.decode-status.decode-enabled {
+  color: #10b981; /* Green */
+}
+
+.decode-status.decode-disabled {
+  color: #6b7280; /* Gray */
+}
+
+.decode-toggle-btn {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 12px;
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  border: 1px solid var(--btn-secondary-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.decode-toggle-btn:hover {
+  background: var(--btn-secondary-hover-bg);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.decode-help-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding-left: 4px;
 }
 
 /* Add Profile Button */
