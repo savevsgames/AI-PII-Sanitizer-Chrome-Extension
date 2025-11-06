@@ -1103,38 +1103,10 @@ async function logActivity(entry: {
   };
   message: string;
 }) {
-  try {
-    const storage = StorageManager.getInstance();
-    const config = await storage.loadConfig();
-
-    if (!config) return;
-
-    const activityEntry = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: Date.now(),
-      ...entry,
-      details: {
-        ...entry.details,
-        profilesUsed: entry.details.profilesUsed || [],
-        piiTypesFound: entry.details.piiTypesFound || [],
-      },
-    };
-
-    // Add to activity log (keep last 100)
-    config.stats.activityLog = [activityEntry, ...config.stats.activityLog].slice(0, 100);
-
-    // Update stats
-    config.stats.totalInterceptions++;
-    if (entry.type === 'substitution' && entry.service !== 'unknown') {
-      config.stats.totalSubstitutions += entry.details.substitutionCount;
-      config.stats.byService[entry.service].requests++;
-      config.stats.byService[entry.service].substitutions += entry.details.substitutionCount;
-    }
-
-    await storage.saveConfig(config);
-  } catch (error) {
-    console.error('[Background] Failed to log activity:', error);
-  }
+  // Skip activity logging in service worker context (can't save encrypted activity logs)
+  // Activity logs are encrypted and can only be saved from popup where Firebase auth is available
+  console.log('[Background] Activity:', entry.message);
+  // Note: Stats tracking and activity logging will be handled in popup when user opens it
 }
 
 // ========== TAB EVENT LISTENERS FOR BADGE UPDATES ==========
