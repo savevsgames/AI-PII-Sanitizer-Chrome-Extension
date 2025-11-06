@@ -13,6 +13,12 @@ const functions = getFunctions(app);
 const STRIPE_PRICE_MONTHLY = process.env.STRIPE_PRICE_MONTHLY;
 const STRIPE_PRICE_YEARLY = process.env.STRIPE_PRICE_YEARLY;
 
+// Debug logging
+console.log('[Stripe] Price IDs loaded:', {
+  monthly: STRIPE_PRICE_MONTHLY ? 'SET' : 'MISSING',
+  yearly: STRIPE_PRICE_YEARLY ? 'SET' : 'MISSING'
+});
+
 export interface CheckoutSessionResponse {
   sessionId: string;
   url: string;
@@ -27,23 +33,31 @@ export interface PortalSessionResponse {
  * Opens Stripe Checkout in a new tab
  */
 export async function initiateCheckout(priceId: string): Promise<void> {
+  console.log('[Stripe] initiateCheckout called with priceId:', priceId);
+
   try {
+    console.log('[Stripe] Calling Firebase function: createCheckoutSession');
+
     const createCheckoutSession = httpsCallable<
       { priceId: string },
       CheckoutSessionResponse
     >(functions, 'createCheckoutSession');
 
     const result = await createCheckoutSession({ priceId });
+    console.log('[Stripe] Function result:', result);
+
     const { url } = result.data;
 
     if (!url) {
+      console.error('[Stripe] No checkout URL in response:', result.data);
       throw new Error('No checkout URL returned');
     }
 
+    console.log('[Stripe] Opening checkout URL:', url);
     // Open Stripe Checkout in new tab
     chrome.tabs.create({ url });
   } catch (error) {
-    console.error('Failed to initiate checkout:', error);
+    console.error('[Stripe] Error in initiateCheckout:', error);
     throw new Error('Failed to start checkout. Please try again.');
   }
 }
@@ -52,9 +66,13 @@ export async function initiateCheckout(priceId: string): Promise<void> {
  * Initiates monthly subscription checkout
  */
 export async function upgradeToMonthly(): Promise<void> {
+  console.log('[Stripe] upgradeToMonthly called, price ID:', STRIPE_PRICE_MONTHLY);
+
   if (!STRIPE_PRICE_MONTHLY) {
-    throw new Error('Monthly price ID not configured');
+    console.error('[Stripe] Monthly price ID not configured!');
+    throw new Error('Monthly price ID not configured. Please contact support.');
   }
+
   return initiateCheckout(STRIPE_PRICE_MONTHLY);
 }
 

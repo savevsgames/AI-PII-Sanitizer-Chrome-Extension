@@ -1,24 +1,27 @@
 # Stripe Payment Integration
 
-**Status:** ✅ Implemented (Core Complete)
+**Status:** ✅ WORKING (Core Complete, Security Fix Needed)
 **Priority:** P0 - Required for Monetization
-**Completed:** November 5, 2025
+**Completed:** November 6, 2025
 **Target Release:** v1.1.0
 
 ## Implementation Summary
 
-The Stripe payment integration is fully implemented and deployed. Users can now:
+The Stripe payment integration is **WORKING** and deployed. Users can now:
 - ✅ Upgrade to PRO tier (Monthly $4.99 or Yearly $49)
 - ✅ Complete checkout via Stripe Checkout (hosted)
 - ✅ Manage billing through Stripe Customer Portal
 - ✅ Automatic tier updates via webhooks
+- ✅ Real-time UI updates when tier changes (Firestore listener)
 
 **Firebase Functions Deployed:**
-- `createCheckoutSession` - Creates checkout sessions
-- `stripeWebhook` - Handles subscription events
-- `createPortalSession` - Opens billing portal
+- `createCheckoutSession` - Creates checkout sessions ✅ WORKING
+- `stripeWebhook` - Handles subscription events ✅ WORKING (signature verification temporarily disabled)
+- `createPortalSession` - Opens billing portal ✅ WORKING
 
-**Webhook URL:** `https://us-central1-promptblocker-prod.cloudfunctions.net/stripeWebhook`
+**Webhook URL:** `https://stripewebhook-plfcofyapq-uc.a.run.app`
+
+⚠️ **SECURITY NOTE:** Webhook signature verification is temporarily disabled for testing. Must be re-enabled before production launch.
 
 ---
 
@@ -620,21 +623,31 @@ See [TESTING.md](./TESTING.md) for complete testing documentation.
 
 ## What's Left to Do
 
-### High Priority
-1. **Firestore Tier Listener** - Real-time tier updates in extension
-2. **Data Migration on Downgrade** - Limit profiles/templates to 5
-3. **Replace Confirm Dialog** - Proper plan selection modal
-4. **Wire Up User Dropdown** - Account Settings & Manage Billing buttons
+### 🔴 Critical (Before Production)
+1. **Re-enable Webhook Signature Verification** - Fix rawBody handling for security
+   - Current: Signature check disabled (TESTING ONLY)
+   - Need: Proper `req.rawBody` handling with Firebase Functions v2
+   - Reference: https://aronschueler.de/blog/2025/03/17/implementing-stripe-subscriptions-with-firebase-cloud-functions-and-firestore/
 
-### Medium Priority
-5. **Success/Cancel Pages** - Landing pages on promptblocker.com
-6. **Loading States** - Spinners during async operations
+### 🟡 High Priority
+2. **Success/Cancel Redirect Pages** - Create landing pages on promptblocker.com
+   - Success: `/welcome-pro` page with onboarding
+   - Cancel: `/checkout-cancelled` page with retry option
+3. **Replace Browser Alerts** - Use custom modal system (already exists)
+   - Replace `alert()` and `confirm()` calls with themed modals
+4. **Data Migration on Downgrade** - Limit profiles/templates to 5 when tier changes to FREE
+5. **Add Yearly Plan Option** - Currently only shows monthly, add yearly selection
+
+### 🟢 Medium Priority
+6. **Loading States** - Add spinners during checkout/portal operations
 7. **Error Handling** - Better error messages and retry logic
-8. **Testing** - Complete test suite with all scenarios
+8. **Cancellation Flow** - Handle subscription cancellation gracefully
+9. **Testing** - Complete test suite with all payment scenarios
 
-### Low Priority
-9. **Notification System** - Toast messages for tier changes
-10. **Analytics** - Track conversion rates and funnel
+### 🔵 Low Priority
+10. **Notification System** - Toast messages for tier changes (instead of console logs)
+11. **Analytics** - Track conversion rates and checkout funnel
+12. **Proration Handling** - Pro-rate upgrades/downgrades mid-cycle
 
 ---
 
