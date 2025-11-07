@@ -14,6 +14,7 @@ import {
 } from '../../lib/backgrounds';
 import { useAppStore } from '../../lib/store';
 import { showError, showProFeature, showWarning } from '../utils/modalUtils';
+import { openImageEditor } from './imageEditor';
 
 let currentConfig: BackgroundConfig = { ...DEFAULT_BACKGROUND_CONFIG };
 let userTier: TierLevel = 'free';
@@ -310,11 +311,13 @@ async function handleCustomUpload(file: File) {
   // Check file size (500KB limit)
   const maxSize = 500 * 1024; // 500KB
   if (file.size > maxSize) {
-    showWarning(`Image too large (${(file.size / 1024).toFixed(0)}KB).\n\nMaximum size is 500KB. Please use a smaller image or we'll compress it for you.`);
-    // TODO: Open cropping modal with compression
+    // Open image editor for cropping and compression
+    console.log('[Background Manager] Image too large, opening editor...');
+    openImageEditor(file, handleImageEditorResult);
     return;
   }
 
+  // Small enough - apply directly
   try {
     // Read file as base64
     const reader = new FileReader();
@@ -341,6 +344,42 @@ async function handleCustomUpload(file: File) {
   } catch (error) {
     console.error('[Background Manager] Error uploading custom background:', error);
     showError('Failed to upload background. Please try again.');
+  }
+}
+
+/**
+ * Handle result from image editor
+ */
+async function handleImageEditorResult(result: { success: boolean; dataURL?: string; size?: number; error?: string }) {
+  if (!result.success) {
+    showError(result.error || 'Failed to process image. Please try again.');
+    return;
+  }
+
+  if (!result.dataURL) {
+    showError('No image data received. Please try again.');
+    return;
+  }
+
+  try {
+    // Save custom background
+    const newConfig: BackgroundConfig = {
+      ...currentConfig,
+      enabled: true,
+      source: 'custom',
+      customBackground: result.dataURL,
+    };
+
+    await saveBackgroundConfig(newConfig);
+
+    // Re-render library
+    renderBackgroundLibrary();
+
+    const sizeKB = result.size ? (result.size / 1024).toFixed(0) : 'unknown';
+    console.log('[Background Manager] Custom background saved successfully:', sizeKB, 'KB');
+  } catch (error) {
+    console.error('[Background Manager] Error saving custom background:', error);
+    showError('Failed to save background. Please try again.');
   }
 }
 
