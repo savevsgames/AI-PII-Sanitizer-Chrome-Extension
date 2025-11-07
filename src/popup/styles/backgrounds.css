@@ -90,6 +90,51 @@ body[data-bg-blur="true"]::before {
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  z-index: 2;
+}
+
+/* Edit button for custom backgrounds */
+.background-thumbnail-edit {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 14px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 2;
+}
+
+.background-thumbnail:hover .background-thumbnail-edit {
+  opacity: 1;
+}
+
+.background-thumbnail-edit:hover {
+  transform: scale(1.1);
+  background: var(--color-primary);
+}
+
+/* Label for custom backgrounds */
+.background-thumbnail-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+  color: white;
+  font-size: var(--font-size-xs);
+  padding: 4px;
+  text-align: center;
+  z-index: 1;
 }
 
 /* Background name tooltip */
