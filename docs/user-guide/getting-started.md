@@ -213,6 +213,18 @@ This helps you understand which profiles you use most!
 
 In the **Settings** tab, you can configure:
 
+**Theme:**
+- Choose from 12 color themes (6 light + 6 dark)
+- Classic, Lavender, Sky, Fire, Leaf, Sunlight themes
+- Or match your Chrome browser theme
+
+**Background Customization:**
+- **FREE:** 6 beautiful backgrounds (theme defaults + nature scenes)
+- **PRO:** 14 total backgrounds + custom upload
+- **BG Transparency slider:** Control how visible your background is (0-100%)
+- **Blur effect toggle:** Apply a smooth blur to your background image
+- **Smart sync:** Selecting classic themes auto-sets matching backgrounds
+
 **General:**
 - Enable/disable extension globally
 - Auto-enable on install

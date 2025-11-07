@@ -3,6 +3,25 @@
  * Thumbnail grid for background selection
  */
 
+/* Background blur effect using ::before pseudo-element */
+/* Only active when data-bg-blur="true" */
+body[data-bg-blur="true"]::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: var(--bg-image);
+  background-size: var(--bg-size, cover);
+  background-position: var(--bg-position, center);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  filter: var(--bg-blur, blur(8px));
+  z-index: -1;
+  pointer-events: none;
+}
+
 .background-library {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));

@@ -28,106 +28,82 @@ export interface BackgroundConfig {
 
 /**
  * Curated background library
- * FREE tier: First 2-4 backgrounds
+ * FREE tier: All 7 preview backgrounds (rotated seasonally)
  * PRO tier: All backgrounds + custom uploads
+ *
+ * Note: default_dark and default_light auto-load based on theme if no selection
  */
 export const BACKGROUNDS: Background[] = [
   // ==========================================
-  // FREE TIER BACKGROUNDS (Preview feature)
+  // THEME-BASED DEFAULTS (Auto-selected)
   // ==========================================
   {
-    id: 'default',
-    name: 'Default',
-    description: 'Clean solid color background',
-    url: '', // No background image
-    thumbnail: 'gradient:#1a1a2e',
+    id: 'default_dark',
+    name: 'Default Dark',
+    description: 'Automatic dark theme background',
+    url: '/assets/backgrounds/default_dark.jpg',
+    thumbnail: '/assets/backgrounds/thumbs/default_dark.jpg',
     tier: 'free',
     category: 'minimal'
   },
   {
-    id: 'gradient-purple',
-    name: 'Purple Dreams',
-    description: 'Smooth purple gradient',
-    url: 'gradient:radial-gradient(circle at 50% 50%, #667eea 0%, #764ba2 100%)',
-    thumbnail: 'gradient:radial-gradient(circle at 50% 50%, #667eea 0%, #764ba2 100%)',
+    id: 'default_light',
+    name: 'Default Light',
+    description: 'Automatic light theme background',
+    url: '/assets/backgrounds/default_light.jpg',
+    thumbnail: '/assets/backgrounds/thumbs/default_light.jpg',
     tier: 'free',
-    category: 'gradient'
-  },
-  {
-    id: 'gradient-blue',
-    name: 'Ocean Blue',
-    description: 'Calming blue gradient',
-    url: 'gradient:linear-gradient(180deg, #4facfe 0%, #00f2fe 100%)',
-    thumbnail: 'gradient:linear-gradient(180deg, #4facfe 0%, #00f2fe 100%)',
-    tier: 'free',
-    category: 'gradient'
-  },
-  {
-    id: 'space-stars',
-    name: 'Starry Night',
-    description: 'Trees under starfield sky',
-    url: '/assets/backgrounds/space-stars.jpg',
-    thumbnail: '/assets/backgrounds/thumbs/space-stars.jpg',
-    tier: 'free',
-    category: 'space'
+    category: 'minimal'
   },
 
   // ==========================================
-  // PRO TIER BACKGROUNDS (Exclusive collection)
+  // FREE TIER BACKGROUNDS (Preview collection)
+  // Rotated seasonally to keep fresh
   // ==========================================
   {
-    id: 'gradient-sunset',
-    name: 'Sunset Glow',
-    description: 'Warm sunset colors',
-    url: 'gradient:linear-gradient(180deg, #f093fb 0%, #f5576c 100%)',
-    thumbnail: 'gradient:linear-gradient(180deg, #f093fb 0%, #f5576c 100%)',
-    tier: 'pro',
-    category: 'gradient'
-  },
-  {
-    id: 'gradient-ocean',
-    name: 'Deep Ocean',
-    description: 'Deep blue ocean gradient',
-    url: 'gradient:linear-gradient(180deg, #2e3192 0%, #1bffff 100%)',
-    thumbnail: 'gradient:linear-gradient(180deg, #2e3192 0%, #1bffff 100%)',
-    tier: 'pro',
-    category: 'gradient'
-  },
-  {
-    id: 'gradient-fire',
-    name: 'Fire Glow',
-    description: 'Warm fire gradient',
-    url: 'gradient:linear-gradient(180deg, #ff6a00 0%, #ee0979 100%)',
-    thumbnail: 'gradient:linear-gradient(180deg, #ff6a00 0%, #ee0979 100%)',
-    tier: 'pro',
-    category: 'gradient'
-  },
-  {
-    id: 'gradient-forest',
-    name: 'Forest Mist',
-    description: 'Green forest gradient',
-    url: 'gradient:linear-gradient(180deg, #134e5e 0%, #71b280 100%)',
-    thumbnail: 'gradient:linear-gradient(180deg, #134e5e 0%, #71b280 100%)',
-    tier: 'pro',
+    id: 'aurora_borealis',
+    name: 'Aurora Dreams',
+    description: 'Northern lights over snowy landscape',
+    url: '/assets/backgrounds/aurora_borealis_01.jpg',
+    thumbnail: '/assets/backgrounds/thumbs/aurora_borealis_01.jpg',
+    tier: 'free',
     category: 'nature'
   },
   {
-    id: 'minimal-dark',
-    name: 'Midnight',
-    description: 'Deep dark minimal',
-    url: 'gradient:#0a0a0a',
-    thumbnail: 'gradient:#0a0a0a',
-    tier: 'pro',
-    category: 'minimal'
+    id: 'jungle_waterfall',
+    name: 'Jungle Falls',
+    description: 'Tropical waterfall paradise',
+    url: '/assets/backgrounds/jungle_waterfall_01.jpg',
+    thumbnail: '/assets/backgrounds/thumbs/jungle_waterfall_01.jpg',
+    tier: 'free',
+    category: 'nature'
   },
   {
-    id: 'minimal-light',
-    name: 'Cloud',
-    description: 'Light minimal background',
-    url: 'gradient:#f5f7fa',
-    thumbnail: 'gradient:#f5f7fa',
-    tier: 'pro',
-    category: 'minimal'
+    id: 'mountains_snow',
+    name: 'Mountain Peak',
+    description: 'Snow-covered mountain vista',
+    url: '/assets/backgrounds/mountains_snow_01.jpg',
+    thumbnail: '/assets/backgrounds/thumbs/mountains_snow_01.jpg',
+    tier: 'free',
+    category: 'nature'
+  },
+  {
+    id: 'sky_clouds',
+    name: 'Blue Skies',
+    description: 'Peaceful cloud formations',
+    url: '/assets/backgrounds/sky_clouds.jpg',
+    thumbnail: '/assets/backgrounds/thumbs/sky_clouds.jpg',
+    tier: 'free',
+    category: 'nature'
+  },
+  {
+    id: 'trees_and_stars',
+    name: 'Starry Forest',
+    description: 'Trees under starlit night sky',
+    url: '/assets/backgrounds/trees_and_stars.jpg',
+    thumbnail: '/assets/backgrounds/thumbs/trees_and_stars.jpg',
+    tier: 'free',
+    category: 'space'
   },
 ];
 
@@ -160,12 +136,21 @@ export function canUseBackground(backgroundId: string, userTier: TierLevel): boo
 }
 
 /**
+ * Get theme-appropriate default background
+ * @param isDarkTheme - Current theme mode
+ * @returns Background ID for theme-based default
+ */
+export function getThemeDefaultBackground(isDarkTheme: boolean): string {
+  return isDarkTheme ? 'default_dark' : 'default_light';
+}
+
+/**
  * Default background configuration
  */
 export const DEFAULT_BACKGROUND_CONFIG: BackgroundConfig = {
-  enabled: false,
+  enabled: true, // Enabled by default with theme-based background
   source: 'library',
-  backgroundId: 'default',
+  backgroundId: 'default_dark', // Will be auto-updated based on theme
   opacity: 80,
   blur: false,
 };

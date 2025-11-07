@@ -8,6 +8,7 @@ import { UserConfig } from '../../lib/types';
 import { isValidEmail } from './utils';
 import { applyChromeTheme } from '../../lib/chromeTheme';
 import { updateStatusIndicator } from './statusIndicator';
+import { onThemeChange, initializeBackgroundSettings, onClassicThemeSelected } from './backgroundManager';
 
 const DEBUG_MODE = false; // Set to true for development debugging
 
@@ -49,6 +50,9 @@ export function initSettingsHandlers() {
 
   // Theme picker
   initThemePicker();
+
+  // Initialize background manager
+  initializeBackgroundSettings();
 
   console.log('[Settings Handlers] Initialized');
 }
@@ -407,6 +411,11 @@ async function handleThemeChange(theme: ThemeName) {
 
   console.log('[Theme Debug] ✅ Theme saved to storage:', theme);
 
+  // Bidirectional sync: Selecting classic theme sets matching background + 100% opacity
+  if (theme === 'classic-dark' || theme === 'classic-light') {
+    await onClassicThemeSelected(theme);
+  }
+
   // Apply theme immediately
   applyTheme(theme);
 
@@ -448,6 +457,7 @@ export async function applyTheme(themeInput: ThemeName | string) {
   } else {
     // Get theme mode (dark or light)
     const themeMode = THEME_MODES[theme] || 'dark';
+    const isDarkMode = themeMode === 'dark';
 
     // Set data attribute for light mode CSS variable overrides
     body.setAttribute('data-theme-mode', themeMode);
@@ -459,6 +469,9 @@ export async function applyTheme(themeInput: ThemeName | string) {
     // Update CSS variables
     root.style.setProperty('--theme-bg-gradient', themeBgVar);
     root.style.setProperty('--theme-header-gradient', themeHeaderVar);
+
+    // Notify background manager of theme change
+    onThemeChange(isDarkMode);
   }
 
   // Update active state on theme swatches (supports both old and new selectors)

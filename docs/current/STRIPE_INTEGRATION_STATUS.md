@@ -57,7 +57,7 @@ The Stripe subscription system is now fully operational with PRO tier upgrades w
 #### Current Configuration
 **Stripe Dashboard → Developers → Webhooks:**
 - **Endpoint:** `https://stripewebhook-plfcofyapq-uc.a.run.app`
-- **Secret:** `whsec_xxx...xxx`
+- **Secret:** `whsec_xxx...xxx` (stored in functions/.env)
 - **API Version:** `2025-04-30.basil`
 - **Events Listening:**
   - `checkout.session.completed`
@@ -92,16 +92,16 @@ The Stripe subscription system is now fully operational with PRO tier upgrades w
 STRIPE_PUBLISHABLE_KEY=pk_test_51xxx...xxx
 STRIPE_SECRET_KEY=sk_test_51xxx...xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx...xxx
-STRIPE_PRICE_MONTHLY=price_1SQEBNCe1kayOIupxCHtUqGk
-STRIPE_PRICE_YEARLY=price_1SQEEYCe1kayOIupdQ3FoatW
+STRIPE_PRICE_MONTHLY=price_1xxx...xxx
+STRIPE_PRICE_YEARLY=price_1xxx...xxx
 ```
 
 #### `functions/.env` (Firebase Functions)
 ```env
 STRIPE_SECRET_KEY=sk_test_51xxx...xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx...xxx
-STRIPE_PRICE_MONTHLY=price_1SQEBNCe1kayOIupxCHtUqGk
-STRIPE_PRICE_YEARLY=price_1SQEEYCe1kayOIupdQ3FoatW
+STRIPE_PRICE_MONTHLY=price_1xxx...xxx
+STRIPE_PRICE_YEARLY=price_1xxx...xxx
 ```
 
 **Status:** ✅ Both files now have matching production secret

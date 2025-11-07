@@ -7,6 +7,7 @@ import {
   BACKGROUNDS,
   getAvailableBackgrounds,
   DEFAULT_BACKGROUND_CONFIG,
+  getThemeDefaultBackground,
   type Background,
   type BackgroundConfig,
   type TierLevel
@@ -16,11 +17,12 @@ import { showError, showProFeature, showWarning } from '../utils/modalUtils';
 
 let currentConfig: BackgroundConfig = { ...DEFAULT_BACKGROUND_CONFIG };
 let userTier: TierLevel = 'free';
+let userHasExplicitSelection = false; // Track if user manually selected a background
 
 /**
- * Initialize background manager in Account Settings modal
+ * Initialize background manager in Settings tab
  */
-export function initializeBackgroundManager() {
+export async function initializeBackgroundManager() {
   console.log('[Background Manager] Initializing...');
 
   const store = useAppStore.getState();
@@ -28,8 +30,8 @@ export function initializeBackgroundManager() {
   // Map enterprise to pro for background features
   userTier = (tier === 'enterprise' ? 'pro' : tier) as TierLevel;
 
-  // Load current config from storage
-  loadBackgroundConfig();
+  // Load current config from storage (MUST await before rendering!)
+  await loadBackgroundConfig();
 
   // Render background library
   renderBackgroundLibrary();
@@ -48,11 +50,30 @@ export function initializeBackgroundManager() {
  */
 async function loadBackgroundConfig() {
   try {
-    const result = await chrome.storage.local.get('backgroundConfig');
+    const result = await chrome.storage.local.get(['backgroundConfig', 'userSelectedBackground']);
+
+    // Check if user has explicitly selected a background
+    userHasExplicitSelection = result.userSelectedBackground || false;
+
     if (result.backgroundConfig) {
       currentConfig = { ...DEFAULT_BACKGROUND_CONFIG, ...result.backgroundConfig };
-      console.log('[Background Manager] Loaded config:', currentConfig);
+    } else {
+      // No saved config - initialize with theme-based default
+      currentConfig = { ...DEFAULT_BACKGROUND_CONFIG };
     }
+
+    // Auto-select theme default if no explicit user selection
+    if (!userHasExplicitSelection) {
+      const isDarkTheme = document.body.getAttribute('data-theme-mode') === 'dark';
+      const themeDefaultId = getThemeDefaultBackground(isDarkTheme);
+
+      currentConfig.backgroundId = themeDefaultId;
+      currentConfig.enabled = true;
+
+      console.log('[Background Manager] Auto-selected theme default:', themeDefaultId);
+    }
+
+    console.log('[Background Manager] Loaded config:', currentConfig);
   } catch (error) {
     console.error('[Background Manager] Error loading config:', error);
   }
@@ -161,12 +182,20 @@ function createBackgroundThumbnail(
 /**
  * Handle background selection
  */
-function handleBackgroundSelect(backgroundId: string, isAvailable: boolean) {
+async function handleBackgroundSelect(backgroundId: string, isAvailable: boolean) {
   if (!isAvailable) {
     // Show upgrade prompt
     showUpgradePrompt();
     return;
   }
+
+  // Mark that user has explicitly selected a background
+  userHasExplicitSelection = true;
+  chrome.storage.local.set({ userSelectedBackground: true });
+
+  // Reset transparency to default when selecting theme defaults (better readability)
+  const isThemeDefault = backgroundId === 'default_dark' || backgroundId === 'default_light';
+  const opacity = isThemeDefault ? 80 : currentConfig.opacity;
 
   // Update config
   const newConfig: BackgroundConfig = {
@@ -174,11 +203,40 @@ function handleBackgroundSelect(backgroundId: string, isAvailable: boolean) {
     enabled: true,
     source: 'library',
     backgroundId,
+    opacity,
   };
 
-  saveBackgroundConfig(newConfig);
+  // Save config and wait for it to complete
+  await saveBackgroundConfig(newConfig);
 
-  // Re-render to update selection
+  // Bidirectional sync: Selecting default background sets matching theme + 80% opacity
+  if (isThemeDefault) {
+    // Set transparency to 80% (show subtle background)
+    const slider = document.getElementById('bgTransparencySlider') as HTMLInputElement;
+    const valueDisplay = document.getElementById('bgTransparencyValue');
+    if (slider) slider.value = '80';
+    if (valueDisplay) valueDisplay.textContent = '80%';
+
+    // Save transparency setting
+    await chrome.storage.local.set({ bgTransparency: 80 });
+
+    // Trigger the actual transparency update
+    window.dispatchEvent(new CustomEvent('bgTransparencyUpdate', { detail: 80 }));
+
+    // Set matching theme (classic dark/light)
+    const store = useAppStore.getState();
+    const themeName = backgroundId === 'default_dark' ? 'classic-dark' : 'classic-light';
+
+    await store.updateSettings({ theme: themeName });
+
+    // Apply theme immediately
+    const { applyTheme } = await import('./settingsHandlers');
+    await applyTheme(themeName);
+
+    console.log('[Background Manager] Selected default background → Set theme:', themeName, '+ 80% opacity');
+  }
+
+  // Re-render to update selection (now currentConfig is updated)
   renderBackgroundLibrary();
 }
 
@@ -186,30 +244,10 @@ function handleBackgroundSelect(backgroundId: string, isAvailable: boolean) {
  * Setup event listeners for controls
  */
 function setupEventListeners() {
-  // Opacity slider
-  const opacitySlider = document.getElementById('backgroundOpacity') as HTMLInputElement;
-  const opacityValue = document.getElementById('opacityValue');
+  // Note: BG Transparency slider is handled by settingsHandlers.ts
+  // It uses bgTransparencySlider ID and controls container transparency
 
-  if (opacitySlider) {
-    opacitySlider.value = currentConfig.opacity.toString();
-    if (opacityValue) {
-      opacityValue.textContent = `${currentConfig.opacity}%`;
-    }
-
-    opacitySlider.oninput = () => {
-      const value = parseInt(opacitySlider.value);
-      if (opacityValue) {
-        opacityValue.textContent = `${value}%`;
-      }
-    };
-
-    opacitySlider.onchange = () => {
-      const value = parseInt(opacitySlider.value);
-      saveBackgroundConfig({ ...currentConfig, opacity: value });
-    };
-  }
-
-  // Blur checkbox
+  // Blur checkbox - applies CSS blur to background image
   const blurCheckbox = document.getElementById('backgroundBlur') as HTMLInputElement;
   if (blurCheckbox) {
     blurCheckbox.checked = currentConfig.blur;
@@ -219,7 +257,7 @@ function setupEventListeners() {
     };
   }
 
-  // Custom upload button
+  // Custom upload button (PRO only)
   const uploadBtn = document.getElementById('uploadCustomBackgroundBtn');
   const fileInput = document.getElementById('customBackgroundInput') as HTMLInputElement;
 
@@ -246,15 +284,15 @@ function setupEventListeners() {
  */
 function updateUIForTier() {
   const customUploadSection = document.getElementById('customBackgroundUploadSection');
-  const optionsSection = document.getElementById('backgroundOptionsSection');
 
+  // Custom upload is PRO only
   if (userTier === 'pro') {
     if (customUploadSection) customUploadSection.style.display = 'block';
-    if (optionsSection) optionsSection.style.display = 'block';
   } else {
     if (customUploadSection) customUploadSection.style.display = 'none';
-    if (optionsSection) optionsSection.style.display = 'none';
   }
+
+  // Note: Background Options (transparency slider & blur) are now available to all users
 }
 
 /**
@@ -317,7 +355,9 @@ function applyBackground(config: BackgroundConfig) {
     // Remove background
     body.style.backgroundImage = 'none';
     body.style.background = '';
+    body.style.setProperty('--bg-blur', 'none');
     body.removeAttribute('data-custom-bg');
+    body.removeAttribute('data-bg-blur');
     return;
   }
 
@@ -339,12 +379,32 @@ function applyBackground(config: BackgroundConfig) {
   }
 
   if (backgroundValue) {
-    // Apply background image to body (fixed, behind everything)
-    body.style.backgroundImage = backgroundValue;
-    body.style.backgroundSize = 'cover';
-    body.style.backgroundPosition = 'center';
-    body.style.backgroundRepeat = 'no-repeat';
-    body.style.backgroundAttachment = 'fixed';
+    // Store background in CSS variable for ::before pseudo-element
+    body.style.setProperty('--bg-image', backgroundValue);
+    body.style.setProperty('--bg-size', 'cover');
+    body.style.setProperty('--bg-position', 'center');
+
+    // Apply blur effect if enabled
+    if (config.blur) {
+      body.style.setProperty('--bg-blur', 'blur(8px)');
+      body.setAttribute('data-bg-blur', 'true');
+    } else {
+      body.style.setProperty('--bg-blur', 'none');
+      body.removeAttribute('data-bg-blur');
+    }
+
+    // If no blur, apply background directly to body (better performance)
+    // If blur is enabled, CSS will apply it via ::before pseudo-element
+    if (!config.blur) {
+      body.style.backgroundImage = backgroundValue;
+      body.style.backgroundSize = 'cover';
+      body.style.backgroundPosition = 'center';
+      body.style.backgroundRepeat = 'no-repeat';
+      body.style.backgroundAttachment = 'fixed';
+    } else {
+      // Clear direct background when using blur (::before will handle it)
+      body.style.backgroundImage = 'none';
+    }
 
     // Mark that we have a custom background
     body.setAttribute('data-custom-bg', 'true');
@@ -357,7 +417,7 @@ function applyBackground(config: BackgroundConfig) {
       window.dispatchEvent(new CustomEvent('bgTransparencyUpdate', { detail: transparency }));
     });
 
-    console.log('[Background Manager] Applied background:', config);
+    console.log('[Background Manager] Applied background with blur:', config.blur);
   }
 }
 
@@ -369,27 +429,125 @@ function showUpgradePrompt() {
 }
 
 /**
- * Export for use in Account Settings modal
+ * Export for use in Settings tab
  */
-export function onAccountSettingsOpened() {
+export function initializeBackgroundSettings() {
   initializeBackgroundManager();
 }
 
 /**
  * Initialize background on popup load
- * Applies saved background configuration
+ * Applies saved background configuration or theme-based default
  */
 export async function initializeBackgroundOnLoad() {
   console.log('[Background Manager] Loading background on startup...');
 
   try {
-    const result = await chrome.storage.local.get('backgroundConfig');
+    const result = await chrome.storage.local.get(['backgroundConfig', 'userSelectedBackground']);
+    const userHasSelection = result.userSelectedBackground || false;
+
+    let config: BackgroundConfig;
+
     if (result.backgroundConfig) {
-      const config = { ...DEFAULT_BACKGROUND_CONFIG, ...result.backgroundConfig };
-      applyBackground(config);
-      console.log('[Background Manager] Background applied on load:', config);
+      config = { ...DEFAULT_BACKGROUND_CONFIG, ...result.backgroundConfig };
+    } else {
+      config = { ...DEFAULT_BACKGROUND_CONFIG };
     }
+
+    // Auto-select theme default if no explicit user selection
+    if (!userHasSelection) {
+      const isDarkTheme = document.body.getAttribute('data-theme-mode') === 'dark';
+      const themeDefaultId = getThemeDefaultBackground(isDarkTheme);
+
+      config.backgroundId = themeDefaultId;
+      config.enabled = true;
+
+      console.log('[Background Manager] Auto-selected theme default on load:', themeDefaultId);
+    }
+
+    applyBackground(config);
+    console.log('[Background Manager] Background applied on load:', config);
   } catch (error) {
     console.error('[Background Manager] Error loading background on startup:', error);
+  }
+}
+
+/**
+ * Handle classic theme selection
+ * Bidirectional sync: Selecting classic theme sets matching background + 100% opacity
+ */
+export async function onClassicThemeSelected(themeName: 'classic-dark' | 'classic-light') {
+  console.log('[Background Manager] Classic theme selected:', themeName);
+
+  // Determine matching background
+  const backgroundId = themeName === 'classic-dark' ? 'default_dark' : 'default_light';
+
+  // Update background config
+  const newConfig: BackgroundConfig = {
+    ...currentConfig,
+    enabled: true,
+    source: 'library',
+    backgroundId,
+    opacity: 80, // Keep at 80 for the background config
+  };
+
+  await chrome.storage.local.set({ backgroundConfig: newConfig });
+  currentConfig = newConfig;
+
+  // Set transparency to 100% (hide background completely)
+  const slider = document.getElementById('bgTransparencySlider') as HTMLInputElement;
+  const valueDisplay = document.getElementById('bgTransparencyValue');
+  if (slider) slider.value = '100';
+  if (valueDisplay) valueDisplay.textContent = '100%';
+
+  // Save transparency setting
+  await chrome.storage.local.set({ bgTransparency: 100 });
+
+  // Trigger the actual transparency update
+  window.dispatchEvent(new CustomEvent('bgTransparencyUpdate', { detail: 100 }));
+
+  // Apply background (will be hidden by 100% opacity)
+  applyBackground(newConfig);
+
+  // Re-render if UI is visible
+  const container = document.getElementById('backgroundLibrary');
+  if (container) {
+    renderBackgroundLibrary();
+  }
+
+  console.log('[Background Manager] Classic theme → Set background:', backgroundId, '+ 100% opacity');
+}
+
+/**
+ * Handle theme changes
+ * Updates background to match new theme if no explicit user selection
+ */
+export async function onThemeChange(isDarkTheme: boolean) {
+  console.log('[Background Manager] Theme changed to:', isDarkTheme ? 'dark' : 'light');
+
+  try {
+    const result = await chrome.storage.local.get(['backgroundConfig', 'userSelectedBackground']);
+    const userHasSelection = result.userSelectedBackground || false;
+
+    // Only auto-switch if user hasn't explicitly selected a background
+    if (!userHasSelection) {
+      const themeDefaultId = getThemeDefaultBackground(isDarkTheme);
+
+      const newConfig: BackgroundConfig = {
+        ...DEFAULT_BACKGROUND_CONFIG,
+        ...(result.backgroundConfig || {}),
+        backgroundId: themeDefaultId,
+        enabled: true,
+      };
+
+      await chrome.storage.local.set({ backgroundConfig: newConfig });
+      applyBackground(newConfig);
+
+      console.log('[Background Manager] Auto-switched to theme default:', themeDefaultId);
+    } else {
+      console.log('[Background Manager] User has explicit selection, not auto-switching');
+    }
+  } catch (error) {
+    console.error('[Background Manager] Error handling theme change:', error);
   }
 }

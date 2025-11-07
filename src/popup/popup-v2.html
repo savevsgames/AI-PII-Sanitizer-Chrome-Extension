@@ -231,16 +231,10 @@
             <!-- Custom Theme -->
             <div class="theme-row">
               <span class="theme-row-label">Custom</span>
-              <div class="theme-swatches" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+              <div class="theme-swatches">
                 <div class="theme-swatch theme-swatch-special" data-theme="chrome-theme" title="Match Chrome Theme">
                   <div class="swatch-preview swatch-preview-chrome">🎨</div>
                   <span class="swatch-name">Chrome</span>
-                </div>
-                <!-- Background Transparency Slider -->
-                <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 200px;">
-                  <label style="font-size: var(--font-size-xs); color: var(--text-secondary); white-space: nowrap;">BG Transparency:</label>
-                  <input type="range" id="bgTransparencySlider" min="0" max="100" value="0" style="flex: 1;">
-                  <span id="bgTransparencyValue" style="font-size: var(--font-size-xs); color: var(--text-primary); min-width: 35px;">0%</span>
                 </div>
               </div>
             </div>
@@ -305,6 +299,49 @@
                   <span class="swatch-name">Sundown</span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Background Customization -->
+        <div class="settings-section">
+          <h3>Background</h3>
+          <div class="setting-item">
+            <label style="display: block; font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: 0.75rem;">Choose Background</label>
+            <div id="backgroundLibrary" class="background-library">
+              <!-- Background thumbnails will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Custom Upload Section (PRO only) -->
+          <div id="customBackgroundUploadSection" style="display: none;" class="setting-item">
+            <label style="display: block; font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: 0.5rem;">
+              <span>✨ PRO Feature: Custom Background</span>
+            </label>
+            <input type="file" id="customBackgroundInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
+            <button class="btn btn-secondary" style="width: 100%; font-size: var(--font-size-sm);" id="uploadCustomBackgroundBtn">
+              📸 Upload Custom Background
+            </button>
+            <p style="margin: 0.5rem 0 0 0; font-size: var(--font-size-xs); color: var(--text-tertiary);">
+              Max size: 500KB. Images will be cropped and compressed.
+            </p>
+          </div>
+
+          <!-- Background Options -->
+          <div class="setting-item">
+            <div style="margin-bottom: 0.75rem;">
+              <label style="display: flex; justify-content: space-between; align-items: center; font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: 0.25rem;">
+                <span>BG Transparency</span>
+                <span id="bgTransparencyValue" style="color: var(--text-primary);">0%</span>
+              </label>
+              <input type="range" id="bgTransparencySlider" min="0" max="100" value="0" style="width: 100%;">
+            </div>
+            <div class="setting-item">
+              <label class="toggle-label">
+                <input type="checkbox" id="backgroundBlur">
+                <span class="toggle-slider"></span>
+                <span class="setting-label-text">✨ Apply Blur Effect</span>
+              </label>
             </div>
           </div>
         </div>
@@ -1042,50 +1079,6 @@
               <label style="display: block; font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: 0.25rem;">Current Tier</label>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span class="user-tier-badge" id="accountTierBadge">FREE</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Background Customization -->
-        <div style="margin-bottom: 1.5rem;" id="accountBackgroundSection">
-          <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: var(--font-size-md);">Background Theme</h4>
-          <div style="padding: 1rem; background: var(--card-bg-light); border-radius: var(--radius-md); border: 1px solid var(--border-neutral);">
-            <div style="margin-bottom: 0.75rem;">
-              <label style="display: block; font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: 0.5rem;">Choose Background</label>
-              <div id="backgroundLibrary" class="background-library">
-                <!-- Background thumbnails will be rendered here -->
-              </div>
-            </div>
-
-            <!-- Custom Upload Section (PRO only) -->
-            <div id="customBackgroundUploadSection" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-neutral);">
-              <label style="display: block; font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: 0.5rem;">
-                <span>✨ PRO Feature: Custom Background</span>
-              </label>
-              <input type="file" id="customBackgroundInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
-              <button class="btn btn-secondary" style="width: 100%; font-size: var(--font-size-sm);" id="uploadCustomBackgroundBtn">
-                📸 Upload Custom Background
-              </button>
-              <p style="margin: 0.5rem 0 0 0; font-size: var(--font-size-xs); color: var(--text-tertiary);">
-                Max size: 500KB. Images will be cropped and compressed.
-              </p>
-            </div>
-
-            <!-- Background Options (PRO only) -->
-            <div id="backgroundOptionsSection" style="display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-neutral);">
-              <div style="margin-bottom: 0.75rem;">
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: 0.25rem;">
-                  <span>✨ Opacity</span>
-                  <span id="opacityValue" style="color: var(--text-primary);">80%</span>
-                </label>
-                <input type="range" id="backgroundOpacity" min="0" max="100" value="80" style="width: 100%;">
-              </div>
-              <div>
-                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: var(--font-size-sm); color: var(--text-secondary); cursor: pointer;">
-                  <input type="checkbox" id="backgroundBlur">
-                  <span>✨ Apply Blur Effect</span>
-                </label>
               </div>
             </div>
           </div>

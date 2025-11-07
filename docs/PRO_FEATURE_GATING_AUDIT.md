@@ -30,6 +30,9 @@ The Stripe integration is working perfectly, BUT we have critical revenue protec
 - ⚠️ 5 prompt templates max (code shows 3, config shows 10)
 - ✅ API Key Vault: 10 keys, OpenAI only
 - ✅ Quick Alias: Single generation, basic templates only
+- ✅ **Backgrounds: 6 backgrounds** (theme defaults + 4 nature scenes)
+- ✅ **BG Transparency slider** (0-100%)
+- ✅ **Blur effect toggle**
 
 ### PRO Tier ($4.99/month or $49/year)
 - ✅ Unlimited alias profiles
@@ -37,6 +40,8 @@ The Stripe integration is working perfectly, BUT we have critical revenue protec
 - ✅ Quick Alias Generator: Bulk (2-10), PRO themes
 - ✅ Custom redaction rules
 - ✅ API Key Vault: Unlimited keys, all patterns
+- ✅ **Backgrounds: 14 total** (6 free + 8 PRO backgrounds)
+- ✅ **Custom background upload** (500KB limit)
 
 ---
 
@@ -101,6 +106,49 @@ if (config.promptTemplates!.maxTemplates !== -1 &&
 - Default config: `maxTemplates: 10` (line 1044)
 - Documentation: 5 templates for FREE
 - **Decision needed:** Standardize on 5 templates
+
+---
+
+#### 4. Background Customization
+**File:** `src/popup/components/backgroundManager.ts`
+**Status:** ✅ WORKING
+
+```typescript
+// PRO backgrounds gated by tier check
+const availableBackgrounds = getAvailableBackgrounds(userTier);
+
+// In backgrounds.ts:
+export function getAvailableBackgrounds(tier: TierLevel): Background[] {
+  if (tier === 'pro') {
+    return BACKGROUNDS; // All 14 backgrounds
+  }
+  // Free tier: Only backgrounds without PRO flag
+  return BACKGROUNDS.filter(bg => !bg.tier || bg.tier === 'free');
+}
+
+// Custom upload gated in UI
+if (userTier !== 'pro') {
+  showUpgradePrompt();
+  return;
+}
+```
+
+**What's gated:**
+- PRO backgrounds (8) - Locked with 🔒 badge + upgrade prompt ✅
+- Custom background upload - Button hidden for FREE users ✅
+
+**What's FREE:**
+- 6 free backgrounds (2 theme defaults + 4 nature scenes) ✅
+- BG transparency slider (0-100%) ✅
+- Blur effect toggle ✅
+- Bidirectional theme/background sync ✅
+
+**Test Status:** ✅ Confirmed working
+- Free users see 6 unlocked + 8 locked backgrounds
+- Locked backgrounds show 🔒 PRO badge
+- Clicking locked background shows upgrade prompt
+- Custom upload section hidden for free users
+- PRO users see all 14 backgrounds + upload button
 
 ---
 

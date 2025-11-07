@@ -10,7 +10,6 @@ import { useAppStore } from '../../lib/store';
 import { openAuthModal, signOutUser } from './authModal';
 import { listenToUserTier } from '../../lib/firebaseService';
 import { handleDowngrade, handleDatabaseUpgrade } from '../../lib/tierMigration';
-import { onAccountSettingsOpened } from './backgroundManager';
 import { showError, showInfo, showWarning } from '../utils/modalUtils';
 
 const DEBUG_MODE = false;
@@ -704,9 +703,6 @@ function openAccountSettingsModal() {
   if (overlay) {
     overlay.onclick = closeModal;
   }
-
-  // Initialize background manager
-  onAccountSettingsOpened();
 
   // Show modal
   modal.classList.remove('hidden');
