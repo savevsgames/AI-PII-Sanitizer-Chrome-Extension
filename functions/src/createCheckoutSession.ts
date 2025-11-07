@@ -56,6 +56,20 @@ export const createCheckoutSession = onCall(async (request) => {
       console.log(`Created Stripe customer ${customerId} for user ${userId}`);
     }
 
+    // Check if user already has an active subscription
+    const existingSubscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: 'active',
+      limit: 1,
+    });
+
+    if (existingSubscriptions.data.length > 0) {
+      throw new HttpsError(
+        'failed-precondition',
+        'You already have an active subscription. Please manage your existing subscription instead.'
+      );
+    }
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -67,8 +81,8 @@ export const createCheckoutSession = onCall(async (request) => {
           quantity: 1,
         },
       ],
-      success_url: `https://promptblocker.com/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://promptblocker.com/cancel`,
+      success_url: `https://promptblocker.com/welcome-pro`,
+      cancel_url: `https://promptblocker.com/checkout-cancelled`,
       metadata: {
         firebaseUID: userId,
       },

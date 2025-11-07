@@ -35,7 +35,7 @@ export const createPortalSession = onCall(async (request) => {
     // Create portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: 'https://promptblocker.com/account',
+      return_url: 'https://promptblocker.com/',
     });
 
     console.log(`Created portal session for user ${userId}`);
