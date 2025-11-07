@@ -281,9 +281,16 @@ Click "Upgrade to PRO" in Account Settings to get started.
 
 ## Future Enhancements
 
-### Planned Features
-- [ ] **Image Cropping:** In-app crop tool for custom uploads
-- [ ] **Auto-Compression:** Reduce file size automatically
+### In Development (Q1 2025)
+- [ ] **Image Editor & Compression:** Full-featured crop, scale, and compress tool for custom uploads
+  - See: `docs/features/feature_image_editor.md`
+  - Opens automatically when upload >500KB
+  - Zoom, pan, rotate, crop controls
+  - Smart compression with quality slider
+  - Live file size preview
+  - **Status:** Spec complete, ready for implementation
+
+### Planned Features (Future)
 - [ ] **Background Categories:** Filter by type (nature, abstract, etc.)
 - [ ] **Community Backgrounds:** User-submitted, curated library
 - [ ] **Dynamic Backgrounds:** Time-of-day based switching
@@ -292,7 +299,7 @@ Click "Upgrade to PRO" in Account Settings to get started.
 - [ ] **Background Opacity:** Separate from container transparency
 
 ### Known Limitations
-- Custom uploads require manual compression if >500KB
+- Custom uploads >500KB require image editor (coming Q1 2025)
 - No batch background management
 - No background favorites/collections
 - Blur is fixed at 8px (not adjustable)

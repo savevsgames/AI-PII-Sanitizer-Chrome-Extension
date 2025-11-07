@@ -18,6 +18,7 @@
 | ✅ **API Key Vault** | COMPLETE | FREE + PRO | 🔴 HIGH | Features Tab |
 | ✅ **Custom Redaction Rules** | COMPLETE | FREE + PRO | 🔴 HIGH | Features Tab |
 | ✅ **Background Customization** | COMPLETE | FREE + PRO | 🟡 MEDIUM | Settings Tab |
+| 📋 **Image Editor & Compression** | PLANNED | PRO | 🟡 MEDIUM | Settings Tab |
 | ⏳ **Prompt Templates** | PLANNED | FREE + PRO | 🔴 HIGH | Features Tab |
 | 📋 **AI Profile Fill** | PLANNED | FREE | 🟡 MEDIUM | Profile Modal |
 | 📋 **Alias Variations** | IMPLEMENTED | FREE | ✅ DONE | Core Engine |
@@ -135,7 +136,58 @@
 
 ---
 
-## Feature 4: Prompt Templates ⏳ PLANNED
+## Feature 4: Image Editor & Compression 📋 PLANNED
+
+**Status:** 📋 PLANNED (Enhancement to background customization)
+**Tier:** PRO only
+**Implementation:** `src/popup/components/imageEditor.ts` (not yet created)
+**Documentation:** `docs/features/feature_image_editor.md`
+**Estimated Time:** 5 days
+
+### Feature Overview:
+Interactive image editor that opens when users upload custom backgrounds >500KB. Allows cropping, scaling, and compression to fit under the 500KB limit.
+
+### User Flow:
+1. PRO user uploads large image (e.g., 1993KB)
+2. Image Editor modal opens automatically
+3. User crops/zooms to select exact area for background
+4. Auto-compress with quality slider to <500KB
+5. Save & apply background instantly
+
+### Technical Approach:
+- **Library:** Cropper.js (CSP-compliant, 45KB gzipped)
+- **Features:** Zoom, pan, crop, rotate, quality adjustment
+- **Compression:** Smart algorithm finds optimal quality
+- **Preview:** Live file size display during editing
+
+### What's Planned:
+- [x] Feature specification complete
+- [x] Library research (Cropper.js selected)
+- [ ] Install Cropper.js
+- [ ] Build imageEditor.ts component
+- [ ] Create modal UI
+- [ ] Implement crop controls
+- [ ] Add compression logic
+- [ ] Integrate with backgroundManager.ts
+- [ ] Test with various image sizes
+- [ ] Documentation
+
+### Why PRO Only:
+- Custom backgrounds are PRO feature
+- Significant development investment
+- Value-add for PRO tier
+- Encourages upgrades
+
+### Success Criteria:
+- 90%+ compression success rate (<500KB)
+- <30 seconds average edit time
+- 80%+ user completion rate
+- Zero CSP violations
+- Works on all supported browsers
+
+---
+
+## Feature 5: Prompt Templates ⏳ PLANNED
 
 **Status:** ⏳ NOT STARTED
 **Tier:** FREE (3 templates) + PRO (unlimited)
