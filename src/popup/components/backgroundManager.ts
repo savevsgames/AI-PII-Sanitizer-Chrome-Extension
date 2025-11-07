@@ -111,12 +111,63 @@ function renderBackgroundLibrary() {
 
   container.innerHTML = '';
 
+  // Add custom background thumbnail if it exists
+  if (currentConfig.source === 'custom' && currentConfig.customBackground) {
+    const customThumbnail = createCustomBackgroundThumbnail();
+    container.appendChild(customThumbnail);
+  }
+
+  // Add library backgrounds
   allBackgrounds.forEach((bg) => {
     const isAvailable = availableBackgrounds.includes(bg);
-    const isSelected = currentConfig.backgroundId === bg.id;
+    const isSelected = currentConfig.source === 'library' && currentConfig.backgroundId === bg.id;
     const thumbnail = createBackgroundThumbnail(bg, isAvailable, isSelected);
     container.appendChild(thumbnail);
   });
+}
+
+/**
+ * Create a custom background thumbnail element
+ */
+function createCustomBackgroundThumbnail(): HTMLElement {
+  const div = document.createElement('div');
+  div.className = 'background-thumbnail selected'; // Always selected when showing
+  div.dataset.backgroundId = 'custom';
+  div.dataset.name = 'Custom Background';
+
+  // Create preview element
+  const preview = document.createElement('div');
+  preview.className = 'background-thumbnail-preview';
+  preview.style.backgroundImage = `url('${currentConfig.customBackground}')`;
+  preview.style.backgroundSize = 'cover';
+  preview.style.backgroundPosition = 'center';
+
+  div.appendChild(preview);
+
+  // Add checkmark
+  const check = document.createElement('div');
+  check.className = 'background-thumbnail-check';
+  check.textContent = '✓';
+  div.appendChild(check);
+
+  // Add edit button
+  const editBtn = document.createElement('button');
+  editBtn.className = 'background-thumbnail-edit';
+  editBtn.innerHTML = '✏️';
+  editBtn.title = 'Edit Background';
+  editBtn.onclick = (e) => {
+    e.stopPropagation(); // Prevent thumbnail click
+    handleEditCustomBackground();
+  };
+  div.appendChild(editBtn);
+
+  // Add label
+  const label = document.createElement('div');
+  label.className = 'background-thumbnail-label';
+  label.textContent = 'Custom';
+  div.appendChild(label);
+
+  return div;
 }
 
 /**
@@ -348,11 +399,46 @@ async function handleCustomUpload(file: File) {
 }
 
 /**
+ * Handle editing custom background
+ */
+function handleEditCustomBackground(): void {
+  if (!currentConfig.customBackground) {
+    console.error('[Background Manager] No custom background to edit');
+    return;
+  }
+
+  console.log('[Background Manager] Opening editor for custom background');
+  openImageEditor(currentConfig.customBackground, handleImageEditorResult);
+}
+
+/**
  * Handle result from image editor
  */
-async function handleImageEditorResult(result: { success: boolean; dataURL?: string; size?: number; error?: string }) {
+async function handleImageEditorResult(result: { success: boolean; dataURL?: string; size?: number; error?: string; deleted?: boolean }) {
   if (!result.success) {
     showError(result.error || 'Failed to process image. Please try again.');
+    return;
+  }
+
+  // Handle delete
+  if (result.deleted) {
+    try {
+      const newConfig: BackgroundConfig = {
+        ...currentConfig,
+        enabled: false,
+        source: 'library', // Switch back to library after deleting custom
+        customBackground: undefined,
+      };
+
+      await saveBackgroundConfig(newConfig);
+      renderBackgroundLibrary();
+      await updateStorageQuotaDisplay();
+
+      console.log('[Background Manager] Custom background deleted successfully');
+    } catch (error) {
+      console.error('[Background Manager] Error deleting custom background:', error);
+      showError('Failed to delete background. Please try again.');
+    }
     return;
   }
 
@@ -375,11 +461,37 @@ async function handleImageEditorResult(result: { success: boolean; dataURL?: str
     // Re-render library
     renderBackgroundLibrary();
 
+    // Update storage quota display
+    await updateStorageQuotaDisplay();
+
     const sizeKB = result.size ? (result.size / 1024).toFixed(0) : 'unknown';
     console.log('[Background Manager] Custom background saved successfully:', sizeKB, 'KB');
   } catch (error) {
     console.error('[Background Manager] Error saving custom background:', error);
     showError('Failed to save background. Please try again.');
+  }
+}
+
+/**
+ * Update storage quota display in Settings tab
+ */
+async function updateStorageQuotaDisplay(): Promise<void> {
+  try {
+    const { StorageManager } = await import('../../lib/storage');
+    const storage = StorageManager.getInstance();
+    const usage = await storage.getStorageUsage();
+
+    const usedEl = document.getElementById('storageUsed');
+    const percentEl = document.getElementById('storagePercent');
+    const progressFillEl = document.getElementById('storageProgressFill') as HTMLElement;
+
+    if (usedEl) usedEl.textContent = usage.formattedUsage;
+    if (percentEl) percentEl.textContent = `${Math.round(usage.percentUsed)}%`;
+    if (progressFillEl) progressFillEl.style.width = `${usage.percentUsed}%`;
+
+    console.log('[Background Manager] Updated storage quota:', usage.formattedUsage);
+  } catch (error) {
+    console.error('[Background Manager] Failed to update storage quota:', error);
   }
 }
 
