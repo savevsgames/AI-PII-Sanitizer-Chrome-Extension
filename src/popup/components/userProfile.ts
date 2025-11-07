@@ -10,6 +10,8 @@ import { useAppStore } from '../../lib/store';
 import { openAuthModal, signOutUser } from './authModal';
 import { listenToUserTier } from '../../lib/firebaseService';
 import { handleDowngrade, handleDatabaseUpgrade } from '../../lib/tierMigration';
+import { onAccountSettingsOpened } from './backgroundManager';
+import { showError, showInfo, showWarning } from '../utils/modalUtils';
 
 const DEBUG_MODE = false;
 
@@ -286,16 +288,16 @@ async function handleSignOut() {
   // Show custom confirmation modal
   const modal = document.getElementById('signOutModal');
   if (!modal) {
-    // Fallback to confirm dialog if modal not found
-    const confirmed = confirm('Are you sure you want to sign out?');
-    if (!confirmed) return;
+    // Fallback - modal should normally be used
+    showWarning('Sign-out modal not found. Please refresh the page and try again.');
+    return;
 
     try {
       await signOutUser();
       console.log('[User Profile] Signed out successfully');
     } catch (error) {
       console.error('[User Profile] Sign-out error:', error);
-      alert('Error signing out. Please try again.');
+      showError('Error signing out. Please try again.');
     }
     return;
   }
@@ -320,7 +322,7 @@ async function handleSignOut() {
       console.log('[User Profile] Signed out successfully');
     } catch (error) {
       console.error('[User Profile] Sign-out error:', error);
-      alert('Error signing out. Please try again.');
+      showError('Error signing out. Please try again.');
     }
   };
 
@@ -544,7 +546,8 @@ async function handleUpgrade() {
     console.log('[User Profile] Opened Stripe Checkout for monthly subscription');
   } catch (error) {
     console.error('[User Profile] Failed to open checkout:', error);
-    alert('Failed to open checkout. Please make sure you are signed in and try again.');
+    const errorMessage = error instanceof Error ? error.message : 'Failed to open checkout. Please make sure you are signed in and try again.';
+    showError(errorMessage);
   }
 }
 
@@ -554,7 +557,7 @@ async function handleUpgrade() {
 async function handleManageBilling() {
   // Check if user has a tier (signed in)
   if (!currentUser) {
-    alert('Please sign in to manage billing.');
+    showWarning('Please sign in to manage billing.');
     return;
   }
 
@@ -563,16 +566,8 @@ async function handleManageBilling() {
   const tier = store.config?.account?.tier || 'free';
 
   if (tier === 'free') {
-    // User is on free tier - offer to upgrade instead
-    const wantsUpgrade = confirm(
-      'You are currently on the FREE tier.\n\n' +
-      'To manage billing, you need an active PRO subscription.\n\n' +
-      'Would you like to upgrade to PRO now?'
-    );
-
-    if (wantsUpgrade) {
-      await handleUpgrade();
-    }
+    // User is on free tier - show info and don't proceed
+    showInfo('You are currently on the FREE tier.\n\nTo manage billing, you need an active PRO subscription.\n\nClick "Upgrade to PRO" to get started.');
     return;
   }
 
@@ -695,7 +690,7 @@ function openAccountSettingsModal() {
 
   // Wire up close buttons
   const closeBtn = modal.querySelector('.modal-close') as HTMLElement;
-  const closeButton = modal.querySelector('.btn-secondary') as HTMLElement;
+  const closeButton = document.getElementById('accountSettingsCloseBtn') as HTMLElement;
   const overlay = modal.querySelector('.modal-overlay') as HTMLElement;
 
   const closeModal = () => modal.classList.add('hidden');
@@ -709,6 +704,9 @@ function openAccountSettingsModal() {
   if (overlay) {
     overlay.onclick = closeModal;
   }
+
+  // Initialize background manager
+  onAccountSettingsOpened();
 
   // Show modal
   modal.classList.remove('hidden');

@@ -56,8 +56,14 @@ export async function initiateCheckout(priceId: string): Promise<void> {
     console.log('[Stripe] Opening checkout URL:', url);
     // Open Stripe Checkout in new tab
     chrome.tabs.create({ url });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Stripe] Error in initiateCheckout:', error);
+
+    // Check for "already has active subscription" error
+    if (error?.code === 'failed-precondition' || error?.message?.includes('already have an active subscription')) {
+      throw new Error('You already have an active PRO subscription. Please use "Manage Billing" to update your subscription.');
+    }
+
     throw new Error('Failed to start checkout. Please try again.');
   }
 }
