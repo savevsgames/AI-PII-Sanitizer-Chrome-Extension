@@ -17,12 +17,18 @@ export const stripeWebhook = onRequest(async (req, res) => {
     return;
   }
 
-  // Initialize Stripe (will be needed when we re-enable signature verification)
-  // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  //   apiVersion: '2023-10-16',
-  // });
+  // Initialize Stripe
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+    apiVersion: '2023-10-16',
+  });
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+
+  if (!webhookSecret) {
+    console.error('❌ STRIPE_WEBHOOK_SECRET not configured');
+    res.status(500).send('Webhook secret not configured');
+    return;
+  }
 
   let event: Stripe.Event;
 
@@ -33,15 +39,15 @@ export const stripeWebhook = onRequest(async (req, res) => {
     console.log('   Signature present:', !!sig);
     console.log('   Webhook secret configured:', !!webhookSecret);
 
-    // TEMPORARY: Skip signature verification to test the rest of the flow
-    // TODO: Fix signature verification after confirming webhook logic works
-    console.log('⚠️  TEMPORARILY skipping signature verification for testing');
-    event = req.body as Stripe.Event;
+    // Verify webhook signature for security
+    const payload = JSON.stringify(req.body, null, 2);
+    event = stripe.webhooks.constructEvent(payload, sig, webhookSecret);
 
+    console.log('   ✅ Signature verified');
     console.log('   Event type:', event.type);
     console.log('   Event ID:', event.id);
   } catch (err: any) {
-    console.error('❌ Webhook processing failed');
+    console.error('❌ Webhook signature verification failed');
     console.error('   Error:', err.message);
     res.status(400).send(`Webhook Error: ${err.message}`);
     return;

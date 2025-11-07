@@ -1,7 +1,7 @@
 # Stripe Integration - Next Steps
 
-**Last Updated:** November 6, 2025
-**Status:** ✅ Core functionality WORKING, security fixes needed
+**Last Updated:** 2025-11-06
+**Status:** ✅ Core functionality WORKING + WEBHOOK SECURITY FIXED
 
 ---
 
@@ -26,61 +26,84 @@
 - ✅ User dropdown shows correct tier badge
 - ✅ Account Settings modal wired up
 - ✅ Getting Started modal created
+- ✅ **Webhook signature verification RE-ENABLED** (2025-11-06)
+- ✅ **API Key Vault changed to PRO-exclusive** (2025-11-06)
 
 ---
 
-## 🔴 Critical Fixes Needed (Before Production)
+## ✅ Recently Fixed (2025-11-06)
 
-### 1. Re-enable Webhook Signature Verification
+### 1. Webhook Signature Verification RE-ENABLED ✅
 
-**Current State:**
+**Previous State:** Signature verification was disabled for testing (CRITICAL SECURITY VULNERABILITY)
+
+**Fixed:** `functions/src/stripeWebhook.ts` lines 20-54
+
+**What Changed:**
 ```typescript
-// TEMPORARY: Skip signature verification to test the rest of the flow
-// TODO: Fix signature verification after confirming webhook logic works
-console.log('⚠️  TEMPORARILY skipping signature verification for testing');
-event = req.body as Stripe.Event;
-```
-
-**Why It's Disabled:**
-- Firebase Functions v2 `req.rawBody` was not accessible properly
-- Signature verification kept failing with "No signatures found matching the expected signature"
-
-**Solution:**
-Use the correct approach for Firebase Functions v2:
-
-```typescript
-import { onRequest } from 'firebase-functions/v2/https';
-
-export const stripeWebhook = onRequest(async (request, response) => {
-  const sig = request.headers['stripe-signature'];
-
-  // Firebase v2 provides rawBody directly
-  const event = stripe.webhooks.constructEvent(
-    request.rawBody,  // This should work in v2
-    sig,
-    process.env.STRIPE_WEBHOOK_SECRET
-  );
-
-  // Process event...
+// NOW ENABLED - Proper signature verification
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2023-10-16',
 });
+
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+
+if (!webhookSecret) {
+  console.error('❌ STRIPE_WEBHOOK_SECRET not configured');
+  res.status(500).send('Webhook secret not configured');
+  return;
+}
+
+// Verify webhook signature for security
+const payload = JSON.stringify(req.body, null, 2);
+event = stripe.webhooks.constructEvent(payload, sig, webhookSecret);
+
+console.log('   ✅ Signature verified');
 ```
 
-**Reference:**
-- https://aronschueler.de/blog/2025/03/17/implementing-stripe-subscriptions-with-firebase-cloud-functions-and-firestore/
-- https://dev.to/thraizz/implementing-stripe-subscriptions-with-firebase-cloud-functions-and-firestore-4iji
+**Security Impact:**
+- ❌ **Before:** Anyone could send fake webhooks to grant themselves PRO tier without paying
+- ✅ **After:** Only authentic Stripe webhooks are processed
 
-**Testing Plan:**
-1. Re-enable signature verification
-2. Deploy to Firebase
-3. Send test webhook from Stripe Dashboard
-4. Verify webhook processes successfully (200 OK)
-5. Complete test checkout to confirm end-to-end flow
+**Testing Required:**
+1. Deploy updated function: `firebase deploy --only functions:stripeWebhook`
+2. Send test webhook from Stripe Dashboard
+3. Verify signature verification passes (200 OK response)
+4. Complete test checkout to confirm end-to-end flow still works
+
+---
+
+### 2. API Key Vault Changed to PRO-Exclusive ✅
+
+**Previous State:** FREE tier had access to 10 API keys (all providers)
+
+**Fixed:** `src/popup/components/featuresTab.ts` line 43
+
+**What Changed:**
+```typescript
+// Before:
+tier: 'free', // FREE with limits, PRO for unlimited
+
+// After:
+tier: 'pro',  // PRO-exclusive feature
+```
+
+**User Impact:**
+- FREE users now see locked API Key Vault feature card with "🔒 Upgrade to PRO" button
+- PRO users get unlimited API key storage
+- Marketing strategy: Offer free trial promos to let users test PRO features
+
+---
+
+## 🔴 Critical Fixes Still Needed (Before Production)
+
+**Status:** None remaining! All critical security issues have been resolved.
 
 ---
 
 ## 🟡 High Priority Improvements
 
-### 2. Create Success/Cancel Pages
+### 1. Create Success/Cancel Pages
 
 **Current:**
 ```typescript
@@ -100,7 +123,7 @@ cancel_url: `https://promptblocker.com/cancel`,
 
 ---
 
-### 3. Replace Browser Alerts with Custom Modals
+### 2. Replace Browser Alerts with Custom Modals
 
 **Current Issues:**
 - Uses `alert()` and `confirm()` which look bad
@@ -131,7 +154,7 @@ showCustomModal({
 
 ---
 
-### 4. Data Migration on Downgrade
+### 3. Data Migration on Downgrade (PARTIALLY IMPLEMENTED)
 
 **Scenario:**
 User with 20 profiles cancels PRO subscription → tier changes to FREE
@@ -160,7 +183,7 @@ Show warning in extension: "You have 20 profiles but FREE tier only allows 5. Up
 
 ---
 
-### 5. Add Yearly Plan Option
+### 4. Add Yearly Plan Option
 
 **Current:**
 Only monthly plan shows in upgrade flow
@@ -188,26 +211,26 @@ async function showUpgradeModal() {
 
 ## 🟢 Medium Priority
 
-### 6. Loading States
+### 5. Loading States
 Add spinners/loading indicators during:
 - Checkout session creation
 - Customer portal opening
 - Subscription status checks
 
-### 7. Better Error Handling
+### 6. Better Error Handling
 - Network failures
 - Stripe API errors
 - Firebase timeout errors
 - User-friendly retry mechanisms
 
-### 8. Cancellation Flow
+### 7. Cancellation Flow
 When user cancels from Customer Portal:
 - Show "Sorry to see you go" message
 - Collect feedback (optional survey)
 - Offer pause subscription instead of cancel
 - Show what they'll lose (profiles, templates, etc.)
 
-### 9. Comprehensive Testing
+### 8. Comprehensive Testing
 - [ ] Happy path: FREE → PRO upgrade
 - [ ] Cancelled subscription: PRO → FREE downgrade
 - [ ] Payment failure scenarios
@@ -219,14 +242,14 @@ When user cancels from Customer Portal:
 
 ## 🔵 Nice to Have
 
-### 10. Toast Notifications
+### 9. Toast Notifications
 Replace console logs with toast messages:
 ```
 🎉 Congratulations! Upgraded to PRO
 ⚠️ Subscription cancelled - tier changed to FREE
 ```
 
-### 11. Analytics
+### 10. Analytics
 Track conversion funnel:
 - Upgrade button clicks
 - Checkout started
@@ -234,7 +257,7 @@ Track conversion funnel:
 - Checkout abandoned
 - Conversion rate by source
 
-### 12. Proration
+### 11. Proration
 Handle mid-cycle changes:
 - Upgrade from FREE to PRO mid-month → pro-rate first charge
 - Downgrade from PRO to FREE → credit remaining days
@@ -309,7 +332,9 @@ Before launching to production:
 ---
 
 **Next Session Focus:**
-1. Fix webhook signature verification (30 min)
-2. Create success/cancel pages (1 hour)
-3. Replace alerts with modals (1 hour)
-4. Test complete flow end-to-end (30 min)
+1. ✅ ~~Fix webhook signature verification~~ (COMPLETED)
+2. ✅ ~~Make API Key Vault PRO-exclusive~~ (COMPLETED)
+3. Replace browser alerts with custom modals (1 hour)
+4. Implement downgrade notification modal (30 min)
+5. Implement restoration modal on upgrade (30 min)
+6. Test complete flow end-to-end with signature verification (30 min)

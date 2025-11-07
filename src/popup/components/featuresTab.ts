@@ -40,7 +40,7 @@ const FEATURES: Feature[] = [
     name: 'API Key Vault',
     icon: '🔑',
     description: 'Protect your API keys from being accidentally sent to AI services',
-    tier: 'free', // FREE with limits, PRO for unlimited
+    tier: 'pro',
     status: 'active',
     stats: []
   },
