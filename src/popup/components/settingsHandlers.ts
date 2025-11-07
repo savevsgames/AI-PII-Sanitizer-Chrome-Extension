@@ -291,7 +291,81 @@ function initThemePicker() {
     });
   });
 
+  // Initialize background transparency slider
+  const bgTransparencySlider = document.getElementById('bgTransparencySlider') as HTMLInputElement;
+  const bgTransparencyValue = document.getElementById('bgTransparencyValue');
+
+  if (bgTransparencySlider && bgTransparencyValue) {
+    // Load saved value
+    chrome.storage.local.get('bgTransparency', (result) => {
+      const transparency = result.bgTransparency || 0;
+      bgTransparencySlider.value = transparency.toString();
+      bgTransparencyValue.textContent = `${transparency}%`;
+      applyBackgroundTransparency(transparency);
+    });
+
+    // Update display while dragging
+    bgTransparencySlider.oninput = () => {
+      const value = parseInt(bgTransparencySlider.value);
+      bgTransparencyValue.textContent = `${value}%`;
+    };
+
+    // Save and apply when released
+    bgTransparencySlider.onchange = async () => {
+      const value = parseInt(bgTransparencySlider.value);
+      await chrome.storage.local.set({ bgTransparency: value });
+      applyBackgroundTransparency(value);
+      console.log('[Theme] Background transparency set to:', value);
+    };
+
+    // Listen for background changes and reapply transparency
+    window.addEventListener('bgTransparencyUpdate', ((event: CustomEvent) => {
+      const transparency = event.detail;
+      applyBackgroundTransparency(transparency);
+    }) as EventListener);
+  }
+
   console.log('[Theme Picker] Initialized');
+}
+
+/**
+ * Apply background transparency to the extension UI
+ * Only affects the main .container background, NOT individual cards
+ * This allows the background image to show through the main panel
+ */
+function applyBackgroundTransparency(transparency: number) {
+  const body = document.body;
+  const container = document.querySelector('.container') as HTMLElement;
+
+  if (!container) {
+    console.warn('[Theme] Container not found for background transparency');
+    return;
+  }
+
+  // Only apply transparency if a custom background is active
+  const hasCustomBg = body.hasAttribute('data-custom-bg');
+
+  if (!hasCustomBg) {
+    // No custom background, reset to normal
+    container.style.backgroundColor = '';
+    return;
+  }
+
+  // Convert transparency percentage to alpha value (0-1)
+  // 0% transparency = fully opaque background (alpha 1, hides image)
+  // 100% transparency = fully transparent background (alpha 0, shows image)
+  const alpha = 1 - (transparency / 100);
+
+  // Get theme mode
+  const isDarkMode = body.getAttribute('data-theme-mode') === 'dark';
+
+  // Apply background color with transparency to .container only
+  // This creates a colored overlay over the background image
+  const bgColor = isDarkMode ? `rgba(26, 26, 46, ${alpha})` : `rgba(255, 255, 255, ${alpha})`;
+
+  container.style.backgroundColor = bgColor;
+
+  console.log('[Theme] Applied background transparency:', transparency, '% (alpha:', alpha.toFixed(2), ')');
 }
 
 /**

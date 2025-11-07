@@ -1,0 +1,118 @@
+/**
+ * Background Library Styles
+ * Thumbnail grid for background selection
+ */
+
+.background-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.background-thumbnail {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.background-thumbnail:hover {
+  border-color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+.background-thumbnail.selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.background-thumbnail.locked {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.background-thumbnail-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Lock badge for PRO backgrounds */
+.background-thumbnail-lock {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #ffd700;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* Checkmark for selected background */
+.background-thumbnail-check {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: var(--color-primary);
+  color: white;
+  font-size: 12px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Background name tooltip */
+.background-thumbnail::after {
+  content: attr(data-name);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+  color: white;
+  font-size: var(--font-size-xs);
+  padding: 4px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.background-thumbnail:hover::after {
+  opacity: 1;
+}
+
+/* Upgrade prompt for locked backgrounds */
+.background-locked-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.background-thumbnail.locked:hover .background-locked-overlay {
+  opacity: 1;
+}
+
+.background-locked-overlay-text {
+  color: white;
+  font-size: var(--font-size-xs);
+  text-align: center;
+  padding: 4px;
+}

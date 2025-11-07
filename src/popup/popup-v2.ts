@@ -18,6 +18,7 @@ import { initAuthModal, openAuthModal } from './components/authModal';
 import { initUserProfile } from './components/userProfile';
 import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/initUI';
 import { updateStatusIndicator } from './components/statusIndicator';
+import { initializeBackgroundOnLoad } from './components/backgroundManager';
 import { auth } from '../lib/firebase';
 // import { testFirebaseConnection } from './test-firebase-popup'; // Disabled - interferes with auth
 
@@ -171,6 +172,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateThemeUI(freshState.config);
 
   console.log('[Theme Debug] 🎨 Theme applied from config:', freshState.config?.settings?.theme);
+
+  // Apply background if configured
+  await initializeBackgroundOnLoad();
 
   await initUI(); // Wait for auth redirect check
   await loadInitialData();
