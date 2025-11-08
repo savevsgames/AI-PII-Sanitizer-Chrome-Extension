@@ -14,7 +14,7 @@ import { initMinimalMode, loadModePreference, updateMinimalView } from './compon
 import { initPageStatus } from './components/pageStatus';
 import { initFeaturesTab, renderFeaturesHub } from './components/featuresTab';
 import { initAPIKeyModal } from './components/apiKeyModal';
-import { initAuthModal, openAuthModal } from './components/authModal';
+import { initAuthModal } from './components/authModal';
 import { initUserProfile } from './components/userProfile';
 import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/initUI';
 import { updateStatusIndicator } from './components/statusIndicator';
@@ -25,57 +25,15 @@ import { auth } from '../lib/firebase';
 // ========== FIREBASE AUTH STATE MANAGEMENT ==========
 
 /**
- * Show locked state overlay when user is signed out
- * Data is encrypted with Firebase UID and cannot be accessed without authentication
- */
-function showLockedState() {
-  const lockedOverlay = document.getElementById('lockedOverlay');
-  if (!lockedOverlay) return;
-
-  lockedOverlay.classList.remove('hidden');
-
-  // Setup sign-in button handler (remove old listener first to avoid duplicates)
-  const signInBtn = document.getElementById('lockedSignInBtn');
-  if (signInBtn) {
-    // Clone node to remove all existing event listeners
-    const newSignInBtn = signInBtn.cloneNode(true) as HTMLElement;
-    signInBtn.parentNode?.replaceChild(newSignInBtn, signInBtn);
-
-    newSignInBtn.addEventListener('click', () => {
-      console.log('[Locked State] User clicked Sign In to Unlock');
-      openAuthModal('signin');
-    });
-  }
-
-  console.log('[Locked State] 🔒 Data locked - authentication required');
-}
-
-/**
- * Hide locked state overlay when user is authenticated
- */
-function hideLockedState() {
-  const lockedOverlay = document.getElementById('lockedOverlay');
-  if (!lockedOverlay) return;
-
-  lockedOverlay.classList.add('hidden');
-  console.log('[Locked State] 🔓 Data unlocked - user authenticated');
-}
-
-/**
  * Handle Firebase authentication state changes
- * Shows/hides locked overlay based on auth state
+ * Reloads encrypted data when user signs in
  */
 function setupAuthStateListener() {
   auth.onAuthStateChanged(async (user) => {
     console.log('[Auth State] Firebase auth state changed:', user ? `Signed in as ${user.email}` : 'Signed out');
 
-    if (!user) {
-      // User signed out - show locked state
-      showLockedState();
-    } else {
-      // User signed in - hide locked state and reload data
-      hideLockedState();
-
+    if (user) {
+      // User signed in - reload encrypted data
       try {
         // Reload data now that we have Firebase UID for decryption
         const store = useAppStore.getState();
@@ -104,6 +62,9 @@ function setupAuthStateListener() {
       } catch (error) {
         console.error('[Auth State] Failed to reload data after sign in:', error);
       }
+    } else {
+      // User signed out - just log it, don't lock UI
+      console.log('[Auth State] User signed out - encrypted data unavailable until sign-in');
     }
   });
 
@@ -139,17 +100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Setup Firebase auth state listener for future changes
   setupAuthStateListener();
 
-  // Check auth state - if not signed in, show locked state
-  if (!auth.currentUser) {
-    console.log('[Popup Init] User not authenticated - showing locked state');
-    showLockedState();
-    // Don't initialize store yet - wait for sign-in
-    await initUI(); // Initialize UI components only
-    return; // Stop here until user signs in
-  }
-
-  // User is authenticated - proceed with normal initialization
-  console.log('[Popup Init] User authenticated - loading data');
+  // User is authenticated OR not - either way, initialize UI
+  console.log('[Popup Init] User state:', auth.currentUser ? `Authenticated (${auth.currentUser.email})` : 'Not authenticated');
 
   // Load config to get saved theme before any UI renders
   const store = useAppStore.getState();
