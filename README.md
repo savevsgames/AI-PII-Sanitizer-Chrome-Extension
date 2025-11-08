@@ -188,11 +188,13 @@ AI_Interceptor/
 
 ## Privacy
 
-- All aliases are stored locally in your browser
-- Data is encrypted using AES-256-GCM (Web Crypto API)
-- No telemetry or analytics
-- No data sent to external servers
-- Open source for transparency
+- **Local Storage Only:** All aliases stored locally in your browser, never sent to external servers
+- **Authentication-Based Encryption:** Data encrypted using AES-256-GCM with keys derived from your secure authentication session
+- **Perfect Key Separation:** Encrypted data and encryption keys are never stored together
+- **Zero Telemetry:** No analytics, tracking, or data collection
+- **Open Source:** Fully transparent codebase for independent security review
+
+**Security Details:** See [Encryption Security Audit](./docs/security/ENCRYPTION_SECURITY_AUDIT.md) for technical implementation details.
 
 ## Browser Compatibility
 

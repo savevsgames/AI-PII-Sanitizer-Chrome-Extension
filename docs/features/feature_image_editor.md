@@ -1,9 +1,9 @@
 # Image Editor & Compression Feature
 
-**Status:** 📋 PLANNED
-**Version:** 1.0 (not yet implemented)
-**Target Release:** Q1 2025
-**Priority:** 🟡 MEDIUM (Enhancement to background customization)
+**Status:** ✅ IMPLEMENTED
+**Version:** 1.0.0
+**Release Date:** January 7, 2025
+**Priority:** ✅ COMPLETE (Enhancement to background customization)
 
 ---
 
@@ -628,6 +628,67 @@ Save & apply instantly
 
 ---
 
-**Feature Status:** 📋 Planned for Q1 2025
-**Documentation Version:** 1.0
+**Feature Status:** ✅ IMPLEMENTED (January 7, 2025)
+**Documentation Version:** 1.1
 **Last Updated:** January 7, 2025
+
+---
+
+## ✅ IMPLEMENTATION COMPLETE
+
+### What's Implemented
+
+The custom image editor is **fully functional** and production-ready:
+
+- ✅ **Full-screen canvas editor** with dark background overlay
+- ✅ **Pan & Zoom controls** - Mouse drag to pan, wheel to zoom (0.1x - 5x)
+- ✅ **550×600px crop overlay** - Floating frame matching popup dimensions
+- ✅ **Quality control slider** - 10% - 100% with live preview
+- ✅ **Auto-compression** - Binary search algorithm to hit 500KB target
+- ✅ **File size enforcement** - Blocks save if >500KB
+- ✅ **Edit existing backgrounds** - Re-open and modify saved images
+- ✅ **Delete functionality** - Remove custom backgrounds
+- ✅ **Crop transformation fix** - Accurate CSS-to-canvas coordinate mapping
+
+### Recent Fix: Crop Transformation Issue (January 7, 2025)
+
+**Problem:** Crop calculation used static overlay dimensions (550×600) but CSS scaling (`max-width: 90vw`, `max-height: calc(90vh - 120px)`) caused mismatches on smaller screens.
+
+**Solution:** Now uses actual displayed size from `getBoundingClientRect()`:
+
+```typescript
+// Get actual displayed size of overlay (imageEditor.ts:382-394)
+const displayedCropWidth = overlayRect.width;
+const displayedCropHeight = overlayRect.height;
+
+// Convert crop position and size to canvas pixels
+const cropX = cropXDisplay * scaleX;
+const cropY = cropYDisplay * scaleY;
+const cropWidth = displayedCropWidth * scaleX;
+const cropHeight = displayedCropHeight * scaleY;
+```
+
+This ensures the crop region accurately reflects whatever size the overlay is displayed at, regardless of screen size or zoom level.
+
+### Files Implemented
+
+- `src/popup/components/imageEditor.ts` (680 lines) - Core editor logic
+- `src/popup/components/backgroundManager.ts` (705 lines) - Integration
+- `src/popup/styles/imageEditor.css` (295 lines) - Full-screen modal styling
+- `src/popup/styles/backgrounds.css` - Gallery thumbnails
+
+### Implementation Differences from Original Spec
+
+**Changed:**
+- ❌ **No Cropper.js** - Built custom canvas-based solution instead
+- ✅ **Custom Implementation** - Better CSP compliance and control
+- ✅ **Binary Search Compression** - More efficient than incremental reduction
+- ✅ **getBoundingClientRect()** - More accurate than viewport calculations
+
+**Why Custom Instead of Cropper.js:**
+- Greater control over crop behavior and coordinates
+- Simpler CSP compliance (no external library)
+- Lighter weight (no 45KB dependency)
+- Exact control over canvas pixel mapping
+
+---
