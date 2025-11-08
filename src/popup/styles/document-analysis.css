@@ -855,7 +855,7 @@
   z-index: 2;
 }
 
-.toggle-slider {
+.toggle-switch .toggle-slider {
   position: absolute;
   top: 0;
   left: 0;
@@ -869,7 +869,7 @@
   z-index: 1;
 }
 
-.toggle-slider:before {
+.toggle-switch .toggle-slider:before {
   content: "";
   position: absolute;
   height: 16px;
