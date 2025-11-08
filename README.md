@@ -277,52 +277,137 @@ For detailed browser compatibility information, see [Launch Roadmap](docs/curren
 - [x] Live pattern testing
 - [x] Usage stats and match tracking
 
-### ✅ Phase 4: Final Polish & Production Ready (COMPLETE!)
-**Goal:** Fix critical UX issues and polish protection status system
-**Document:** [FINAL_DEV_PHASE.md](FINAL_DEV_PHASE.md)
-**Status:** 🎉 **PRODUCTION READY!**
+### ✅ Phase 3.5: Authentication & User Management (COMPLETE!)
+**Goal:** User authentication, tier management, and payment infrastructure
+**Status:** ✅ **INFRASTRUCTURE COMPLETE** - End-to-end testing pending
 
-**Critical Fixes:** ✅ ALL COMPLETE
-- [x] Fix badge accuracy with HEALTH_CHECK updates
-- [x] Fix PROTECTION_LOST notification with proper tab ID
-- [x] Fix disabled extension modal bug
+**Authentication:**
+- [x] Firebase Authentication integration
+- [x] Google Sign-In (OAuth redirect flow)
+- [x] Email/Password authentication with password reset
+- [x] Auth state management and user sessions
+- [x] User profile display in header with dropdown menu
+- [x] Sign-out functionality
+
+**User Management:**
+- [x] User profiles synced to Firestore in real-time
+- [x] Tier system (FREE/PRO) with automatic enforcement
+- [x] Real-time tier updates via Firestore listeners
+- [x] Account settings modal (tier-specific UI)
+- [x] Getting started flow for new users
+
+**Tier System & Limits:**
+- [x] FREE tier: 1 profile max, 3 starter templates (read-only), no custom rules
+- [x] PRO tier: Unlimited profiles, templates, and custom rules
+- [x] Tier migration system (handles upgrades/downgrades)
+- [x] 90-day encrypted archive for downgraded profiles
+- [x] Automatic restoration when user re-subscribes to PRO
+
+**Payment Integration (Stripe):**
+- [x] Stripe checkout integration (test mode configured)
+- [x] Stripe Customer Portal (manage billing)
+- [x] Firebase Cloud Functions deployed:
+  - `createCheckoutSession` - Initiates checkout
+  - `stripeWebhook` - Processes subscription events
+  - `createPortalSession` - Opens billing management
+- [x] Webhook handler for subscription lifecycle events
+- [x] Real-time tier updates when payment processed
+- [ ] End-to-end payment flow testing (pending)
+
+**Pricing:** $4.99/month or $49/year (17% savings)
+
+### ✅ Phase 3.6: Advanced Features (COMPLETE!)
+**Goal:** Multi-document analysis, background customization, alias variations
+**Status:** ✅ **FULLY IMPLEMENTED AND WORKING**
+
+**Multi-Document Analysis:**
+- [x] Upload multiple PDF/DOCX/TXT files simultaneously
+- [x] Visual queue management with status tracking (Pending → Processing → Complete)
+- [x] Sequential processing with per-file progress
+- [x] Unified preview window with side-by-side diff (Original vs Sanitized)
+- [x] Smart pagination (15k chars/page, respects paragraph boundaries)
+- [x] Progress bar with colored document boundary markers
+- [x] Theme-aware design matching extension theme
+
+**Background Customization:**
+- [x] Upload custom background images
+- [x] Full-featured image editor (crop, zoom, pan, compression)
+- [x] Curated background library (7 high-quality images)
+- [x] 12 theme swatches (6 light + 6 dark variants)
+- [x] Real-time preview
+- [x] Thumbnail generation
+- [x] Chrome theme integration (auto-adapt to browser colors)
+
+**Alias Variations (PRO):**
+- [x] Auto-generate name format variations (GregBarker, gregbarker, gbarker, G.Barker, etc.)
+- [x] Email format variations
+- [x] Phone number format variations
+- [x] Smart matching for partial names
+- [x] Reduces false negatives when PII appears in different formats
+
+**Prompt Templates:**
+- [x] Save and reuse common prompts with variable substitution
+- [x] Variable support: {{name}}, {{email}}, {{phone}}, {{address}}, {{company}}, custom fields
+- [x] Category organization
+- [x] Default profile selection per template
+- [x] Starter templates for FREE users (read-only)
+
+**Quick Alias Generator:**
+- [x] One-click generation of realistic fake profiles
+- [x] Themed name pools (coder, fantasy, funny, vintage)
+- [x] Auto-fill all profile fields (name, email, phone, address, company)
+- [x] Randomized but realistic data
+
+### 🚧 Phase 4: Testing & Verification (IN PROGRESS)
+**Goal:** Fix failing tests and verify all features before production launch
+**Status:** 🚧 **TESTING IN PROGRESS** - 90% test pass rate, platform verification pending
+
+**Test Status:**
+- 📊 **431 Total Tests**
+- ✅ **387 Passing (90%)**
+- ❌ **44 Failing (10%)** - Needs fixing before launch
+- ⚠️ **5 Failing Test Suites:**
+  - stripe.test.ts (payment integration)
+  - firebase.test.ts (authentication)
+  - tierSystem.test.ts (FREE/PRO features)
+  - storage.test.ts (encryption context)
+  - e2e/chatgpt.test.ts (platform integration)
+
+**Critical Fixes Completed:**
+- [x] Badge accuracy with HEALTH_CHECK updates
+- [x] PROTECTION_LOST notification with proper tab ID
+- [x] Disabled extension modal bug
 - [x] Multiple injection guard (prevents duplicate scripts)
 - [x] Suppress transient reload errors
 - [x] Auto-enable extension on install
 - [x] Reduce log spam (DEBUG_MODE flag)
+- [x] Auto-reload AI service tabs on extension update
 
-**UX Improvements:** ✅ KEY FEATURES COMPLETE
-- [x] Auto-reload AI service tabs on extension update (GAME CHANGER!)
-- [ ] Prominent hard refresh notification in modal (OPTIONAL)
-- [ ] Visual protection indicator with badge color alignment (OPTIONAL)
+**Pending Before Launch:**
+- [ ] Fix 44 failing tests (get to 100% pass rate)
+- [ ] End-to-end Stripe payment testing (test mode)
+- [ ] Manual verification on all 5 platforms
+- [ ] Platform-specific edge case testing
+- [ ] Final security audit
+- [ ] Performance testing
 
-**What's Working:**
-- ✅ Badge shows protection status accurately
-- ✅ Auto-reload fixes context loss on extension updates
-- ✅ Clean console logs (only state changes logged)
-- ✅ Professional error handling
-- ✅ Extension enabled by default
-
-**Next Steps:**
-- **Option A:** Ship to Chrome Web Store NOW (Recommended)
-- **Option B:** Add optional UX polish (+1-2 hours)
-- **Option C:** Service testing (Gemini, Perplexity, etc.) (+1-2 weeks)
-
-**Timeline:** Ready to ship TODAY! 🚀
+**Timeline:** 1-2 weeks to production readiness
 
 ### 🔜 Phase 5-7: Enhanced Features (Planned)
-- [ ] **Alias Variations**: Auto-detect GregBarker, gregbarker, gbarker
-- [ ] **Dev Terms Spell Check**: Catch "openIA" → "OpenAI" typos
-- [ ] **AI Profile Fill**: Generate fake profiles using ChatGPT/Claude/Gemini
-- [ ] **Cloud Sync** (PRO): Sync profiles across devices
+- [ ] **Dev Terms Spell Check**: Catch "openIA" → "OpenAI" typos before sending
+- [ ] **AI Profile Fill**: Generate fake profiles using ChatGPT/Claude/Gemini API
+- [ ] **Cloud Sync** (PRO): Sync profiles across devices via Firestore
 - [ ] **Team Sharing** (Enterprise): Share profiles with team members
+- [ ] **Advanced Alias Variations**: Nickname detection (Greg → Gregory, Bob → Robert)
 
 ### 📅 Timeline
-- **Phase 1-3:** Complete ✅
-- **Phase 4 (Critical Fixes):** Complete ✅ (Nov 1, 2025)
-- **Phase 4 (Service Testing):** Optional (+1-2 weeks)
-- **Phase 5-7:** 3-4 weeks (post-launch features)
-- **Total to Chrome Web Store launch:** **READY NOW!** 🎉
+- **Phase 1-2:** Complete ✅ (Profile Editor, Production Polish)
+- **Phase 3:** Complete ✅ (API Key Vault, Custom Rules)
+- **Phase 3.5:** Complete ✅ (Authentication, Payments, Tier System)
+- **Phase 3.6:** Complete ✅ (Multi-Doc, Backgrounds, Alias Variations, Templates)
+- **Phase 4 (Testing):** In Progress 🚧 (1-2 weeks to 100% pass rate)
+- **Phase 5-7:** 3-4 weeks (post-launch enhancements)
+- **Target Chrome Web Store Launch:** After Phase 4 testing complete
 
 For detailed roadmap and browser compatibility plans, see [Launch Roadmap](docs/current/launch_roadmap.md).
 
