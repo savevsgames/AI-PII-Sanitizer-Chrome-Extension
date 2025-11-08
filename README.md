@@ -10,7 +10,7 @@ See [LICENSE](LICENSE) for details.
 
 ## 🎉 Current Status: **PRODUCTION READY - 5 PLATFORMS!**
 
-✅ **289/289 Unit Tests Passing** | ✅ **Comprehensive Testing Complete** | ✅ **Professional Codebase**
+✅ **387/431 Unit Tests Passing (90%)** | ✅ **Core Features Tested** | ✅ **Professional Codebase**
 
 ### Supported Platforms (100% Functional)
 | Platform | Status | Market Share | Technology |
@@ -32,11 +32,18 @@ See [LICENSE](LICENSE) for details.
 
 **Core Features:**
 - 🔒 **API Key Vault** - Protect OpenAI, GitHub, AWS, Stripe, and custom API keys
-- 🎯 **Custom Redaction Rules** - Regex-based patterns for SSN, credit cards, medical records
+- 🎯 **Custom Redaction Rules** - Regex-based patterns with 10 preset templates (SSN, credit cards, medical records, etc.)
 - 📄 **Multi-Document Analysis** - Upload & sanitize multiple PDFs/DOCX/TXT files with visual progress tracking
-- 📊 **Activity Logging** - Track all substitutions across all platforms
-- 🎨 **Modern UI** - Glassmorphism design with comprehensive stats
+- 📊 **Activity Logging** - Track all substitutions across all platforms with detailed stats
+- 🎨 **Modern UI** - Glassmorphism design with 12 theme options (light/dark variants)
 - 🔐 **Privacy-First** - All data stored locally with AES-256-GCM encryption
+
+**Additional Features:**
+- ⚡ **Quick Alias Generator** - Generate realistic fake profiles instantly with themed name pools
+- 📝 **Prompt Templates** - Save and reuse common prompts with variable substitution
+- 🖼️ **Custom Backgrounds** - Upload custom images or choose from curated library with built-in editor
+- 🎯 **Minimal Mode** - Compact UI for quick access to essential features
+- 🎨 **Chrome Theme Integration** - Automatically adapts to your browser's theme colors
 
 **Future Platforms (Tier 2 - Post-Launch):**
 - 🎯 Meta AI (100M+ users, GraphQL architecture documented)
