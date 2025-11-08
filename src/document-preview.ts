@@ -338,12 +338,75 @@ async function handleCopy() {
 /**
  * Handle send to chat
  */
-function handleSendToChat() {
+async function handleSendToChat() {
   if (!documentData) return;
 
-  // TODO: Implement send to chat functionality
-  // This will need to integrate with the chat interception system
-  showSuccess('Send to chat feature coming soon!');
+  const sendBtn = document.getElementById('sendToChatBtn') as HTMLButtonElement;
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span class="spinner" style="width: 14px; height: 14px; display: inline-block;"></span> Sending...';
+  }
+
+  try {
+    // Query for tabs with chat platforms
+    const chatPlatforms = [
+      'chatgpt.com',
+      'chat.openai.com',
+      'claude.ai',
+      'gemini.google.com',
+      'perplexity.ai',
+      'copilot.microsoft.com'
+    ];
+
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: false });
+
+    // Find a tab with a chat platform
+    let targetTab = tabs.find(tab =>
+      tab.url && chatPlatforms.some(platform => tab.url!.includes(platform))
+    );
+
+    // If no active chat tab, try any chat tab
+    if (!targetTab) {
+      const allTabs = await chrome.tabs.query({});
+      targetTab = allTabs.find(tab =>
+        tab.url && chatPlatforms.some(platform => tab.url!.includes(platform))
+      );
+    }
+
+    if (!targetTab || !targetTab.id) {
+      showError('No chat platform found. Please open ChatGPT, Claude, Gemini, Perplexity, or Copilot in another tab.');
+      return;
+    }
+
+    // Send message to inject the sanitized text
+    const response = await chrome.tabs.sendMessage(targetTab.id, {
+      type: 'INJECT_TEMPLATE',
+      payload: {
+        content: documentData.sanitizedText
+      }
+    });
+
+    if (response && response.success) {
+      showSuccess(`Sanitized text sent to ${targetTab.title || 'chat'}!`);
+      // Optionally switch to that tab
+      await chrome.tabs.update(targetTab.id, { active: true });
+    } else {
+      showError(response?.error || 'Failed to send text to chat');
+    }
+  } catch (error: any) {
+    console.error('[Document Preview] Send to chat error:', error);
+    showError(`Failed to send to chat: ${error.message}`);
+  } finally {
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = `
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        Send to Chat
+      `;
+    }
+  }
 }
 
 /**

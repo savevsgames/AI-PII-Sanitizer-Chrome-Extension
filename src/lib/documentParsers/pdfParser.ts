@@ -33,18 +33,48 @@ export async function parsePDF(file: File): Promise<string> {
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
 
-      // Extract text items and join
-      const pageText = textContent.items
-        .map((item: any) => {
-          // pdf.js returns items with 'str' property
-          return item.str || '';
-        })
-        .filter(str => str.trim().length > 0)  // Remove empty strings
-        .join(' ');
+      // Extract text items and reconstruct paragraph structure
+      // PDF.js provides transform data that includes Y position
+      let lastY = -1;
+      let currentParagraph = '';
+      const paragraphs: string[] = [];
 
+      textContent.items.forEach((item: any) => {
+        const str = item.str || '';
+        if (str.trim().length === 0) return;
+
+        // Get Y position from transform matrix
+        const currentY = item.transform ? item.transform[5] : 0;
+
+        // Detect paragraph break: significant Y position change (more than 10 units)
+        // or if this is the first item
+        if (lastY !== -1 && Math.abs(currentY - lastY) > 10) {
+          // Y position changed significantly - likely a new paragraph
+          if (currentParagraph.trim()) {
+            paragraphs.push(currentParagraph.trim());
+            currentParagraph = '';
+          }
+        }
+
+        // Add space before text if not at start of paragraph
+        if (currentParagraph.length > 0 && !currentParagraph.endsWith(' ')) {
+          currentParagraph += ' ';
+        }
+
+        currentParagraph += str;
+        lastY = currentY;
+      });
+
+      // Add final paragraph
+      if (currentParagraph.trim()) {
+        paragraphs.push(currentParagraph.trim());
+      }
+
+      // Join paragraphs with double newline
+      const pageText = paragraphs.join('\n\n');
       textPages.push(pageText);
 
-      console.log(`[PDF Parser] Page ${pageNum}/${pdf.numPages}: ${pageText.length} chars`);
+      console.log(`[PDF Parser] Page ${pageNum}/${pdf.numPages}: ${paragraphs.length} paragraphs, ${pageText.length} chars`);
     }
 
     // Join all pages with double newline
