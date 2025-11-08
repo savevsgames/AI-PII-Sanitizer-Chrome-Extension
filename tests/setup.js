@@ -60,12 +60,37 @@ global.chrome = {
   storage: mockStorage,
   runtime: {
     id: 'test-extension-id',
+    getURL: jest.fn((path) => `chrome-extension://test-extension-id/${path}`),
   },
 };
 
 global.crypto = crypto;
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
+
+// Polyfill File.text() for Node.js environment (not available in jsdom)
+if (typeof File !== 'undefined' && !File.prototype.text) {
+  File.prototype.text = function() {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(this);
+    });
+  };
+}
+
+// Polyfill File.arrayBuffer() for Node.js environment (not available in jsdom)
+if (typeof File !== 'undefined' && !File.prototype.arrayBuffer) {
+  File.prototype.arrayBuffer = function() {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(this);
+    });
+  };
+}
 
 // Export for tests that need to access mock data
 module.exports = { mockStorageData, mockStorage };
