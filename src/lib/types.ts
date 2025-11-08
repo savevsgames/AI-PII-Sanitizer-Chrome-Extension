@@ -541,3 +541,19 @@ export interface DocumentAlias {
   // Preview snippet (first 200 chars)
   preview: string;
 }
+
+/**
+ * Queued File - Represents a file in the upload queue (before processing)
+ */
+export interface QueuedFile {
+  id: string;                    // Unique identifier (timestamp + random)
+  file: File;                    // Original File object
+  fileName: string;              // Display name
+  fileSize: number;              // Size in bytes
+  fileType: string;              // MIME type
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  errorMessage?: string;         // If status is error
+  extractedText?: string;        // Cached after parsing (if completed)
+  sanitizedText?: string;        // Cached after sanitizing (if completed)
+  documentAlias?: Omit<DocumentAlias, 'id' | 'createdAt' | 'updatedAt'>; // Result data
+}

@@ -5,9 +5,13 @@
 
 import { useAppStore } from '../../lib/store';
 import { parseDocument, getSupportedExtensions } from '../../lib/documentParsers';
-import { DocumentAlias, UserConfig } from '../../lib/types';
+import { DocumentAlias, UserConfig, QueuedFile } from '../../lib/types';
 import { DocumentPreviewModal } from './documentPreviewModal';
 import { downloadDocumentPair } from '../../lib/downloadUtils';
+
+// Upload Queue State
+let uploadQueue: QueuedFile[] = [];
+let isProcessing = false;
 
 /**
  * Initialize Document Analysis UI
@@ -42,49 +46,76 @@ export function renderDocumentAnalysis(_config: UserConfig) {
   }
 
   container.innerHTML = `
-    <!-- Upload Section -->
-    <div class="doc-upload-section">
-      <div class="doc-upload-card">
-        <div class="doc-upload-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <!-- Compact Upload Area -->
+    <div class="doc-upload-compact">
+      <div class="doc-upload-header">
+        <div class="doc-upload-title">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="12" y1="18" x2="12" y2="12"></line>
-            <line x1="9" y1="15" x2="15" y2="15"></line>
           </svg>
+          <span>Document Sanitizer</span>
         </div>
-        <h3>Upload Document</h3>
-        <p>Upload PDF or TXT files to sanitize PII before sharing with AI services</p>
+        <span class="doc-upload-count" id="uploadCount">0 files</span>
+      </div>
 
-        <div class="doc-upload-dropzone" id="docUploadDropzone">
-          <svg class="doc-upload-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <div class="doc-upload-actions">
+        <input
+          type="file"
+          id="docFileInput"
+          accept="${getSupportedExtensions()}"
+          multiple
+          style="display: none;"
+        />
+        <button class="btn btn-primary btn-compact" id="selectFilesBtn">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          Select Files
+        </button>
+        <div class="doc-upload-dropzone-compact" id="docUploadDropzone">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
-          <p><strong>Drop file here</strong> or click to browse</p>
-          <span class="doc-upload-formats">Supports: PDF, TXT</span>
-          <input
-            type="file"
-            id="docFileInput"
-            accept="${getSupportedExtensions()}"
-            style="display: none;"
-          />
+          <span>or drag & drop files here</span>
         </div>
+      </div>
 
-        <!-- Storage Quota -->
-        <div class="doc-storage-quota" id="docStorageQuota">
-          <div class="quota-header">
-            <span>Storage Used</span>
-            <span id="quotaPercentage">Loading...</span>
-          </div>
-          <div class="quota-bar">
-            <div class="quota-fill" id="quotaFill" style="width: 0%"></div>
-          </div>
-          <div class="quota-details" id="quotaDetails">
-            <span>-</span>
-          </div>
-        </div>
+      <p class="doc-upload-help">Upload PDF or TXT files. Your PII will be replaced with aliases before sending to AI.</p>
+    </div>
+
+    <!-- Upload Queue -->
+    <div class="doc-upload-queue" id="docUploadQueue">
+      <div class="queue-header">
+        <h3>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          </svg>
+          Upload Queue
+          <span class="queue-count">(<span id="queueCount">0</span>)</span>
+        </h3>
+        <button class="btn btn-secondary btn-compact" id="clearQueueBtn">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          Clear All
+        </button>
+      </div>
+      <div class="queue-list" id="queueList">
+        <!-- Queue items will be inserted here -->
+      </div>
+      <div class="queue-actions">
+        <button class="btn btn-primary" id="analyzeSelectedBtn" disabled>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+          Analyze Selected
+        </button>
       </div>
     </div>
 
@@ -210,8 +241,18 @@ function setupEventListeners() {
   // File input change
   document.addEventListener('change', (e) => {
     const target = e.target as HTMLInputElement;
-    if (target.id === 'docFileInput' && target.files && target.files[0]) {
-      handleFileUpload(target.files[0]);
+    if (target.id === 'docFileInput' && target.files) {
+      addFilesToQueue(target.files);
+      target.value = ''; // Reset so same file can be added again
+    }
+  });
+
+  // Select Files button click
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'selectFilesBtn' || target.closest('#selectFilesBtn')) {
+      const fileInput = document.getElementById('docFileInput') as HTMLInputElement;
+      fileInput?.click();
     }
   });
 
@@ -246,10 +287,10 @@ function setupEventListeners() {
   document.addEventListener('drop', (e) => {
     const target = e.target as HTMLElement;
     const dropzone = target.closest('#docUploadDropzone');
-    if (dropzone && e.dataTransfer?.files && e.dataTransfer.files[0]) {
+    if (dropzone && e.dataTransfer?.files) {
       e.preventDefault();
       dropzone.classList.remove('dragover');
-      handleFileUpload(e.dataTransfer.files[0]);
+      addFilesToQueue(e.dataTransfer.files);
     }
   });
 
@@ -266,42 +307,255 @@ function setupEventListeners() {
       handleDocumentAction(action, docId);
     }
   });
+
+  // Queue UI - Checkbox changes (update button state)
+  document.addEventListener('change', (e) => {
+    const target = e.target as HTMLInputElement;
+    console.log('[Document Analysis] Change event detected:', {
+      targetId: target.id,
+      targetType: target.type,
+      checked: target.checked,
+      isFileCheckbox: target.id.startsWith('file_')
+    });
+
+    if (target.type === 'checkbox' && target.id.startsWith('file_')) {
+      console.log('[Document Analysis] File checkbox changed, updating button state only (NOT re-rendering)');
+
+      // Update button state without re-rendering (which destroys checkbox states)
+      const selectedCount = getSelectedFiles().length;
+      const analyzeBtn = document.getElementById('analyzeSelectedBtn') as HTMLButtonElement;
+      if (analyzeBtn) {
+        analyzeBtn.disabled = selectedCount === 0 || isProcessing;
+        console.log('[Document Analysis] Analyze button disabled:', analyzeBtn.disabled, '(selected:', selectedCount, ')');
+      }
+    }
+  });
+
+  // Additional logging for clicks on toggle area
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const toggleSwitch = target.closest('.toggle-switch');
+    const queueItem = target.closest('.queue-item');
+
+    if (toggleSwitch || queueItem) {
+      console.log('[Document Analysis] Click detected:', {
+        clickedElement: target.className,
+        isToggleSwitch: !!toggleSwitch,
+        isQueueItem: !!queueItem,
+        queueItemId: queueItem?.getAttribute('data-file-id')
+      });
+    }
+  });
+
+  // Queue UI - Analyze Selected button
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'analyzeSelectedBtn' || target.closest('#analyzeSelectedBtn')) {
+      analyzeSelectedFiles();
+    }
+  });
+
+  // Queue UI - Remove file button
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const button = target.closest('[data-action="remove"]') as HTMLElement;
+    if (button && button.hasAttribute('data-file-id')) {
+      const fileId = button.getAttribute('data-file-id');
+      if (fileId) {
+        removeFileFromQueue(fileId);
+      }
+    }
+  });
+
+  // Queue UI - Clear All button
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'clearQueueBtn' || target.closest('#clearQueueBtn')) {
+      clearQueue();
+    }
+  });
 }
 
 /**
- * Handle file upload
+ * Add files to upload queue
  */
-async function handleFileUpload(file: File) {
-  console.log('[Document Analysis] Uploading file:', file.name);
+function addFilesToQueue(files: FileList | File[]) {
+  const fileArray = Array.from(files);
+  console.log('[Document Analysis] addFilesToQueue called with', fileArray.length, 'files');
 
-  showProcessingStatus('Parsing document...', `Reading ${file.name}`);
-
-  try {
-    // Parse document
-    const extractedText = await parseDocument(file);
-    console.log('[Document Analysis] Extracted text:', extractedText.length, 'chars');
-
-    updateProcessingStatus('Sanitizing PII...', 'Applying alias profiles');
-
-    // Sanitize text using enabled profiles
-    const state = useAppStore.getState();
-    const enabledProfiles = state.profiles.filter((p) => p.enabled);
-
-    if (enabledProfiles.length === 0) {
-      hideProcessingStatus();
-      showError('No enabled profiles', 'Please enable at least one profile to sanitize documents');
+  fileArray.forEach(file => {
+    // Validate file type
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!['pdf', 'txt'].includes(ext || '')) {
+      console.warn('[Document Analysis] Invalid file type:', file.name, ext);
+      showError('Invalid file type', `${file.name} is not supported. Use PDF or TXT files.`);
       return;
     }
 
-    const result = sanitizeText(extractedText, enabledProfiles);
+    // Create queue entry
+    const queuedFile: QueuedFile = {
+      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      file: file,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      status: 'pending'
+    };
 
-    updateProcessingStatus('Opening preview...', 'Preparing document comparison');
+    uploadQueue.push(queuedFile);
+    console.log('[Document Analysis] Added to queue:', {
+      id: queuedFile.id,
+      fileName: queuedFile.fileName,
+      status: queuedFile.status
+    });
+  });
+
+  console.log('[Document Analysis] Queue now has', uploadQueue.length, 'files');
+  renderUploadQueue();
+}
+
+/**
+ * Render upload queue UI
+ */
+function renderUploadQueue() {
+  console.log('[Document Analysis] renderUploadQueue called');
+
+  const queueContainer = document.getElementById('queueList');
+  const queueCountEl = document.getElementById('queueCount');
+  const uploadCountEl = document.getElementById('uploadCount');
+  const analyzeBtn = document.getElementById('analyzeSelectedBtn') as HTMLButtonElement;
+  const queueSection = document.getElementById('docUploadQueue');
+
+  console.log('[Document Analysis] DOM elements found:', {
+    queueContainer: !!queueContainer,
+    queueCountEl: !!queueCountEl,
+    uploadCountEl: !!uploadCountEl,
+    analyzeBtn: !!analyzeBtn,
+    queueSection: !!queueSection
+  });
+
+  if (!queueContainer) {
+    console.error('[Document Analysis] queueList container not found!');
+    return;
+  }
+
+  // Update counts
+  if (queueCountEl) queueCountEl.textContent = `${uploadQueue.length}`;
+  if (uploadCountEl) {
+    uploadCountEl.textContent = uploadQueue.length === 1 ? '1 file' : `${uploadQueue.length} files`;
+  }
+
+  // Show/hide queue section
+  if (queueSection) {
+    queueSection.style.display = uploadQueue.length > 0 ? 'block' : 'none';
+    console.log('[Document Analysis] Queue section display:', queueSection.style.display);
+  }
+
+  // Render items
+  queueContainer.innerHTML = uploadQueue.map(renderQueueItem).join('');
+  console.log('[Document Analysis] Rendered', uploadQueue.length, 'queue items');
+
+  // Enable/disable analyze button
+  const selectedCount = getSelectedFiles().length;
+  console.log('[Document Analysis] Selected files count:', selectedCount);
+
+  if (analyzeBtn) {
+    analyzeBtn.disabled = selectedCount === 0 || isProcessing;
+    console.log('[Document Analysis] Analyze button disabled:', analyzeBtn.disabled, '(selected:', selectedCount, 'processing:', isProcessing, ')');
+  }
+}
+
+/**
+ * Render single queue item
+ */
+function renderQueueItem(queuedFile: QueuedFile): string {
+  const isPDF = queuedFile.fileType.includes('pdf') || queuedFile.fileName.endsWith('.pdf');
+
+  const icon = isPDF ? `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+      <path d="M9 13h6"></path>
+      <path d="M9 17h6"></path>
+    </svg>
+  ` : `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+      <line x1="9" y1="15" x2="15" y2="15"></line>
+    </svg>
+  `;
+
+  const statusClass = `status-${queuedFile.status}`;
+  const statusText = queuedFile.status.charAt(0).toUpperCase() + queuedFile.status.slice(1);
+
+  const isCompleted = queuedFile.status === 'completed';
+  const isDisabled = queuedFile.status !== 'pending';
+
+  return `
+    <div class="queue-item" data-file-id="${queuedFile.id}">
+      <div class="queue-item-toggle">
+        <label class="toggle-switch" title="Select for analysis">
+          <input
+            type="checkbox"
+            id="file_${queuedFile.id}"
+            ${isCompleted ? 'checked' : ''}
+            ${isDisabled ? 'disabled' : ''}
+          />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="queue-item-icon">${icon}</div>
+      <div class="queue-item-info">
+        <div class="queue-item-name">${escapeHtml(queuedFile.fileName)}</div>
+        <div class="queue-item-meta">${formatFileSize(queuedFile.fileSize)} • ${isPDF ? 'PDF' : 'TXT'}</div>
+      </div>
+      <div class="queue-item-status">
+        <span class="status-badge ${statusClass}">${statusText}</span>
+        ${queuedFile.errorMessage ? `<div class="error-message">${escapeHtml(queuedFile.errorMessage)}</div>` : ''}
+      </div>
+      <div class="queue-item-actions">
+        <button class="btn-icon" data-action="remove" data-file-id="${queuedFile.id}" title="Remove from queue">×</button>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Process queued file (single file)
+ */
+async function processQueuedFile(queuedFile: QueuedFile) {
+  console.log('[Document Analysis] Processing file:', queuedFile.fileName);
+
+  // Update status
+  queuedFile.status = 'processing';
+  renderUploadQueue();
+
+  showProcessingStatus('Parsing document...', `Reading ${queuedFile.fileName}`);
+
+  try {
+    // Parse document
+    const extractedText = await parseDocument(queuedFile.file);
+    queuedFile.extractedText = extractedText;
+
+    updateProcessingStatus('Sanitizing PII...', 'Applying alias profiles');
+
+    // Sanitize
+    const state = useAppStore.getState();
+    const enabledProfiles = state.profiles.filter(p => p.enabled);
+
+    if (enabledProfiles.length === 0) {
+      throw new Error('No enabled profiles. Please enable at least one profile.');
+    }
+
+    const result = sanitizeText(extractedText, enabledProfiles);
+    queuedFile.sanitizedText = result.sanitizedText;
 
     // Create document alias
     const documentData: Omit<DocumentAlias, 'id' | 'createdAt' | 'updatedAt'> = {
-      documentName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
+      documentName: queuedFile.fileName,
+      fileSize: queuedFile.fileSize,
+      fileType: queuedFile.fileType,
       piiMap: result.piiMap,
       originalText: extractedText,
       sanitizedText: result.sanitizedText,
@@ -312,19 +566,110 @@ async function handleFileUpload(file: File) {
       preview: result.sanitizedText.substring(0, 150).trim() + '...',
     };
 
+    queuedFile.documentAlias = documentData;
+    queuedFile.status = 'completed';
+
     hideProcessingStatus();
+    renderUploadQueue();
 
     // Open preview window
+    updateProcessingStatus('Opening preview...', 'Preparing document comparison');
+
     openPreviewWindow({
       documentAlias: documentData,
       originalText: extractedText,
-      sanitizedText: result.sanitizedText,
+      sanitizedText: result.sanitizedText
     });
-  } catch (error: any) {
-    console.error('[Document Analysis] Upload error:', error);
+
     hideProcessingStatus();
+
+  } catch (error: any) {
+    console.error('[Document Analysis] Processing error:', error);
+    queuedFile.status = 'error';
+    queuedFile.errorMessage = error.message || 'Unknown error';
+    hideProcessingStatus();
+    renderUploadQueue();
     showError('Processing failed', error.message || 'Unknown error');
   }
+}
+
+/**
+ * Analyze selected files from queue
+ */
+async function analyzeSelectedFiles() {
+  if (isProcessing) return;
+
+  const selectedFiles = getSelectedFiles();
+  if (selectedFiles.length === 0) return;
+
+  // For now: Process first selected file only
+  const fileToProcess = selectedFiles[0];
+
+  isProcessing = true;
+  await processQueuedFile(fileToProcess);
+  isProcessing = false;
+}
+
+/**
+ * Get selected files from queue
+ */
+function getSelectedFiles(): QueuedFile[] {
+  console.log('[Document Analysis] getSelectedFiles called, checking', uploadQueue.length, 'files');
+
+  const selected = uploadQueue.filter(qf => {
+    const checkbox = document.getElementById(`file_${qf.id}`) as HTMLInputElement;
+    const isChecked = checkbox?.checked;
+    const isPending = qf.status === 'pending';
+
+    console.log('[Document Analysis] File:', qf.fileName, {
+      checkboxFound: !!checkbox,
+      checked: isChecked,
+      status: qf.status,
+      isPending: isPending,
+      willSelect: isChecked && isPending
+    });
+
+    return checkbox?.checked && qf.status === 'pending';
+  });
+
+  console.log('[Document Analysis] Selected', selected.length, 'files');
+  return selected;
+}
+
+/**
+ * Remove file from queue
+ */
+function removeFileFromQueue(fileId: string) {
+  uploadQueue = uploadQueue.filter(qf => qf.id !== fileId);
+  renderUploadQueue();
+}
+
+/**
+ * Clear all files from queue
+ */
+function clearQueue() {
+  uploadQueue = [];
+  renderUploadQueue();
+}
+
+/**
+ * Helper: Format file size
+ */
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
+}
+
+/**
+ * Helper: Escape HTML
+ */
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 /**
@@ -420,8 +765,18 @@ function openPreviewWindow(data: {
   originalText: string;
   sanitizedText: string;
 }) {
+  // Get current theme from store
+  const state = useAppStore.getState();
+  const theme = state.config?.settings?.theme || 'classic-light';
+
+  // Add theme to data
+  const dataWithTheme = {
+    ...data,
+    theme: theme
+  };
+
   // Encode document data as URL parameter
-  const encodedData = encodeURIComponent(JSON.stringify(data));
+  const encodedData = encodeURIComponent(JSON.stringify(dataWithTheme));
   const previewUrl = chrome.runtime.getURL(`document-preview.html?data=${encodedData}`);
 
   // Open in new tab
@@ -462,9 +817,9 @@ async function updateStorageQuota() {
       quotaFill.style.width = `${quota.percentage}%`;
 
       if (quota.hasUnlimitedStorage) {
-        quotaDetails.innerHTML = `<span>${formatBytes(quota.used)} used (Unlimited)</span>`;
+        quotaDetails.innerHTML = `<span>${formatFileSize(quota.used)} used (Unlimited)</span>`;
       } else {
-        quotaDetails.innerHTML = `<span>${formatBytes(quota.used)} / ${formatBytes(quota.quota)}</span>`;
+        quotaDetails.innerHTML = `<span>${formatFileSize(quota.used)} / ${formatFileSize(quota.quota)}</span>`;
       }
 
       // Add warning class if > 80%
@@ -520,33 +875,4 @@ function showError(title: string, message: string) {
   // TODO: Implement toast notification system
   console.error(`[Error] ${title}: ${message}`);
   alert(`Error: ${title}\n\n${message}`);
-}
-
-/**
- * Format file size
- */
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
-
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
-}
-
-/**
- * Format bytes
- */
-function formatBytes(bytes: number): string {
-  return formatFileSize(bytes);
-}
-
-/**
- * Escape HTML
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }

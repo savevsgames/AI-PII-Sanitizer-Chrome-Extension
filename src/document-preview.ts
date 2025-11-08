@@ -12,12 +12,13 @@ interface DocumentPreviewData {
   documentAlias: Omit<DocumentAlias, 'id' | 'createdAt' | 'updatedAt'>;
   originalText: string;
   sanitizedText: string;
+  theme?: string; // Theme from main popup
 }
 
 let documentData: DocumentPreviewData | null = null;
 
 // Pagination state
-const CHARS_PER_PAGE = 3000; // ~1-2 pages of text
+const CHARS_PER_PAGE = 15000; // ~1 full page of dense text (increased from 3000)
 let currentPage = 1;
 let totalPages = 1;
 let originalPages: string[] = [];
@@ -53,6 +54,9 @@ async function init() {
       drawer.classList.add('collapsed');
     }
 
+    // Apply theme
+    applyTheme(documentData.theme || 'classic-light');
+
     // Render the document
     renderDocument(documentData);
 
@@ -70,16 +74,59 @@ async function init() {
 }
 
 /**
- * Split text into pages
+ * Apply theme to the document
+ */
+function applyTheme(theme: string) {
+  const body = document.body;
+
+  // Determine if dark or light mode
+  const darkThemes = ['classic-dark', 'midnight-purple', 'deep-ocean', 'embers', 'forest', 'sundown'];
+  const themeMode = darkThemes.includes(theme) ? 'dark' : 'light';
+
+  // Set theme attributes
+  body.setAttribute('data-theme', theme);
+  body.setAttribute('data-theme-mode', themeMode);
+
+  console.log('[Document Preview] Applied theme:', theme, '(mode:', themeMode, ')');
+}
+
+/**
+ * Split text into pages using smart paragraph-based pagination
+ * - Tries to get as close to CHARS_PER_PAGE (15,000) as possible
+ * - Respects paragraph boundaries (double newlines)
+ * - If a single paragraph exceeds 15k, that's fine - it becomes its own page
+ * - Won't add a paragraph if it would exceed 15k (saves it for next page)
  */
 function paginateText(text: string): string[] {
   const pages: string[] = [];
-  let currentPos = 0;
 
-  while (currentPos < text.length) {
-    const chunk = text.substring(currentPos, currentPos + CHARS_PER_PAGE);
-    pages.push(chunk);
-    currentPos += CHARS_PER_PAGE;
+  // Split text into paragraphs (double newlines)
+  const paragraphs = text.split(/\n\n+/);
+
+  let currentPage = '';
+
+  for (let i = 0; i < paragraphs.length; i++) {
+    const paragraph = paragraphs[i];
+    const paragraphWithNewline = i === 0 ? paragraph : '\n\n' + paragraph;
+
+    // If current page is empty, add the paragraph regardless of length
+    if (currentPage === '') {
+      currentPage = paragraph;
+    }
+    // If adding this paragraph would exceed CHARS_PER_PAGE, save current page and start new one
+    else if ((currentPage + paragraphWithNewline).length > CHARS_PER_PAGE) {
+      pages.push(currentPage);
+      currentPage = paragraph;
+    }
+    // Otherwise, add paragraph to current page
+    else {
+      currentPage += paragraphWithNewline;
+    }
+  }
+
+  // Don't forget the last page
+  if (currentPage) {
+    pages.push(currentPage);
   }
 
   return pages.length > 0 ? pages : [''];
