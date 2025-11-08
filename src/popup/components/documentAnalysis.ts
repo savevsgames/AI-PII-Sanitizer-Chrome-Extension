@@ -13,6 +13,10 @@ import { downloadDocumentPair } from '../../lib/downloadUtils';
 let uploadQueue: QueuedFile[] = [];
 let isProcessing = false;
 
+// Track previous state to detect changes
+let previousDocumentAliases: DocumentAlias[] = [];
+let previousLoadingState = false;
+
 /**
  * Initialize Document Analysis UI
  */
@@ -24,6 +28,23 @@ export function initDocumentAnalysisUI() {
     console.error('[Document Analysis] Container not found');
     return;
   }
+
+  // Subscribe to store changes
+  useAppStore.subscribe((state) => {
+    // Re-render when document aliases change
+    if (state.documentAliases !== previousDocumentAliases) {
+      console.log('[Document Analysis] Document aliases changed, re-rendering...');
+      previousDocumentAliases = state.documentAliases;
+      renderDocumentAnalysis(state.config!);
+    }
+
+    // Re-render when loading completes
+    if (previousLoadingState && !state.isLoadingDocuments) {
+      console.log('[Document Analysis] Loading complete, re-rendering...');
+      renderDocumentAnalysis(state.config!);
+    }
+    previousLoadingState = state.isLoadingDocuments;
+  });
 
   setupEventListeners();
   console.log('[Document Analysis] Initialized');
@@ -131,13 +152,24 @@ export function renderDocumentAnalysis(_config: UserConfig) {
     <!-- Document List -->
     <div class="doc-list-section">
       <div class="doc-list-header">
-        <h3>
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
-          Saved Documents
-        </h3>
-        <span class="doc-count">${documents.length} document${documents.length !== 1 ? 's' : ''}</span>
+        <div class="doc-list-title-row">
+          <h3>
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Saved Documents
+          </h3>
+          <span class="doc-count">${documents.length} document${documents.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="doc-storage-quota">
+          <div class="quota-bar">
+            <div class="quota-fill" id="quotaFill" style="width: 0%"></div>
+          </div>
+          <div class="quota-info">
+            <span id="quotaDetails">Loading...</span>
+            <span class="quota-percentage" id="quotaPercentage">0%</span>
+          </div>
+        </div>
       </div>
 
       ${isLoading ? renderLoadingState() : ''}

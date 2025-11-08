@@ -65,7 +65,7 @@
   gap: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: var(--bg-primary);
+  background: var(--card-bg-light);
   min-height: 48px;
 }
 
@@ -84,7 +84,7 @@
 
 .doc-upload-dropzone-compact:hover {
   border-color: var(--primary);
-  background: var(--hover-bg, rgba(99, 102, 241, 0.05));
+  background: var(--card-bg-medium);
 }
 
 .doc-upload-dropzone-compact:hover .icon,
@@ -95,7 +95,7 @@
 .doc-upload-dropzone-compact.dragover {
   border-color: var(--primary);
   border-width: 2px;
-  background: var(--primary-bg, rgba(99, 102, 241, 0.1));
+  background: var(--card-bg);
   transform: scale(1.01);
 }
 
@@ -136,9 +136,9 @@
 
 /* ========== Storage Quota ========== */
 .doc-storage-quota {
-  background: var(--surface-bg, #f9fafb);
+  /* Background removed - using transparent background for theme compatibility */
   border-radius: 8px;
-  padding: 16px;
+  padding: 0; /* Padding handled by parent container */
 }
 
 .quota-header {
@@ -224,9 +224,15 @@
 
 .doc-list-header {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.doc-list-title-row {
+  display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
 }
 
 .doc-list-header h3 {
@@ -245,9 +251,47 @@
 .doc-count {
   font-size: 14px;
   color: var(--text-secondary);
-  background: var(--surface-bg, #f3f4f6);
+  background: var(--card-bg-medium);
   padding: 4px 12px;
   border-radius: 12px;
+}
+
+/* Storage Quota Display */
+.doc-storage-quota {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quota-bar {
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.quota-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 3px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.quota-fill.warning {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.quota-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.quota-percentage {
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 /* ========== Loading & Empty States ========== */
@@ -311,7 +355,7 @@
   flex-shrink: 0;
   width: 40px;
   height: 40px;
-  background: var(--surface-bg, #f3f4f6);
+  background: var(--card-bg-medium);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -775,7 +819,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: var(--surface-bg, #f9fafb);
+  background: var(--card-bg-medium);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -803,7 +847,7 @@
 .queue-list {
   max-height: 400px;
   overflow-y: auto;
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 .queue-item {
@@ -814,7 +858,7 @@
   padding: 16px 20px;
   border-bottom: 1px solid var(--border-color);
   transition: background 0.2s;
-  background: var(--bg-primary);
+  background: var(--card-bg-light);
 }
 
 .queue-item:last-child {
@@ -822,7 +866,7 @@
 }
 
 .queue-item:hover {
-  background: var(--hover-bg, #f9fafb);
+  background: var(--card-bg-medium);
 }
 
 /* Toggle Switch for Queue Items */
@@ -914,7 +958,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-bg, #f3f4f6);
+  background: var(--card-bg);
   border-radius: 10px;
   color: var(--primary);
   flex-shrink: 0;
