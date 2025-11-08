@@ -13,6 +13,7 @@ interface DocumentPreviewData {
   originalText: string;
   sanitizedText: string;
   theme?: string; // Theme from main popup
+  documentBoundaries?: Array<{ name: string; startChar: number; percentage: number }>; // Character-based from source
 }
 
 let documentData: DocumentPreviewData | null = null;
@@ -23,6 +24,7 @@ let currentPage = 1;
 let totalPages = 1;
 let originalPages: string[] = [];
 let sanitizedPages: string[] = [];
+let documentBoundaries: Array<{ name: string; startPage: number; percentage: number }> = [];
 
 /**
  * Initialize the preview page
@@ -30,22 +32,34 @@ let sanitizedPages: string[] = [];
 async function init() {
   console.log('[Document Preview] Initializing...');
 
-  // Get document data from URL parameters
+  // Get session key from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
-  const dataParam = urlParams.get('data');
+  const sessionKey = urlParams.get('sessionKey');
 
-  if (!dataParam) {
-    showError('No document data provided');
+  if (!sessionKey) {
+    showError('No session key provided');
     return;
   }
 
   try {
-    // Decode and parse the document data
-    documentData = JSON.parse(decodeURIComponent(dataParam));
+    console.log('[Document Preview] Loading data from session key:', sessionKey);
+
+    // Get document data from chrome.storage.session
+    const result = await chrome.storage.session.get(sessionKey);
+    documentData = result[sessionKey];
 
     if (!documentData) {
-      showError('Invalid document data');
+      showError('Session data not found');
       return;
+    }
+
+    // Clean up session storage
+    await chrome.storage.session.remove(sessionKey);
+    console.log('[Document Preview] Session data loaded and cleaned up');
+
+    // Document boundaries will be calculated after pagination
+    if (documentData.documentBoundaries) {
+      console.log('[Document Preview] Multi-document with', documentData.documentBoundaries.length, 'documents');
     }
 
     // Initialize drawer as collapsed
@@ -86,6 +100,14 @@ function applyTheme(theme: string) {
   // Set theme attributes
   body.setAttribute('data-theme', theme);
   body.setAttribute('data-theme-mode', themeMode);
+
+  // Update CSS variable to apply theme gradient background
+  // This matches the theme system in variables.css
+  const themeVar = `--theme-${theme}`;
+  const headerVar = `--theme-${theme}-header`;
+
+  body.style.setProperty('--theme-bg-gradient', `var(${themeVar})`);
+  body.style.setProperty('--theme-header-gradient', `var(${headerVar})`);
 
   console.log('[Document Preview] Applied theme:', theme, '(mode:', themeMode, ')');
 }
@@ -154,6 +176,12 @@ function renderDocument(data: DocumentPreviewData) {
   currentPage = 1;
 
   console.log(`[Document Preview] Paginated: ${totalPages} pages (${CHARS_PER_PAGE} chars/page)`);
+
+  // Calculate page-based boundaries if we have multiple documents
+  if (data.documentBoundaries && data.documentBoundaries.length > 1) {
+    calculatePageBoundaries(data.documentBoundaries);
+    renderProgressBar(); // Render progress bar after calculating boundaries
+  }
 
   // Render first page
   renderCurrentPage();
@@ -272,6 +300,9 @@ function updatePaginationControls() {
   if (prevPageBtn) prevPageBtn.disabled = currentPage === 1;
   if (nextPageBtn) nextPageBtn.disabled = currentPage === totalPages;
   if (lastPageBtn) lastPageBtn.disabled = currentPage === totalPages;
+
+  // Update progress bar if multi-doc
+  updateProgressBar();
 }
 
 /**
@@ -636,6 +667,89 @@ function escapeHtml(text: string): string {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+/**
+ * Calculate which page each document starts on
+ */
+function calculatePageBoundaries(boundaries: Array<{ name: string; startChar: number; percentage: number }>) {
+  console.log('[Progress Bar] Calculating page boundaries...');
+
+  // Find which page each document header appears on
+  documentBoundaries = [];
+
+  for (const boundary of boundaries) {
+    // Find which page contains this character position
+    let charsSoFar = 0;
+    let foundPage = 1;
+
+    for (let i = 0; i < sanitizedPages.length; i++) {
+      const pageEndChar = charsSoFar + sanitizedPages[i].length;
+
+      if (boundary.startChar >= charsSoFar && boundary.startChar < pageEndChar) {
+        foundPage = i + 1; // Pages are 1-indexed
+        break;
+      }
+
+      charsSoFar = pageEndChar + 2; // +2 for \n\n between pages
+    }
+
+    // Calculate percentage based on page position
+    const percentage = ((foundPage - 1) / Math.max(1, totalPages - 1)) * 100;
+
+    documentBoundaries.push({
+      name: boundary.name,
+      startPage: foundPage,
+      percentage: percentage
+    });
+
+    console.log(`[Progress Bar] ${boundary.name} starts at page ${foundPage} (${percentage.toFixed(1)}%)`);
+  }
+}
+
+/**
+ * Render progress bar with document markers
+ */
+function renderProgressBar() {
+  const progressBar = document.getElementById('docProgressBar');
+  const markersContainer = document.getElementById('progressMarkers');
+
+  if (!progressBar || !markersContainer || documentBoundaries.length === 0) return;
+
+  // Show progress bar
+  progressBar.style.display = 'flex';
+
+  // Clear existing markers
+  markersContainer.innerHTML = '';
+
+  // Create marker for each document
+  documentBoundaries.forEach((boundary, index) => {
+    const marker = document.createElement('div');
+    marker.className = 'doc-marker';
+    marker.textContent = (index + 1).toString();
+    marker.style.left = `${boundary.percentage}%`;
+    marker.title = boundary.name;
+    markersContainer.appendChild(marker);
+  });
+
+  console.log('[Progress Bar] Rendered', documentBoundaries.length, 'markers');
+
+  // Initial progress update
+  updateProgressBar();
+}
+
+/**
+ * Update progress bar based on current page
+ */
+function updateProgressBar() {
+  if (documentBoundaries.length === 0) return;
+
+  const progressFill = document.getElementById('progressFill');
+  if (!progressFill) return;
+
+  // Calculate progress based on current page
+  const progress = (currentPage / totalPages) * 100;
+  progressFill.style.width = `${progress}%`;
 }
 
 // Initialize when DOM is ready

@@ -78,9 +78,14 @@ body {
 }
 
 .btn-secondary:hover {
-  background: var(--card-bg);
+  background: var(--card-bg-hover, var(--card-bg));
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+}
+
+/* Dark theme needs lighter hover background */
+body[data-theme-mode="dark"] .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .btn-success {
@@ -335,33 +340,49 @@ body {
   box-shadow: 0 0 0 3px rgba(134, 239, 172, 0.3);
 }
 
-/* Top Controls Bar */
-.top-controls-bar {
+/* Unified Controls Bar - Single container for all controls */
+.unified-controls-bar {
   display: flex;
-  gap: var(--space-lg);
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  gap: var(--space-lg);
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  flex-wrap: nowrap;
 }
 
-/* Pagination Controls */
-.pagination-controls {
+/* Pagination Section */
+.pagination-section {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-md);
-  padding: var(--space-md);
-  border-radius: var(--radius-lg);
+  flex-shrink: 0;
 }
 
-/* Action Buttons */
-.action-buttons {
+/* Progress Section - Takes available space in middle */
+.progress-section {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+  max-width: 600px;
+  padding: 0 var(--space-lg);
+}
+
+/* Actions Section */
+.actions-section {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-lg);
+  flex-shrink: 0;
   flex-wrap: wrap;
+  pointer-events: none; /* Prevent container from reacting to hover */
+}
+
+/* Re-enable pointer events for buttons */
+.actions-section .btn {
+  pointer-events: auto;
 }
 
 .btn-compact {

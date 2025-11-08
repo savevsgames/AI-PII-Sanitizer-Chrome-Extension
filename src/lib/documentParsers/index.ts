@@ -4,6 +4,15 @@
 
 export { parsePDF, isPDF } from './pdfParser';
 export { parseTXT, isTXT } from './txtParser';
+export { parseDocx } from './docxParser';
+
+/**
+ * Check if file is DOCX
+ */
+export function isDocx(file: File): boolean {
+  const name = file.name.toLowerCase();
+  return name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+}
 
 /**
  * Parse document based on file type
@@ -13,11 +22,14 @@ export { parseTXT, isTXT } from './txtParser';
 export async function parseDocument(file: File): Promise<string> {
   const { parsePDF, isPDF } = await import('./pdfParser');
   const { parseTXT, isTXT } = await import('./txtParser');
+  const { parseDocx } = await import('./docxParser');
 
   if (isPDF(file)) {
     return await parsePDF(file);
   } else if (isTXT(file)) {
     return await parseTXT(file);
+  } else if (isDocx(file)) {
+    return await parseDocx(file);
   } else {
     throw new Error(`Unsupported file type: ${file.type || file.name}`);
   }
@@ -32,7 +44,7 @@ export function isSupportedFileType(file: File): boolean {
   const { isPDF } = require('./pdfParser');
   const { isTXT } = require('./txtParser');
 
-  return isPDF(file) || isTXT(file);
+  return isPDF(file) || isTXT(file) || isDocx(file);
 }
 
 /**
@@ -40,5 +52,5 @@ export function isSupportedFileType(file: File): boolean {
  * @returns string - Comma-separated list for file input accept attribute
  */
 export function getSupportedExtensions(): string {
-  return '.pdf,.txt,.text';
+  return '.pdf,.txt,.text,.docx';
 }

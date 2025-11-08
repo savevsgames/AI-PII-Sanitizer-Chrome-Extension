@@ -105,7 +105,7 @@ export function renderDocumentAnalysis(_config: UserConfig) {
         </div>
       </div>
 
-      <p class="doc-upload-help">Upload PDF or TXT files. Your PII will be replaced with aliases before sending to AI.</p>
+      <p class="doc-upload-help">Upload PDF, TXT, or DOCX files. Your PII will be replaced with aliases before sending to AI.</p>
     </div>
 
     <!-- Upload Queue -->
@@ -418,9 +418,9 @@ function addFilesToQueue(files: FileList | File[]) {
   fileArray.forEach(file => {
     // Validate file type
     const ext = file.name.split('.').pop()?.toLowerCase();
-    if (!['pdf', 'txt'].includes(ext || '')) {
+    if (!['pdf', 'txt', 'text', 'docx'].includes(ext || '')) {
       console.warn('[Document Analysis] Invalid file type:', file.name, ext);
-      showError('Invalid file type', `${file.name} is not supported. Use PDF or TXT files.`);
+      showError('Invalid file type', `${file.name} is not supported. Use PDF, TXT, or DOCX files.`);
       return;
     }
 
@@ -502,6 +502,8 @@ function renderUploadQueue() {
  */
 function renderQueueItem(queuedFile: QueuedFile): string {
   const isPDF = queuedFile.fileType.includes('pdf') || queuedFile.fileName.endsWith('.pdf');
+  const isDocx = queuedFile.fileType.includes('word') || queuedFile.fileName.endsWith('.docx');
+  const fileTypeLabel = isPDF ? 'PDF' : isDocx ? 'DOCX' : 'TXT';
 
   const icon = isPDF ? `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -509,6 +511,14 @@ function renderQueueItem(queuedFile: QueuedFile): string {
       <polyline points="14 2 14 8 20 8"></polyline>
       <path d="M9 13h6"></path>
       <path d="M9 17h6"></path>
+    </svg>
+  ` : isDocx ? `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+      <path d="M9 9h6"></path>
+      <path d="M9 13h6"></path>
+      <path d="M9 17h3"></path>
     </svg>
   ` : `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -540,7 +550,7 @@ function renderQueueItem(queuedFile: QueuedFile): string {
       <div class="queue-item-icon">${icon}</div>
       <div class="queue-item-info">
         <div class="queue-item-name">${escapeHtml(queuedFile.fileName)}</div>
-        <div class="queue-item-meta">${formatFileSize(queuedFile.fileSize)} • ${isPDF ? 'PDF' : 'TXT'}</div>
+        <div class="queue-item-meta">${formatFileSize(queuedFile.fileSize)} • ${fileTypeLabel}</div>
       </div>
       <div class="queue-item-status">
         <span class="status-badge ${statusClass}">${statusText}</span>
@@ -634,12 +644,154 @@ async function analyzeSelectedFiles() {
   const selectedFiles = getSelectedFiles();
   if (selectedFiles.length === 0) return;
 
-  // For now: Process first selected file only
-  const fileToProcess = selectedFiles[0];
-
   isProcessing = true;
-  await processQueuedFile(fileToProcess);
-  isProcessing = false;
+
+  try {
+    if (selectedFiles.length === 1) {
+      // Single file: Use existing logic
+      await processQueuedFile(selectedFiles[0]);
+    } else {
+      // Multiple files: Combine them
+      await processMultipleFiles(selectedFiles);
+    }
+  } finally {
+    isProcessing = false;
+  }
+}
+
+/**
+ * Process multiple files and combine into one document
+ */
+async function processMultipleFiles(files: QueuedFile[]) {
+  console.log('[Document Analysis] Processing multiple files:', files.length);
+
+  const state = useAppStore.getState();
+  const enabledProfiles = state.profiles.filter(p => p.enabled);
+
+  if (enabledProfiles.length === 0) {
+    showError('No enabled profiles', 'Please enable at least one profile.');
+    return;
+  }
+
+  // Mark all as processing
+  files.forEach(f => {
+    f.status = 'processing';
+  });
+  renderUploadQueue();
+
+  const combinedOriginal: string[] = [];
+  const combinedSanitized: string[] = [];
+  let totalSize = 0;
+  let totalSubstitutions = 0;
+  const fileNames: string[] = [];
+  const documentBoundaries: Array<{ name: string; startChar: number; percentage: number }> = [];
+
+  try {
+    let currentCharPosition = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const queuedFile = files[i];
+      fileNames.push(queuedFile.fileName);
+
+      showProcessingStatus(
+        `Processing ${i + 1} of ${files.length}...`,
+        `Parsing ${queuedFile.fileName}`
+      );
+
+      // Parse document
+      const extractedText = await parseDocument(queuedFile.file);
+      queuedFile.extractedText = extractedText;
+
+      updateProcessingStatus(
+        `Processing ${i + 1} of ${files.length}...`,
+        `Sanitizing ${queuedFile.fileName}`
+      );
+
+      // Sanitize
+      const result = sanitizeText(extractedText, enabledProfiles);
+      queuedFile.sanitizedText = result.sanitizedText;
+
+      // Add document header separator
+      const documentHeader = `DOCUMENT ${i + 1}: ${queuedFile.fileName}\n${'='.repeat(80)}\n\n`;
+
+      // Track this document's starting position
+      documentBoundaries.push({
+        name: queuedFile.fileName,
+        startChar: currentCharPosition,
+        percentage: 0 // Will calculate after we know total length
+      });
+
+      const fullDocument = documentHeader + result.sanitizedText;
+      combinedOriginal.push(documentHeader + extractedText);
+      combinedSanitized.push(fullDocument);
+
+      currentCharPosition += fullDocument.length + 2; // +2 for the \n\n joining
+
+      totalSize += queuedFile.fileSize;
+      totalSubstitutions += result.substitutionCount;
+
+      // Mark as completed
+      queuedFile.status = 'completed';
+      renderUploadQueue();
+    }
+
+    hideProcessingStatus();
+
+    // Create combined document alias
+    const combinedDocumentName = `Combined: ${fileNames.join(', ')}`;
+    const combinedOriginalText = combinedOriginal.join('\n\n');
+    const combinedSanitizedText = combinedSanitized.join('\n\n');
+
+    // Calculate percentages for each document boundary
+    const totalChars = combinedSanitizedText.length;
+    documentBoundaries.forEach(boundary => {
+      boundary.percentage = (boundary.startChar / totalChars) * 100;
+    });
+
+    // Re-run sanitization on combined text to get accurate PII map
+    const finalResult = sanitizeText(combinedOriginalText, enabledProfiles);
+
+    const documentData: Omit<DocumentAlias, 'id' | 'createdAt' | 'updatedAt'> = {
+      documentName: combinedDocumentName,
+      fileSize: totalSize,
+      fileType: 'application/pdf', // Generic type for combined
+      piiMap: finalResult.piiMap,
+      originalText: combinedOriginalText,
+      sanitizedText: combinedSanitizedText,
+      confidence: finalResult.confidence,
+      substitutionCount: totalSubstitutions,
+      profilesUsed: finalResult.profilesUsed,
+      usageCount: 0,
+      preview: combinedSanitizedText.substring(0, 150).trim() + '...',
+    };
+
+    // Open preview window
+    updateProcessingStatus('Opening preview...', 'Preparing combined document');
+
+    openPreviewWindow({
+      documentAlias: documentData,
+      originalText: combinedOriginalText,
+      sanitizedText: combinedSanitizedText,
+      documentBoundaries: documentBoundaries.length > 1 ? documentBoundaries : undefined
+    });
+
+    hideProcessingStatus();
+
+  } catch (error: any) {
+    console.error('[Document Analysis] Multi-file processing error:', error);
+
+    // Mark all as error
+    files.forEach(f => {
+      if (f.status === 'processing') {
+        f.status = 'error';
+        f.errorMessage = error.message || 'Unknown error';
+      }
+    });
+
+    hideProcessingStatus();
+    renderUploadQueue();
+    showError('Processing failed', error.message || 'Unknown error');
+  }
 }
 
 /**
@@ -792,10 +944,11 @@ function handleDocumentAction(action: string, docId: string) {
 /**
  * Open preview window in new tab
  */
-function openPreviewWindow(data: {
+async function openPreviewWindow(data: {
   documentAlias: Omit<DocumentAlias, 'id' | 'createdAt' | 'updatedAt'>;
   originalText: string;
   sanitizedText: string;
+  documentBoundaries?: Array<{ name: string; startChar: number; percentage: number }>;
 }) {
   // Get current theme from store
   const state = useAppStore.getState();
@@ -807,13 +960,18 @@ function openPreviewWindow(data: {
     theme: theme
   };
 
-  // Encode document data as URL parameter
-  const encodedData = encodeURIComponent(JSON.stringify(dataWithTheme));
-  const previewUrl = chrome.runtime.getURL(`document-preview.html?data=${encodedData}`);
+  // Generate unique session key
+  const sessionKey = `doc_preview_${Date.now()}`;
+
+  // Store data in chrome.storage.session (supports large data)
+  await chrome.storage.session.set({ [sessionKey]: dataWithTheme });
+
+  // Pass only the session key in URL
+  const previewUrl = chrome.runtime.getURL(`document-preview.html?sessionKey=${sessionKey}`);
 
   // Open in new tab
   chrome.tabs.create({ url: previewUrl }, (tab) => {
-    console.log('[Document Analysis] Opened preview window:', tab?.id);
+    console.log('[Document Analysis] Opened preview window:', tab?.id, 'sessionKey:', sessionKey);
   });
 }
 

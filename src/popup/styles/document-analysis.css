@@ -1011,24 +1011,28 @@
 }
 
 .status-badge.status-pending {
-  background: var(--surface-bg, #f3f4f6);
-  color: var(--text-secondary);
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.3);
 }
 
 .status-badge.status-processing {
-  background: var(--primary-bg, #eef2ff);
-  color: var(--primary);
+  background: rgba(99, 102, 241, 0.15);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.3);
   animation: pulse 1.5s ease-in-out infinite;
 }
 
 .status-badge.status-completed {
-  background: var(--success-bg, #d1fae5);
-  color: var(--success, #10b981);
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .status-badge.status-error {
-  background: var(--danger-bg, #fef2f2);
-  color: var(--danger, #ef4444);
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 @keyframes pulse {

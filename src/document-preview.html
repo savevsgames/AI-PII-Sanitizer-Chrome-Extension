@@ -7,6 +7,7 @@
   <!-- Import only theme variables, not layout constraints -->
   <link rel="stylesheet" href="styles/variables.css">
   <link rel="stylesheet" href="document-preview.css">
+  <link rel="stylesheet" href="document-preview-progress.css">
 </head>
 <body data-theme="classic-light" data-theme-mode="light">
   <div class="doc-preview-page">
@@ -38,10 +39,10 @@
 
     <!-- Main Content -->
     <main class="doc-preview-page-main">
-      <!-- Top Controls Bar -->
-      <div class="top-controls-bar">
+      <!-- Unified Top Controls Bar -->
+      <div class="unified-controls-bar glass">
         <!-- Pagination Controls -->
-        <div class="pagination-controls glass">
+        <div class="pagination-section">
           <button class="btn-pagination" id="firstPageBtn" title="First Page">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="11 17 6 12 11 7"></polyline>
@@ -76,8 +77,16 @@
           </button>
         </div>
 
+        <!-- Document Progress Bar (shown for multiple documents) -->
+        <div class="progress-section" id="docProgressBar" style="display: none;">
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+            <div class="progress-markers" id="progressMarkers"></div>
+          </div>
+        </div>
+
         <!-- Action Buttons -->
-        <div class="action-buttons glass">
+        <div class="actions-section">
           <button class="btn btn-secondary btn-compact" id="copyBtn" title="Copy Sanitized Text">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>

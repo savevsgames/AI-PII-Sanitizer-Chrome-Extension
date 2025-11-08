@@ -44,6 +44,7 @@ module.exports = {
         { from: 'src/auth/auth.html', to: 'auth.html' }, // Auth page
         { from: 'src/document-preview.html', to: 'document-preview.html' }, // Document preview page
         { from: 'src/document-preview.css', to: 'document-preview.css' }, // Document preview CSS
+        { from: 'src/document-preview-progress.css', to: 'document-preview-progress.css' }, // Progress bar CSS
         { from: 'src/assets/icons', to: 'icons' },
         { from: 'src/content/inject.js', to: 'inject.js' },
         { from: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs', to: 'pdf.worker.min.mjs' }, // PDF.js worker
