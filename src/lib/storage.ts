@@ -2094,4 +2094,145 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
     this.configCache = null;
     this.configCacheTimestamp = 0;
   }
+
+  // ========== DOCUMENT ANALYSIS METHODS ==========
+
+  /**
+   * Load document aliases (decrypted)
+   */
+  async loadDocumentAliases(): Promise<import('./types').DocumentAlias[]> {
+    const data = await chrome.storage.local.get('documentAliases');
+
+    if (!data.documentAliases) {
+      return [];
+    }
+
+    const aliases: import('./types').DocumentAlias[] = [];
+
+    for (const item of data.documentAliases) {
+      try {
+        const decrypted = await this.decrypt(item.encryptedData);
+        aliases.push(JSON.parse(decrypted));
+      } catch (error) {
+        console.error('[Storage] Failed to decrypt document:', item.id, error);
+        // Skip corrupted documents
+      }
+    }
+
+    // Sort by creation date (newest first)
+    return aliases.sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  /**
+   * Save document alias (encrypted)
+   */
+  async saveDocumentAlias(documentAlias: import('./types').DocumentAlias): Promise<void> {
+    type StoredDocumentItem = {
+      id: string;
+      documentName: string;
+      createdAt: number;
+      encryptedData: string;
+    };
+
+    const encrypted = await this.encrypt(JSON.stringify(documentAlias));
+
+    const data = await chrome.storage.local.get('documentAliases');
+    const existing: StoredDocumentItem[] = data.documentAliases || [];
+
+    existing.push({
+      id: documentAlias.id,
+      documentName: documentAlias.documentName,
+      createdAt: documentAlias.createdAt,
+      encryptedData: encrypted
+    });
+
+    // Limit to 50 documents (configurable)
+    const maxDocuments = 50;
+    if (existing.length > maxDocuments) {
+      // Remove oldest documents
+      existing.sort((a, b) => b.createdAt - a.createdAt);
+      existing.splice(maxDocuments);
+      console.log(`[Storage] Trimmed to ${maxDocuments} documents`);
+    }
+
+    await chrome.storage.local.set({ documentAliases: existing });
+    console.log('[Storage] Saved document alias:', documentAlias.id);
+  }
+
+  /**
+   * Delete document alias
+   */
+  async deleteDocumentAlias(id: string): Promise<void> {
+    type StoredDocumentItem = {
+      id: string;
+      documentName: string;
+      createdAt: number;
+      encryptedData: string;
+    };
+
+    const data = await chrome.storage.local.get('documentAliases');
+    const existing: StoredDocumentItem[] = data.documentAliases || [];
+
+    const filtered = existing.filter((item: StoredDocumentItem) => item.id !== id);
+
+    await chrome.storage.local.set({ documentAliases: filtered });
+    console.log('[Storage] Deleted document alias:', id);
+  }
+
+  /**
+   * Update document alias (for incrementing usage)
+   */
+  async updateDocumentAlias(documentAlias: import('./types').DocumentAlias): Promise<void> {
+    type StoredDocumentItem = {
+      id: string;
+      documentName: string;
+      createdAt: number;
+      encryptedData: string;
+    };
+
+    const data = await chrome.storage.local.get('documentAliases');
+    const existing: StoredDocumentItem[] = data.documentAliases || [];
+
+    const index = existing.findIndex((item: StoredDocumentItem) => item.id === documentAlias.id);
+
+    if (index !== -1) {
+      const encrypted = await this.encrypt(JSON.stringify(documentAlias));
+      existing[index] = {
+        id: documentAlias.id,
+        documentName: documentAlias.documentName,
+        createdAt: documentAlias.createdAt,
+        encryptedData: encrypted
+      };
+
+      await chrome.storage.local.set({ documentAliases: existing });
+      console.log('[Storage] Updated document alias:', documentAlias.id);
+    }
+  }
+
+  /**
+   * Get storage quota information
+   */
+  async getStorageQuota(): Promise<{
+    used: number;
+    quota: number;
+    percentage: number;
+    hasUnlimitedStorage: boolean;
+  }> {
+    const estimate = await navigator.storage.estimate();
+
+    const used = estimate.usage || 0;
+    const quota = estimate.quota || 10485760; // 10 MB fallback
+    const percentage = (used / quota) * 100;
+
+    // Check if we have unlimited storage
+    // With unlimitedStorage permission, quota is huge (disk space)
+    const hasUnlimitedStorage = quota > 100000000; // > 100 MB = unlimited
+
+    return {
+      used,
+      quota,
+      percentage,
+      hasUnlimitedStorage
+    };
+  }
 }

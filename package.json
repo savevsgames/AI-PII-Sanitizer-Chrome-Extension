@@ -48,6 +48,8 @@
   },
   "dependencies": {
     "firebase": "^12.5.0",
+    "mammoth": "^1.11.0",
+    "pdfjs-dist": "^5.4.394",
     "zustand": "^5.0.8"
   }
 }

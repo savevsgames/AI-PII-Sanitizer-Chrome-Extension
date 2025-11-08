@@ -14,7 +14,7 @@ body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   line-height: var(--line-height-base);
-  color: var(--text-on-glass-primary);
+  color: var(--text-primary); /* Theme-aware text color (dark text for light themes, light text for dark themes) */
 
   /* Animated gradient background - Uses CSS variable for theme switching */
   background: var(--theme-bg-gradient);

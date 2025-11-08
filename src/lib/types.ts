@@ -499,3 +499,61 @@ export interface CustomRulesConfig {
   enabled: boolean;
   rules: CustomRule[];
 }
+
+// ========== DOCUMENT ANALYSIS TYPES ==========
+
+/**
+ * Document Alias - Tracks a sanitized document upload
+ */
+export interface DocumentAlias {
+  id: string;                    // "doc_1699394400000_abc123"
+  documentName: string;          // "Contract_2024.pdf"
+  createdAt: number;
+  updatedAt: number;
+  fileSize: number;              // Bytes
+  fileType: string;              // MIME type
+  platform?: AIService;          // Where it was used (optional)
+
+  // PII detection results
+  piiMap: Array<{
+    profileId: string;           // Which profile matched
+    profileName: string;         // "Greg - Work"
+    piiType: PIIType;            // "name", "email", etc.
+    realValue: string;           // "Greg Barker"
+    aliasValue: string;          // "John Doe"
+    occurrences: number;         // How many times found
+    positions: number[];         // Character positions in text
+  }>;
+
+  // Text content
+  originalText?: string;         // Optional: full original (encrypted)
+  sanitizedText: string;         // Sanitized version (ready to use)
+
+  // Metadata
+  confidence: number;            // 0-1 from AliasEngine
+  substitutionCount: number;
+  profilesUsed: string[];        // Profile IDs
+
+  // Usage tracking
+  usageCount: number;
+  lastUsed?: number;
+
+  // Preview snippet (first 200 chars)
+  preview: string;
+}
+
+/**
+ * Queued File - Represents a file in the upload queue (before processing)
+ */
+export interface QueuedFile {
+  id: string;                    // Unique identifier (timestamp + random)
+  file: File;                    // Original File object
+  fileName: string;              // Display name
+  fileSize: number;              // Size in bytes
+  fileType: string;              // MIME type
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  errorMessage?: string;         // If status is error
+  extractedText?: string;        // Cached after parsing (if completed)
+  sanitizedText?: string;        // Cached after sanitizing (if completed)
+  documentAlias?: Omit<DocumentAlias, 'id' | 'createdAt' | 'updatedAt'>; // Result data
+}

@@ -459,6 +459,10 @@ export async function applyTheme(themeInput: ThemeName | string) {
     const themeMode = THEME_MODES[theme] || 'dark';
     const isDarkMode = themeMode === 'dark';
 
+    // Check if theme mode is changing (for transparency adjustment)
+    const previousMode = body.getAttribute('data-theme-mode');
+    const modeIsChanging = previousMode && previousMode !== themeMode;
+
     // Set data attribute for light mode CSS variable overrides
     body.setAttribute('data-theme-mode', themeMode);
 
@@ -469,6 +473,24 @@ export async function applyTheme(themeInput: ThemeName | string) {
     // Update CSS variables
     root.style.setProperty('--theme-bg-gradient', themeBgVar);
     root.style.setProperty('--theme-header-gradient', themeHeaderVar);
+
+    // Adjust transparency when switching between light and dark modes
+    if (modeIsChanging) {
+      const bgTransparencySlider = document.getElementById('bgTransparencySlider') as HTMLInputElement;
+      const bgTransparencyValue = document.getElementById('bgTransparencyValue');
+
+      // Light theme needs less background showing (more opaque overlay) = 20% transparency
+      // Dark theme needs more background showing (more transparent overlay) = 80% transparency
+      const newTransparency = isDarkMode ? 80 : 20;
+
+      if (bgTransparencySlider && bgTransparencyValue) {
+        bgTransparencySlider.value = newTransparency.toString();
+        bgTransparencyValue.textContent = `${newTransparency}%`;
+        chrome.storage.local.set({ bgTransparency: newTransparency });
+        applyBackgroundTransparency(newTransparency);
+        console.log(`[Theme] Mode changed to ${themeMode}, adjusted transparency to ${newTransparency}%`);
+      }
+    }
 
     // Notify background manager of theme change
     onThemeChange(isDarkMode);

@@ -26,6 +26,7 @@
 @import './styles/settings.css';
 @import './styles/minimal.css';
 @import './styles/backgrounds.css';
+@import './styles/document-analysis.css';
 
 /* Utilities */
 @import './styles/utilities.css';

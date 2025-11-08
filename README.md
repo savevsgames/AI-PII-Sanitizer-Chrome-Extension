@@ -33,6 +33,7 @@ See [LICENSE](LICENSE) for details.
 **Core Features:**
 - 🔒 **API Key Vault** - Protect OpenAI, GitHub, AWS, Stripe, and custom API keys
 - 🎯 **Custom Redaction Rules** - Regex-based patterns for SSN, credit cards, medical records
+- 📄 **Multi-Document Analysis** - Upload & sanitize multiple PDFs/DOCX/TXT files with visual progress tracking
 - 📊 **Activity Logging** - Track all substitutions across all platforms
 - 🎨 **Modern UI** - Glassmorphism design with comprehensive stats
 - 🔐 **Privacy-First** - All data stored locally with AES-256-GCM encryption
@@ -74,6 +75,13 @@ See [LICENSE](LICENSE) for details.
   - Priority-based rule execution
   - Category organization (PII, Financial, Medical, Custom)
   - Match count tracking
+- **Multi-Document Analysis Queue**: Upload and sanitize multiple documents simultaneously
+  - Support for PDF, TXT, and DOCX files
+  - Visual queue management with status tracking
+  - Unified preview window with pagination
+  - Multi-document progress bar with boundary markers
+  - Theme-aware design matching main extension
+  - Session storage for unlimited document sizes
 - **Privacy-First**: All data stored locally with AES-256-GCM encryption
 - **Multiple AI Services**: 5 production platforms (ChatGPT, Claude, Gemini, Perplexity, Copilot)
 - **Modern UI**: Glassmorphism design with tab navigation
