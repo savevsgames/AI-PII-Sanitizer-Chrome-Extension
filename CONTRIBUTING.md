@@ -9,7 +9,7 @@ Thank you for your interest in contributing to PromptBlocker! We welcome contrib
 - **Code of Conduct:** Be respectful and constructive
 - **Bug Reports:** [GitHub Issues](https://github.com/savevsgames/AI-PII-Sanitizer-Chrome-Extension/issues)
 - **Feature Requests:** [GitHub Discussions](https://github.com/savevsgames/AI-PII-Sanitizer-Chrome-Extension/discussions)
-- **Development Docs:** [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- **Development Docs:** [docs/development/ARCHITECTURE.md](./docs/development/ARCHITECTURE.md)
 
 ---
 
@@ -469,7 +469,7 @@ if (window.location.hostname.includes('newservice.com')) {
 
 - Add service to README.md supported services list
 - Update CHANGELOG.md
-- Add service-specific notes to ARCHITECTURE.md
+- Add service-specific notes to docs/development/ARCHITECTURE.md
 
 ---
 
