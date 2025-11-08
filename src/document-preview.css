@@ -320,6 +320,15 @@ body {
   box-shadow: 0 0 0 3px rgba(134, 239, 172, 0.3);
 }
 
+/* Top Controls Bar */
+.top-controls-bar {
+  display: flex;
+  gap: var(--space-lg);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
 /* Pagination Controls */
 .pagination-controls {
   display: flex;
@@ -328,7 +337,26 @@ body {
   gap: var(--space-md);
   padding: var(--space-md);
   border-radius: var(--radius-lg);
-  margin-top: var(--space-lg);
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  flex-wrap: wrap;
+}
+
+.btn-compact {
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-xs);
+}
+
+.btn-compact .icon {
+  width: 14px;
+  height: 14px;
 }
 
 .btn-pagination {
@@ -429,44 +457,8 @@ body {
   font-size: var(--font-size-sm);
 }
 
-/* PII Details Section */
-.pii-details-section {
-  background: var(--card-bg);
-  backdrop-filter: var(--blur-medium);
-  border-radius: var(--radius-xl);
-  padding: var(--space-lg);
-  box-shadow: var(--shadow-md);
-}
-
-.pii-details-section summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  cursor: pointer;
-  font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
-  padding: var(--space-sm);
-  border-radius: var(--radius-md);
-  transition: var(--transition-base);
-  list-style: none;
-}
-
-.pii-details-section summary::-webkit-details-marker {
-  display: none;
-}
-
-.pii-details-section summary:hover {
-  background: var(--card-bg-light);
-}
-
-.pii-details-section summary .icon {
-  width: 20px;
-  height: 20px;
-  color: var(--color-primary);
-}
-
+/* PII List */
 .pii-list-full {
-  margin-top: var(--space-lg);
   display: grid;
   gap: var(--space-md);
 }
@@ -511,26 +503,94 @@ body {
   color: var(--text-secondary);
 }
 
-/* Footer */
-.doc-preview-page-footer {
-  padding: var(--space-lg) var(--space-2xl);
-  border-top: 1px solid var(--border-neutral);
-  position: sticky;
+/* PII Drawer (Bottom, Expands Upward) */
+.pii-drawer {
+  position: fixed;
   bottom: 0;
-  z-index: var(--z-sticky);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: all var(--transition-base);
 }
 
-.doc-preview-page-actions {
-  margin: 0 0 var(--space-md) 0;
+/* Content appears above the toggle */
+.pii-drawer-content {
+  overflow-y: auto;
+  background: var(--card-bg);
+  backdrop-filter: var(--blur-medium);
+  border-top: 1px solid var(--border-neutral);
+  max-height: 50vh;
+  transition: all var(--transition-base);
+  order: 1; /* Content is first (top) */
+}
+
+.pii-drawer.collapsed .pii-drawer-content {
+  max-height: 0;
+  padding: 0;
+  overflow: hidden;
+  border-top: none;
+}
+
+.pii-drawer:not(.collapsed) .pii-drawer-content {
+  padding: var(--space-lg);
+  border-top: 1px solid var(--border-neutral);
+}
+
+/* Toggle button is at the bottom */
+.pii-drawer-toggle {
+  width: 100%;
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  border-top: 1px solid var(--border-neutral);
+  cursor: pointer;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: var(--space-lg);
+  justify-content: space-between;
+  gap: var(--space-md);
+  transition: var(--transition-base);
+  order: 2; /* Toggle is second (bottom) */
 }
 
-.action-group {
+.pii-drawer-toggle:hover {
+  background: var(--card-bg-light);
+}
+
+.drawer-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
+  transition: transform var(--transition-base);
+}
+
+.pii-drawer.collapsed .drawer-icon {
+  transform: rotate(180deg); /* Point down when collapsed */
+}
+
+.drawer-info {
   display: flex;
-  gap: var(--space-md);
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.drawer-info .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--color-primary);
+}
+
+.storage-info-compact {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  min-width: 200px;
 }
 
 /* Storage Info */

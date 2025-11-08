@@ -47,6 +47,12 @@ async function init() {
       return;
     }
 
+    // Initialize drawer as collapsed
+    const drawer = document.getElementById('piiDrawer');
+    if (drawer) {
+      drawer.classList.add('collapsed');
+    }
+
     // Render the document
     renderDocument(documentData);
 
@@ -254,6 +260,18 @@ function setupEventListeners() {
   const saveBothBtn = document.getElementById('saveBothBtn');
   saveBothBtn?.addEventListener('click', handleSaveBoth);
 
+  // Copy button
+  const copyBtn = document.getElementById('copyBtn');
+  copyBtn?.addEventListener('click', handleCopy);
+
+  // Send to Chat button
+  const sendToChatBtn = document.getElementById('sendToChatBtn');
+  sendToChatBtn?.addEventListener('click', handleSendToChat);
+
+  // PII Drawer toggle
+  const piiDrawerToggle = document.getElementById('piiDrawerToggle');
+  piiDrawerToggle?.addEventListener('click', togglePIIDrawer);
+
   // Pagination controls
   const firstPageBtn = document.getElementById('firstPageBtn');
   firstPageBtn?.addEventListener('click', () => goToPage(1));
@@ -290,6 +308,42 @@ function setupEventListeners() {
       handleClose();
     }
   });
+}
+
+/**
+ * Toggle PII drawer open/closed
+ */
+function togglePIIDrawer() {
+  const drawer = document.getElementById('piiDrawer');
+  if (drawer) {
+    drawer.classList.toggle('collapsed');
+  }
+}
+
+/**
+ * Handle copy to clipboard
+ */
+async function handleCopy() {
+  if (!documentData) return;
+
+  try {
+    await navigator.clipboard.writeText(documentData.sanitizedText);
+    showSuccess('Sanitized text copied to clipboard!');
+  } catch (error) {
+    console.error('[Document Preview] Copy error:', error);
+    showError('Failed to copy to clipboard');
+  }
+}
+
+/**
+ * Handle send to chat
+ */
+function handleSendToChat() {
+  if (!documentData) return;
+
+  // TODO: Implement send to chat functionality
+  // This will need to integrate with the chat interception system
+  showSuccess('Send to chat feature coming soon!');
 }
 
 /**

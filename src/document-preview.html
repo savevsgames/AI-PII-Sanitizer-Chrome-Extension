@@ -38,6 +38,96 @@
 
     <!-- Main Content -->
     <main class="doc-preview-page-main">
+      <!-- Top Controls Bar -->
+      <div class="top-controls-bar">
+        <!-- Pagination Controls -->
+        <div class="pagination-controls glass">
+          <button class="btn-pagination" id="firstPageBtn" title="First Page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="11 17 6 12 11 7"></polyline>
+              <polyline points="18 17 13 12 18 7"></polyline>
+            </svg>
+          </button>
+
+          <button class="btn-pagination" id="prevPageBtn" title="Previous Page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+
+          <div class="page-info">
+            <span class="page-label">PAGE</span>
+            <input type="number" id="pageInput" class="page-input" value="1" min="1" />
+            <span class="page-separator">of</span>
+            <span id="pageTotal" class="page-total">1</span>
+          </div>
+
+          <button class="btn-pagination" id="nextPageBtn" title="Next Page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+
+          <button class="btn-pagination" id="lastPageBtn" title="Last Page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="13 17 18 12 13 7"></polyline>
+              <polyline points="6 17 11 12 6 7"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons glass">
+          <button class="btn btn-secondary btn-compact" id="copyBtn" title="Copy Sanitized Text">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy
+          </button>
+
+          <button class="btn btn-secondary btn-compact" id="sendToChatBtn" title="Send to Chat">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Send to Chat
+          </button>
+
+          <button class="btn btn-secondary btn-compact" id="downloadBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download
+          </button>
+
+          <button class="btn btn-primary btn-compact" id="saveBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Save
+          </button>
+
+          <button class="btn btn-success btn-compact" id="saveBothBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Save & Download
+          </button>
+
+          <button class="btn btn-secondary btn-compact" id="cancelBtn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Close
+          </button>
+        </div>
+      </div>
+
       <!-- Comparison View -->
       <div class="doc-comparison-grid-full">
         <div class="doc-comparison-column-full doc-original">
@@ -69,104 +159,37 @@
         </div>
       </div>
 
-      <!-- Pagination Controls -->
-      <div class="pagination-controls glass">
-        <button class="btn-pagination" id="firstPageBtn" title="First Page">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="11 17 6 12 11 7"></polyline>
-            <polyline points="18 17 13 12 18 7"></polyline>
-          </svg>
-        </button>
+    </main>
 
-        <button class="btn-pagination" id="prevPageBtn" title="Previous Page">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-
-        <div class="page-info">
-          <span class="page-label">PAGE</span>
-          <input type="number" id="pageInput" class="page-input" value="1" min="1" />
-          <span class="page-separator">of</span>
-          <span id="pageTotal" class="page-total">1</span>
+    <!-- PII Details Drawer (Bottom, Expands Upward) -->
+    <div class="pii-drawer" id="piiDrawer">
+      <!-- Content appears ABOVE toggle button -->
+      <div class="pii-drawer-content" id="piiDrawerContent">
+        <div class="pii-list-full" id="piiList">
+          <!-- PII items will be inserted here -->
         </div>
-
-        <button class="btn-pagination" id="nextPageBtn" title="Next Page">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-
-        <button class="btn-pagination" id="lastPageBtn" title="Last Page">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="13 17 18 12 13 7"></polyline>
-            <polyline points="6 17 11 12 6 7"></polyline>
-          </svg>
-        </button>
       </div>
 
-      <!-- PII Details Section (Collapsible) -->
-      <details class="pii-details-section glass" open>
-        <summary>
+      <!-- Toggle button is at the bottom -->
+      <button class="pii-drawer-toggle glass" id="piiDrawerToggle">
+        <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+        <div class="drawer-info">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
           </svg>
           <span>PII Detection Details (<span id="piiCount">0</span> replacements)</span>
-        </summary>
-        <div class="pii-list-full" id="piiList">
-          <!-- PII items will be inserted here -->
         </div>
-      </details>
-    </main>
-
-    <!-- Footer Actions -->
-    <footer class="doc-preview-page-footer glass">
-      <div class="doc-preview-page-actions">
-        <button class="btn btn-secondary" id="cancelBtn">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-          Cancel
-        </button>
-
-        <div class="action-group">
-          <button class="btn btn-secondary" id="downloadBtn">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Download Files
-          </button>
-
-          <button class="btn btn-primary" id="saveBtn">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-              <polyline points="17 21 17 13 7 13 7 21"></polyline>
-              <polyline points="7 3 7 8 15 8"></polyline>
-            </svg>
-            Save to Storage
-          </button>
-
-          <button class="btn btn-success" id="saveBothBtn">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            Save & Download Both
-          </button>
+        <div class="storage-info-compact" id="storageInfo">
+          <div class="storage-label">Storage:</div>
+          <div class="storage-bar-footer">
+            <div class="storage-fill-footer" id="storageFill" style="width: 0%"></div>
+          </div>
+          <div class="storage-text-footer" id="storageText">Loading...</div>
         </div>
-      </div>
-
-      <!-- Storage Quota Display -->
-      <div class="storage-info-footer" id="storageInfo">
-        <div class="storage-label">Chrome Storage:</div>
-        <div class="storage-bar-footer">
-          <div class="storage-fill-footer" id="storageFill" style="width: 0%"></div>
-        </div>
-        <div class="storage-text-footer" id="storageText">Loading...</div>
-      </div>
-    </footer>
+      </button>
+    </div>
   </div>
 
   <script src="document-preview.js"></script>
