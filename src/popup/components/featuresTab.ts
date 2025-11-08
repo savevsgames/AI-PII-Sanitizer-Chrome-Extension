@@ -8,6 +8,7 @@ import { initAPIKeyVaultUI, renderAPIKeys } from './apiKeyVault';
 import { initCustomRulesUI, renderCustomRules } from './customRulesUI';
 import { initPromptTemplatesUI, renderPromptTemplates } from './promptTemplates';
 import { initQuickAliasGeneratorUI, renderQuickAliasGenerator } from './quickAliasGenerator';
+import { initDocumentAnalysisUI, renderDocumentAnalysis } from './documentAnalysis';
 import { useAppStore } from '../../lib/store';
 
 // Feature definition
@@ -58,6 +59,15 @@ const FEATURES: Feature[] = [
     icon: '📋',
     description: 'Save and reuse common prompt templates with privacy built-in',
     tier: 'free', // FREE with limits (3), PRO for unlimited
+    status: 'active',
+    stats: []
+  },
+  {
+    id: 'document-analysis',
+    name: 'Document Analysis',
+    icon: '📄',
+    description: 'Upload and sanitize documents (PDF, TXT) before sharing with AI',
+    tier: 'free',
     status: 'active',
     stats: []
   },
@@ -209,6 +219,15 @@ function getFeatureStats(featureId: string, config: UserConfig): Array<{ icon: s
       return templateCount > 0 ? [
         { icon: '📋', value: templateCount, label: templateCount === 1 ? 'template' : 'templates' },
         { icon: '▶️', value: totalUsage, label: 'uses' }
+      ] : [];
+    }
+    case 'document-analysis': {
+      const state = useAppStore.getState();
+      const docCount = state.documentAliases?.length || 0;
+      const totalSubs = state.documentAliases?.reduce((sum, d) => sum + d.substitutionCount, 0) || 0;
+      return docCount > 0 ? [
+        { icon: '📄', value: docCount, label: docCount === 1 ? 'document' : 'documents' },
+        { icon: '🔒', value: totalSubs, label: 'redactions' }
       ] : [];
     }
     default:
@@ -477,6 +496,8 @@ function renderFeatureContent(featureId: string): string {
           </div>
         </div>
       `;
+    case 'document-analysis':
+      return '<div id="documentAnalysisContainer"></div>';
     default:
       return `<p>Feature content coming soon...</p>`;
   }
@@ -522,6 +543,17 @@ function initFeatureHandlers(featureId: string) {
       // Then attach event handlers (after DOM is updated)
       initPromptTemplatesUI();
       console.log('[Features Tab] Prompt Templates handlers ready');
+      break;
+    }
+    case 'document-analysis': {
+      // Render document analysis UI from current config
+      const docState = useAppStore.getState();
+      if (docState.config) {
+        renderDocumentAnalysis(docState.config);
+      }
+      // Then attach event handlers
+      initDocumentAnalysisUI();
+      console.log('[Features Tab] Document Analysis handlers ready');
       break;
     }
     default:

@@ -5,7 +5,7 @@
  */
 
 import { createStore } from 'zustand/vanilla';
-import { AliasProfile, UserConfig, ActivityLogEntry } from './types';
+import { AliasProfile, UserConfig, ActivityLogEntry, DocumentAlias } from './types';
 import { StorageManager } from './storage';
 import { User } from 'firebase/auth';
 import {
@@ -22,6 +22,8 @@ interface AppState {
   activityLog: ActivityLogEntry[];
   isLoading: boolean;
   firestoreUser: FirestoreUser | null;
+  documentAliases: DocumentAlias[];
+  isLoadingDocuments: boolean;
 
   // Actions - Profiles
   loadProfiles: () => Promise<void>;
@@ -70,6 +72,18 @@ interface AppState {
   deletePromptTemplate: (id: string) => Promise<void>;
   incrementTemplateUsage: (id: string) => Promise<void>;
 
+  // Actions - Document Analysis
+  loadDocumentAliases: () => Promise<void>;
+  addDocumentAlias: (documentData: Omit<DocumentAlias, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  deleteDocumentAlias: (id: string) => Promise<void>;
+  incrementDocumentUsage: (id: string) => Promise<void>;
+  getStorageQuota: () => Promise<{
+    used: number;
+    quota: number;
+    percentage: number;
+    hasUnlimitedStorage: boolean;
+  }>;
+
   // Initialization
   initialize: () => Promise<void>;
 }
@@ -81,6 +95,8 @@ export const useAppStore = createStore<AppState>((set, get) => ({
   activityLog: [],
   isLoading: false,
   firestoreUser: null,
+  documentAliases: [],
+  isLoadingDocuments: false,
 
   // Profile actions
   loadProfiles: async () => {
@@ -382,6 +398,75 @@ export const useAppStore = createStore<AppState>((set, get) => ({
     // Reload config to get updated templates
     const config = await storage.loadConfig();
     set({ config });
+  },
+
+  // Document Analysis actions
+  loadDocumentAliases: async () => {
+    set({ isLoadingDocuments: true });
+    const storage = StorageManager.getInstance();
+    try {
+      const documentAliases = await storage.loadDocumentAliases();
+      set({ documentAliases, isLoadingDocuments: false });
+      console.log('[Store] Loaded', documentAliases.length, 'document aliases');
+    } catch (error) {
+      console.error('[Store] Error loading document aliases:', error);
+      set({ documentAliases: [], isLoadingDocuments: false });
+    }
+  },
+
+  addDocumentAlias: async (documentData) => {
+    const storage = StorageManager.getInstance();
+
+    const newDocumentAlias: DocumentAlias = {
+      ...documentData,
+      id: `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    await storage.saveDocumentAlias(newDocumentAlias);
+
+    set((state) => ({
+      documentAliases: [newDocumentAlias, ...state.documentAliases],
+    }));
+
+    console.log('[Store] Document alias saved:', newDocumentAlias.id);
+  },
+
+  deleteDocumentAlias: async (id) => {
+    const storage = StorageManager.getInstance();
+    await storage.deleteDocumentAlias(id);
+
+    set((state) => ({
+      documentAliases: state.documentAliases.filter((d) => d.id !== id),
+    }));
+
+    console.log('[Store] Document alias deleted:', id);
+  },
+
+  incrementDocumentUsage: async (id) => {
+    const storage = StorageManager.getInstance();
+
+    set((state) => {
+      const updated = state.documentAliases.map((d) =>
+        d.id === id
+          ? { ...d, usageCount: d.usageCount + 1, lastUsed: Date.now(), updatedAt: Date.now() }
+          : d
+      );
+
+      // Save updated document alias
+      const document = updated.find((d) => d.id === id);
+      if (document) {
+        storage.updateDocumentAlias(document);
+      }
+
+      return { documentAliases: updated };
+    });
+  },
+
+  getStorageQuota: async () => {
+    const storage = StorageManager.getInstance();
+    return await storage.getStorageQuota();
   },
 
   // Initialization

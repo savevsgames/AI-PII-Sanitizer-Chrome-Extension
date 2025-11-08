@@ -5,8 +5,8 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configure PDF.js worker
-// Note: Worker file needs to be copied to dist folder during build
-pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.min.js');
+// Note: Worker file is copied to dist folder during webpack build
+pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.min.mjs');
 
 /**
  * Parse PDF file and extract text content

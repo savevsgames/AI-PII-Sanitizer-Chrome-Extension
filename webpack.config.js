@@ -8,6 +8,7 @@ module.exports = {
     content: './src/content/content.ts',
     'popup-v2': './src/popup/popup-v2.ts',
     auth: './src/auth/auth.ts',
+    'document-preview': './src/document-preview.ts',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -41,8 +42,11 @@ module.exports = {
         { from: 'src/popup/styles', to: 'styles' }, // Copy modular CSS
         { from: 'src/popup/assets', to: 'assets' }, // Copy background images
         { from: 'src/auth/auth.html', to: 'auth.html' }, // Auth page
+        { from: 'src/document-preview.html', to: 'document-preview.html' }, // Document preview page
+        { from: 'src/document-preview.css', to: 'document-preview.css' }, // Document preview CSS
         { from: 'src/assets/icons', to: 'icons' },
         { from: 'src/content/inject.js', to: 'inject.js' },
+        { from: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs', to: 'pdf.worker.min.mjs' }, // PDF.js worker
       ],
     }),
   ],

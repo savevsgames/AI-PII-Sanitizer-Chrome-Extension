@@ -27,7 +27,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["inject.js"],
+      "resources": ["inject.js", "pdf.worker.min.mjs"],
       "matches": [
         "https://chat.openai.com/*",
         "https://chatgpt.com/*",
