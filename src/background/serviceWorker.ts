@@ -12,7 +12,7 @@ import { Message } from '../lib/types';
 import { APIKeyDetector } from '../lib/apiKeyDetector';
 import { extractAllText, replaceAllText } from '../lib/textProcessor';
 import { redactionEngine } from '../lib/redactionEngine';
-import { waitForAuth } from '../lib/firebase';  // Initialize Firebase auth in service worker
+import { waitForAuth } from '../lib/firebase-sw';  // Service worker-specific Firebase
 
 // Initialize Firebase auth immediately
 console.log('[Background] Initializing Firebase auth for service worker...');
