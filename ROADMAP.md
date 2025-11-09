@@ -14,6 +14,7 @@
 - 🎉 **FEATURE WORK RESUMED** - Security no longer blocking launch
 
 **Recent Updates:**
+- ✅ **Multi-Provider Auth** (2025-11-09) - GitHub sign-in with email-based account linking, smart error recovery banner
 - 🎉 **Test Suite 100% Achievement** (2025-11-09) - 697/697 unit tests passing, test suite caught up to application development!
 - ✅ **Storage Quota Unified** (2025-11-09) - Fixed unlimited storage implementation, removed 10MB quota confusion
 - ✅ **Authentication Bug Fixed** (2025-11-09) - App now works for both signed-in and signed-out users

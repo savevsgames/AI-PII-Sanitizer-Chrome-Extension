@@ -34,6 +34,7 @@ console.log('[Debug] To sign out, run: debugSignOut()');
 // ========== AUTH ISSUE BANNER ==========
 /**
  * Show auth issue banner when decryption fails
+ * Uses delayed display to avoid flashing during normal sign-in flow
  */
 function setupAuthIssueBanner() {
   const banner = document.getElementById('authIssueBanner');
@@ -44,6 +45,7 @@ function setupAuthIssueBanner() {
 
   // Store the encryption provider for the retry flow
   let detectedProvider: string | undefined;
+  let bannerTimeout: number | undefined;
 
   // Listen for decryption failure event
   window.addEventListener('auth-decryption-failed', () => {
@@ -63,8 +65,39 @@ function setupAuthIssueBanner() {
       bannerText.textContent = 'Sign in with the original provider to unlock your encrypted data.';
     }
 
-    banner.classList.remove('hidden');
-    console.log('[Auth Banner] Showing decryption failure banner');
+    // Clear any existing timeout
+    if (bannerTimeout) {
+      clearTimeout(bannerTimeout);
+    }
+
+    // Delay showing banner by 2 seconds
+    // This prevents flash during normal async sign-in flow
+    console.log('[Auth Banner] Decryption failed - waiting 2s before showing banner...');
+    bannerTimeout = window.setTimeout(() => {
+      // Only show if still in failed state (user hasn't signed in successfully)
+      if (auth.currentUser) {
+        console.log('[Auth Banner] User authenticated during delay - banner cancelled');
+        return;
+      }
+
+      banner.classList.remove('hidden');
+      console.log('[Auth Banner] ⚠️ Showing decryption failure banner');
+    }, 2000);
+  });
+
+  // Listen for successful auth to cancel pending banner
+  auth.onAuthStateChanged((user) => {
+    if (user && bannerTimeout) {
+      console.log('[Auth Banner] Auth successful - cancelling pending banner');
+      clearTimeout(bannerTimeout);
+      bannerTimeout = undefined;
+
+      // Also hide banner if it's already showing
+      if (!banner.classList.contains('hidden')) {
+        console.log('[Auth Banner] Hiding banner after successful auth');
+        banner.classList.add('hidden');
+      }
+    }
   });
 
   // Handle "Reset & Try Again" button - FULL RESET FLOW
