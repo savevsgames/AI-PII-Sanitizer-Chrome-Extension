@@ -361,6 +361,41 @@ async function loadInitialData() {
   }
 }
 
+// ========== MESSAGE HANDLER FOR ACTIVITY LOGGING ==========
+/**
+ * Listen for activity log messages from service worker
+ * Service worker can't encrypt logs (no Firebase auth), so popup handles it
+ */
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === 'ADD_ACTIVITY_LOG') {
+    const entry = message.payload;
+    console.log('[Popup] Received activity log from background:', entry.message);
+
+    // Add activity log entry via store (will encrypt and save)
+    const store = useAppStore.getState();
+
+    // addActivityLog is synchronous, but we wrap in async to handle errors
+    (async () => {
+      try {
+        await store.addActivityLog(entry);
+        console.log('[Popup] ✅ Activity log encrypted and saved');
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error('[Popup] ❌ Failed to save activity log:', error);
+        sendResponse({ success: false, error: (error as Error).message });
+      }
+    })();
+
+    // Return true to indicate async response
+    return true;
+  }
+
+  // Return false for unhandled messages
+  return false;
+});
+
+console.log('[Popup] Activity log message handler registered');
+
 // ========== EXPORTS FOR CONSOLE DEBUGGING ==========
 (window as any).popupV2 = {
   renderProfiles,

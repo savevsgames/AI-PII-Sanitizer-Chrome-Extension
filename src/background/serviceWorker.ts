@@ -1101,10 +1101,21 @@ async function logActivity(entry: {
   };
   message: string;
 }) {
-  // Skip activity logging in service worker context (can't save encrypted activity logs)
-  // Activity logs are encrypted and can only be saved from popup where Firebase auth is available
   console.log('[Background] Activity:', entry.message);
-  // Note: Stats tracking and activity logging will be handled in popup when user opens it
+
+  // Send activity log entry to popup for encrypted storage
+  // Service worker can't encrypt logs (no Firebase auth), so popup handles it
+  try {
+    await chrome.runtime.sendMessage({
+      type: 'ADD_ACTIVITY_LOG',
+      payload: entry
+    });
+    console.log('[Background] ✅ Activity log sent to popup for encryption');
+  } catch (error) {
+    // Popup might not be open - that's OK, logs will be ephemeral
+    // Stats will be updated when popup opens and processes the logs
+    console.log('[Background] Popup not available for activity logging (will track on next popup open)');
+  }
 }
 
 // ========== TAB EVENT LISTENERS FOR BADGE UPDATES ==========
