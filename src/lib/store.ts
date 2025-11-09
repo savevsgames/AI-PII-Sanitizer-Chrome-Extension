@@ -477,27 +477,55 @@ export const useAppStore = createStore<AppState>((set, get) => ({
     const storage = StorageManager.getInstance();
     await storage.initialize();
 
-    const [profiles, config] = await Promise.all([
-      storage.loadProfiles(),
-      storage.loadConfig(),
-    ]);
+    try {
+      const [profiles, config] = await Promise.all([
+        storage.loadProfiles(),
+        storage.loadConfig(),
+      ]);
 
-    console.log('[Theme Debug] 📦 Config loaded from storage:', {
-      hasConfig: !!config,
-      theme: config?.settings?.theme || 'none',
-      enabled: config?.settings?.enabled
-    });
+      console.log('[Theme Debug] 📦 Config loaded from storage:', {
+        hasConfig: !!config,
+        theme: config?.settings?.theme || 'none',
+        enabled: config?.settings?.enabled
+      });
 
-    set({
-      profiles,
-      config,
-      activityLog: config?.stats.activityLog || [],
-      isLoading: false,
-    });
+      set({
+        profiles,
+        config,
+        activityLog: config?.stats.activityLog || [],
+        isLoading: false,
+      });
 
-    console.log('[Theme Debug] ✅ Store state updated with loaded config');
+      console.log('[Theme Debug] ✅ Store state updated with loaded config');
 
-    console.log('[Store] Initialized with', profiles.length, 'profiles');
+      console.log('[Store] Initialized with', profiles.length, 'profiles');
+    } catch (error) {
+      // If user not authenticated, load config only (profiles require encryption)
+      if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+        console.log('[Store] User not authenticated - loading config only');
+
+        // Config is not encrypted, can still be loaded
+        const config = await storage.loadConfig();
+
+        set({
+          profiles: [],  // No profiles without authentication
+          config,
+          activityLog: config?.stats.activityLog || [],
+          isLoading: false,
+        });
+
+        console.log('[Store] Initialized with default state (user not authenticated)');
+      } else {
+        // Unexpected error - set safe defaults
+        console.error('[Store] Unexpected error during initialization:', error);
+        set({
+          profiles: [],
+          config: null,
+          activityLog: [],
+          isLoading: false,
+        });
+      }
+    }
   },
 }));
 

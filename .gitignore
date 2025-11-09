@@ -25,6 +25,8 @@ npm-debug.log*
 # Testing
 coverage/
 test-*.js
+.env.local.testing
+.env.test.local
 
 # Temp files
 temp/

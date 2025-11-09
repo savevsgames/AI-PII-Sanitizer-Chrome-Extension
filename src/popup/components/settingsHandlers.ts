@@ -531,49 +531,36 @@ export function updateThemeUI(config: UserConfig | null) {
 
 /**
  * Update storage usage display
+ * We have unlimitedStorage permission - just show how much space is being used
  */
 async function updateStorageUsage() {
   try {
-    const { StorageManager } = await import('../../lib/storage');
-    const storage = StorageManager.getInstance();
-    const usage = await storage.getStorageUsage();
+    const bytesInUse = await chrome.storage.local.getBytesInUse();
+    const formattedUsage = formatBytes(bytesInUse);
 
     const usedEl = document.getElementById('storageUsed');
-    const percentEl = document.getElementById('storagePercent');
-    const quotaEl = document.getElementById('storageQuota');
-    const progressFillEl = document.getElementById('storageProgressFill') as HTMLElement;
     const hintEl = document.getElementById('storageHint');
 
-    if (usedEl) usedEl.textContent = usage.formattedUsage;
-    if (percentEl) percentEl.textContent = `${Math.round(usage.percentUsed)}%`;
-    if (quotaEl) quotaEl.textContent = `of ${usage.formattedQuota}`;
-
-    if (progressFillEl) {
-      progressFillEl.style.width = `${usage.percentUsed}%`;
-
-      // Change color based on usage
-      progressFillEl.classList.remove('warning', 'danger');
-      if (usage.percentUsed >= 90) {
-        progressFillEl.classList.add('danger');
-      } else if (usage.percentUsed >= 80) {
-        progressFillEl.classList.add('warning');
-      }
+    if (usedEl) {
+      usedEl.textContent = formattedUsage;
     }
 
-    // Update hint based on usage
     if (hintEl) {
-      if (usage.percentUsed >= 90) {
-        hintEl.textContent = '⚠️ Storage almost full! Consider clearing stats or deleting unused profiles.';
-        hintEl.style.color = 'var(--error-color)';
-      } else if (usage.percentUsed >= 80) {
-        hintEl.textContent = '⚠️ Storage usage is high. You have ' + usage.formattedQuota + ' total.';
-        hintEl.style.color = 'var(--warning-color)';
-      } else {
-        hintEl.textContent = 'ℹ️ Chrome extensions have a 10MB storage limit';
-        hintEl.style.color = 'var(--text-secondary)';
-      }
+      hintEl.textContent = '✓ Unlimited local storage';
+      hintEl.style.color = 'var(--text-secondary)';
     }
   } catch (error) {
     console.error('[Settings] Error loading storage usage:', error);
   }
+}
+
+/**
+ * Format bytes to human-readable string
+ */
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }

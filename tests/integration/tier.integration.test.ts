@@ -1,25 +1,42 @@
 /**
- * Unit tests for Tier System
- * Tests tier limits, feature gating, downgrade/upgrade flows, and archive system
+ * @jest-environment node
  *
- * Coverage:
- * - Profile creation limits (1 FREE, unlimited PRO)
- * - Template creation limits (starter templates vs custom)
- * - Custom rules access (PRO only)
- * - Downgrade flow (archive + wipe)
- * - Upgrade flow (restoration prompt)
- * - Archive system (encryption, expiration)
+ * Integration tests for Tier System with Real Firebase Auth
+ * Tests tier limits, feature gating, downgrade/upgrade flows with real encryption
+ *
+ * These tests use real Firebase authentication to properly test
+ * tier archive encryption with real Firebase UID.
  */
 
-import { StorageManager } from '../src/lib/storage';
-import { archiveProData, restoreProData, getArchivedData, clearArchivedData } from '../src/lib/tierArchive';
-import { handleDowngrade, handleDatabaseUpgrade } from '../src/lib/tierMigration';
+import {
+  setupIntegrationTests,
+  teardownIntegrationTests,
+  getCurrentTestUser,
+} from './setup';
+import { User } from 'firebase/auth';
+import { StorageManager } from '../../src/lib/storage';
+import { archiveProData, restoreProData, getArchivedData, clearArchivedData } from '../../src/lib/tierArchive';
+import { handleDowngrade, handleDatabaseUpgrade } from '../../src/lib/tierMigration';
 
 // Access mock data from global setup
-const { mockStorageData } = require('./setup');
+const { mockStorageData } = require('../setup');
 
 describe('Tier System', () => {
   let storage: StorageManager;
+  let testUser: User;
+
+  // Set up Firebase auth before all tests
+  beforeAll(async () => {
+    // Mock document global so storage doesn't think we're in a service worker
+    (global as any).document = {};
+
+    testUser = await setupIntegrationTests();
+  }, 30000);
+
+  // Clean up after all tests
+  afterAll(async () => {
+    await teardownIntegrationTests();
+  }, 30000);
 
   beforeEach(async () => {
     // Clear all mocks

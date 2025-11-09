@@ -473,26 +473,40 @@ async function handleImageEditorResult(result: { success: boolean; dataURL?: str
 }
 
 /**
- * Update storage quota display in Settings tab
+ * Update storage usage display in Settings tab
+ * We have unlimitedStorage permission - just show bytes used
  */
 async function updateStorageQuotaDisplay(): Promise<void> {
   try {
-    const { StorageManager } = await import('../../lib/storage');
-    const storage = StorageManager.getInstance();
-    const usage = await storage.getStorageUsage();
+    const bytesInUse = await chrome.storage.local.getBytesInUse();
+    const formattedUsage = formatBytes(bytesInUse);
 
     const usedEl = document.getElementById('storageUsed');
-    const percentEl = document.getElementById('storagePercent');
-    const progressFillEl = document.getElementById('storageProgressFill') as HTMLElement;
+    if (usedEl) {
+      usedEl.textContent = formattedUsage;
+    }
 
-    if (usedEl) usedEl.textContent = usage.formattedUsage;
-    if (percentEl) percentEl.textContent = `${Math.round(usage.percentUsed)}%`;
-    if (progressFillEl) progressFillEl.style.width = `${usage.percentUsed}%`;
+    const hintEl = document.getElementById('storageHint');
+    if (hintEl) {
+      hintEl.textContent = '✓ Unlimited local storage';
+      hintEl.style.color = 'var(--text-secondary)';
+    }
 
-    console.log('[Background Manager] Updated storage quota:', usage.formattedUsage);
+    console.log('[Background Manager] Storage used:', formattedUsage);
   } catch (error) {
-    console.error('[Background Manager] Failed to update storage quota:', error);
+    console.error('[Background Manager] Failed to update storage display:', error);
   }
+}
+
+/**
+ * Format bytes to human-readable string
+ */
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
 /**

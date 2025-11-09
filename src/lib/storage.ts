@@ -1639,31 +1639,8 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
   }
 
   // ========== STORAGE QUOTA MONITORING ==========
-
-  /**
-   * Get current storage usage and quota
-   * Chrome provides 10MB (QUOTA_BYTES) for local storage
-   */
-  async getStorageUsage(): Promise<{
-    bytesInUse: number;
-    quota: number;
-    percentUsed: number;
-    formattedUsage: string;
-    formattedQuota: string;
-  }> {
-    const bytesInUse = await chrome.storage.local.getBytesInUse();
-    const quota = chrome.storage.local.QUOTA_BYTES || 10485760; // 10MB default
-
-    const percentUsed = (bytesInUse / quota) * 100;
-
-    return {
-      bytesInUse,
-      quota,
-      percentUsed,
-      formattedUsage: this.formatBytes(bytesInUse),
-      formattedQuota: this.formatBytes(quota),
-    };
-  }
+  // NOTE: We have unlimitedStorage permission in manifest.json
+  // No need for complex quota tracking - we have essentially unlimited space
 
 
   // ========== ENCRYPTION ==========
@@ -2068,16 +2045,6 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
     return buffer;
   }
 
-  /**
-   * Format bytes to human-readable string
-   */
-  private formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-  }
 
   /**
    * Generate unique ID for aliases

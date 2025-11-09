@@ -1,23 +1,41 @@
 /**
- * Unit tests for StorageManager
- * Tests encryption, profile CRUD, migration, and config management
+ * @jest-environment node
  *
- * NOTE: Tests involving Web Crypto API (crypto.subtle) are currently skipped
- * because Jest's jsdom environment doesn't provide a full Web Crypto implementation.
- * These tests will be covered by E2E tests which run in a real browser environment.
+ * Integration tests for StorageManager with Real Firebase Auth
+ * Tests encryption, profile CRUD with real Firebase authentication
  *
- * TODO: Consider adding @peculiar/webcrypto polyfill if comprehensive crypto
- * unit testing becomes critical.
+ * These tests use real Firebase authentication to properly test
+ * encryption key derivation from Firebase UID.
  */
 
-import { StorageManager } from '../src/lib/storage';
-import { AliasProfile, UserConfig } from '../src/lib/types';
+import {
+  setupIntegrationTests,
+  teardownIntegrationTests,
+  getCurrentTestUser,
+} from './setup';
+import { User } from 'firebase/auth';
+import { StorageManager } from '../../src/lib/storage';
+import { AliasProfile, UserConfig } from '../../src/lib/types';
 
 // Access mock data from global setup
-const { mockStorageData } = require('./setup');
+const { mockStorageData } = require('../setup');
 
 describe('StorageManager', () => {
   let storage: StorageManager;
+  let testUser: User;
+
+  // Set up Firebase auth before all tests
+  beforeAll(async () => {
+    // Mock document global so storage doesn't think we're in a service worker
+    (global as any).document = {};
+
+    testUser = await setupIntegrationTests();
+  }, 30000);
+
+  // Clean up after all tests
+  afterAll(async () => {
+    await teardownIntegrationTests();
+  }, 30000);
 
   beforeEach(async () => {
     // Clear all mocks
