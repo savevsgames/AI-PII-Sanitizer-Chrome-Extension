@@ -9,6 +9,15 @@ import { Message } from '../lib/types';
 import { APIKeyDetector } from '../lib/apiKeyDetector';
 import { extractAllText, replaceAllText } from '../lib/textProcessor';
 import { redactionEngine } from '../lib/redactionEngine';
+import { waitForAuth } from '../lib/firebase';  // Initialize Firebase auth in service worker
+
+// Initialize Firebase auth immediately
+console.log('[Background] Initializing Firebase auth for service worker...');
+waitForAuth().then(() => {
+  console.log('[Background] ✅ Firebase auth initialized in service worker');
+}).catch(error => {
+  console.error('[Background] ❌ Firebase auth initialization failed:', error);
+});
 
 // Debug mode - set to false for production to reduce log spam
 const DEBUG_MODE = false;
