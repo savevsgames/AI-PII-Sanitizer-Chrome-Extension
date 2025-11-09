@@ -66,19 +66,30 @@ let authReady: Promise<Auth>;
 // Initialize auth based on context (runs immediately)
 authReady = (async () => {
   try {
+    console.log('[Firebase] Starting auth initialization for', contextName);
+
     if (isServiceWorker) {
       // Service Worker: Use web-extension auth module (no DOM required)
+      console.log('[Firebase] Importing firebase/auth/web-extension...');
       const { getAuth: getWebExtAuth, indexedDBLocalPersistence } = await import('firebase/auth/web-extension');
+      console.log('[Firebase] Module imported, calling getAuth...');
+
       auth = getWebExtAuth(app);
+      console.log('[Firebase] Auth instance created, setting persistence...');
 
       // Enable IndexedDB persistence for service worker
       await auth.setPersistence(indexedDBLocalPersistence);
+      console.log('[Firebase] Persistence set');
 
       console.log('[Firebase] ✅ Initialized with WEB-EXTENSION auth for service worker');
     } else {
       // Popup/Content: Use standard auth module (requires DOM)
+      console.log('[Firebase] Importing firebase/auth...');
       const { getAuth: getStandardAuth, connectAuthEmulator } = await import('firebase/auth');
+      console.log('[Firebase] Module imported, calling getAuth...');
+
       auth = getStandardAuth(app);
+      console.log('[Firebase] Auth instance created');
 
       console.log('[Firebase] ✅ Initialized with STANDARD auth for popup/content');
 
@@ -89,6 +100,7 @@ authReady = (async () => {
       }
     }
 
+    console.log('[Firebase] Auth initialization complete, returning auth');
     return auth;
   } catch (error) {
     console.error('[Firebase] Auth initialization failed in', contextName, ':', error);
