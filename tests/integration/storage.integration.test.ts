@@ -14,14 +14,28 @@ import {
   getCurrentTestUser,
 } from './setup';
 import { User } from 'firebase/auth';
-import { StorageManager } from '../src/lib/storage';
-import { AliasProfile, UserConfig } from '../src/lib/types';
+import { StorageManager } from '../../src/lib/storage';
+import { AliasProfile, UserConfig } from '../../src/lib/types';
 
 // Access mock data from global setup
 const { mockStorageData } = require('../setup');
 
 describe('StorageManager', () => {
   let storage: StorageManager;
+  let testUser: User;
+
+  // Set up Firebase auth before all tests
+  beforeAll(async () => {
+    // Mock document global so storage doesn't think we're in a service worker
+    (global as any).document = {};
+
+    testUser = await setupIntegrationTests();
+  }, 30000);
+
+  // Clean up after all tests
+  afterAll(async () => {
+    await teardownIntegrationTests();
+  }, 30000);
 
   beforeEach(async () => {
     // Clear all mocks
