@@ -1,7 +1,7 @@
 /**
  * Authentication Modal Component
  * Handles Google Sign-In and Email/Password authentication
- * Firebase Auth integration
+ * Firebase Auth integration with multi-provider support
  */
 
 import { auth } from '../../lib/firebase';
@@ -14,8 +14,13 @@ import {
   User,
 } from 'firebase/auth';
 import { useAppStore } from '../../lib/store';
+import { detectPlatform, getPlatformGuidance, getProviderErrorGuidance } from '../../lib/authProviders';
+import { showAuthErrorModal } from './errorModal';
 
 const DEBUG_MODE = false;
+
+// Platform detection for better UX
+const currentPlatform = detectPlatform();
 
 let currentModal: HTMLElement | null = null;
 let currentMode: 'signin' | 'signup' | 'reset' = 'signin';
@@ -91,7 +96,10 @@ export async function initAuthModal() {
     if (e.key === 'Enter') handlePasswordReset();
   });
 
-  console.log('[Auth Modal] Initialized');
+  // Show platform-specific guidance
+  showPlatformGuidance();
+
+  console.log('[Auth Modal] Initialized for platform:', currentPlatform);
 }
 
 /**
@@ -250,10 +258,25 @@ async function handleGoogleSignIn() {
     console.error('[Auth] Google sign-in error:', error);
     console.error('[Auth] Error message:', error.message);
 
-    // Re-open modal to show error
-    openAuthModal('signin');
-    showError('googleSignInError', getAuthErrorMessage(error));
     setLoading(googleSignInBtn, false, 'Continue with Google');
+
+    // Detect error type
+    let errorCode: string | undefined;
+    if (error.message?.includes('popup')) {
+      errorCode = 'popup-blocked';
+    } else if (error.message?.includes('cancelled') || error.message?.includes('closed')) {
+      errorCode = 'popup-closed-by-user';
+    }
+
+    // Get provider-specific error guidance
+    const guidance = getProviderErrorGuidance('google', errorCode);
+
+    // Show professional error modal with fallback option
+    showAuthErrorModal(
+      guidance.title,
+      guidance.message,
+      guidance.showEmailFallback ? switchToEmailPasswordMode : undefined
+    );
   }
 }
 
@@ -615,4 +638,59 @@ async function checkRedirectResult() {
       showError('googleSignInError', getAuthErrorMessage(error));
     }
   }
+}
+
+/**
+ * Show platform-specific guidance
+ */
+function showPlatformGuidance() {
+  const guidance = getPlatformGuidance(currentPlatform);
+  if (!guidance) return;
+
+  // Show guidance message in the auth modal
+  const signInView = document.getElementById('authSignInView');
+  if (!signInView) return;
+
+  // Check if guidance already exists
+  if (document.getElementById('platformGuidance')) return;
+
+  // Create guidance element
+  const guidanceEl = document.createElement('div');
+  guidanceEl.id = 'platformGuidance';
+  guidanceEl.className = 'platform-guidance';
+  guidanceEl.innerHTML = `
+    <div class="info-message">
+      <span class="info-icon">ℹ️</span>
+      <span class="info-text">${guidance}</span>
+    </div>
+  `;
+
+  // Insert at the top of sign-in view
+  signInView.insertBefore(guidanceEl, signInView.firstChild);
+}
+
+/**
+ * Switch to email/password mode (fallback for auth errors)
+ */
+function switchToEmailPasswordMode() {
+  // Open modal in sign-in mode
+  openAuthModal('signin');
+
+  // Hide Google button, show email/password form
+  const googleBtn = document.getElementById('googleSignInBtn');
+  const emailForm = document.querySelectorAll('.email-password-section');
+
+  if (googleBtn) {
+    googleBtn.style.display = 'none';
+  }
+
+  emailForm.forEach(form => {
+    (form as HTMLElement).style.display = 'block';
+  });
+
+  // Focus email input
+  const emailInput = document.getElementById('authEmail') as HTMLInputElement;
+  setTimeout(() => emailInput?.focus(), 100);
+
+  console.log('[Auth] Switched to email/password mode');
 }
