@@ -204,7 +204,8 @@ AI_Interceptor/
 ## Privacy
 
 - **Local Storage Only:** All aliases stored locally in your browser, never sent to external servers
-- **Authentication-Based Encryption:** Data encrypted using AES-256-GCM with keys derived from your secure authentication session
+- **Authentication-Based Encryption:** Data encrypted using AES-256-GCM with keys derived from your secure authentication session (Google/GitHub/Email)
+- **Multi-Provider Account Linking:** Sign in with any provider - your data stays accessible via email matching
 - **Perfect Key Separation:** Encrypted data and encryption keys are never stored together
 - **Zero Telemetry:** No analytics, tracking, or data collection
 - **Open Source:** Fully transparent codebase for independent security review
@@ -284,10 +285,12 @@ For detailed browser compatibility information, see [Launch Roadmap](docs/curren
 **Authentication:**
 - [x] Firebase Authentication integration
 - [x] Google Sign-In (OAuth redirect flow)
+- [x] **GitHub Sign-In with email-based account linking**
 - [x] Email/Password authentication with password reset
 - [x] Auth state management and user sessions
 - [x] User profile display in header with dropdown menu
 - [x] Sign-out functionality
+- [x] **Multi-provider support with smart error recovery**
 
 **User Management:**
 - [x] User profiles synced to Firestore in real-time

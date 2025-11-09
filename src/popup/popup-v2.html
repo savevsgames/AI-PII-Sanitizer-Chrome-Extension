@@ -74,6 +74,18 @@
       </div>
     </div>
 
+    <!-- Auth Issue Banner (shown when can't decrypt data) -->
+    <div class="status-banner auth-issue-banner hidden" id="authIssueBanner">
+      <div class="status-banner-content">
+        <span class="status-banner-icon">🔐</span>
+        <div class="status-banner-text">
+          <strong><span class="warning-text">Can't Access Encrypted Data</span></strong>
+          <p id="authIssueBannerText">Sign in with the original provider to unlock your data</p>
+        </div>
+        <button class="btn btn-warning" id="resetAndRetrySignInBtn">Reset & Try Again</button>
+      </div>
+    </div>
+
     <!-- Tab Navigation -->
     <nav class="tab-nav">
       <button class="tab-button active" data-tab="aliases">
@@ -858,6 +870,14 @@
 
           <div class="form-info hidden" id="googleSignInInfo"></div>
 
+          <!-- GitHub Sign-In -->
+          <button class="btn btn-github btn-block" id="githubSignInBtn">
+            <span class="btn-icon">💻</span>
+            Continue with GitHub
+          </button>
+
+          <div class="form-info hidden" id="githubSignInInfo"></div>
+
           <div class="auth-divider">
             <span>or</span>
           </div>
@@ -893,6 +913,12 @@
           <button class="btn btn-google btn-block" id="googleSignUpBtn">
             <span class="btn-icon">🔐</span>
             Continue with Google
+          </button>
+
+          <!-- GitHub Sign-In -->
+          <button class="btn btn-github btn-block" id="githubSignUpBtn">
+            <span class="btn-icon">💻</span>
+            Continue with GitHub
           </button>
 
           <div class="auth-divider">

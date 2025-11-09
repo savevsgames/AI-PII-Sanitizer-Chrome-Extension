@@ -20,7 +20,132 @@ import { initTabNavigation, initKeyboardShortcuts, initTheme } from './init/init
 import { updateStatusIndicator } from './components/statusIndicator';
 import { initializeBackgroundOnLoad } from './components/backgroundManager';
 import { auth } from '../lib/firebase';
+import { signOut } from 'firebase/auth';
 // import { testFirebaseConnection } from './test-firebase-popup'; // Disabled - interferes with auth
+
+// ========== DEBUG: Expose sign out globally for console access ==========
+(window as any).debugSignOut = async () => {
+  await signOut(auth);
+  console.log('✅ Signed out successfully!');
+  window.location.reload();
+};
+console.log('[Debug] To sign out, run: debugSignOut()');
+
+// ========== AUTH ISSUE BANNER ==========
+/**
+ * Show auth issue banner when decryption fails
+ * Uses delayed display to avoid flashing during normal sign-in flow
+ */
+function setupAuthIssueBanner() {
+  const banner = document.getElementById('authIssueBanner');
+  const bannerText = document.getElementById('authIssueBannerText');
+  const resetRetryBtn = document.getElementById('resetAndRetrySignInBtn');
+
+  if (!banner || !bannerText || !resetRetryBtn) return;
+
+  // Store the encryption provider for the retry flow
+  let detectedProvider: string | undefined;
+  let bannerTimeout: number | undefined;
+
+  // Listen for decryption failure event
+  window.addEventListener('auth-decryption-failed', () => {
+    const config = useAppStore.getState().config;
+    const encryptionProvider = config?.account?.encryptionProvider;
+    const encryptionEmail = config?.account?.encryptionEmail;
+
+    // Store for retry button
+    detectedProvider = encryptionProvider;
+
+    // Update banner text with helpful message
+    if (encryptionProvider && encryptionEmail) {
+      bannerText.textContent = `Your data was encrypted with ${encryptionProvider === 'google' ? 'Google' : encryptionProvider === 'github' ? 'GitHub' : encryptionProvider} sign-in (${encryptionEmail}). Please use that provider to unlock your data.`;
+    } else if (encryptionProvider) {
+      bannerText.textContent = `Your data was encrypted with ${encryptionProvider === 'google' ? 'Google' : encryptionProvider === 'github' ? 'GitHub' : encryptionProvider} sign-in. Please use that provider to unlock your data.`;
+    } else {
+      bannerText.textContent = 'Sign in with the original provider to unlock your encrypted data.';
+    }
+
+    // Clear any existing timeout
+    if (bannerTimeout) {
+      clearTimeout(bannerTimeout);
+    }
+
+    // Delay showing banner by 2 seconds
+    // This prevents flash during normal async sign-in flow
+    console.log('[Auth Banner] Decryption failed - waiting 2s before showing banner...');
+    bannerTimeout = window.setTimeout(() => {
+      // Only show if still in failed state (user hasn't signed in successfully)
+      if (auth.currentUser) {
+        console.log('[Auth Banner] User authenticated during delay - banner cancelled');
+        return;
+      }
+
+      banner.classList.remove('hidden');
+      console.log('[Auth Banner] ⚠️ Showing decryption failure banner');
+    }, 2000);
+  });
+
+  // Listen for successful auth to cancel pending banner
+  auth.onAuthStateChanged((user) => {
+    if (user && bannerTimeout) {
+      console.log('[Auth Banner] Auth successful - cancelling pending banner');
+      clearTimeout(bannerTimeout);
+      bannerTimeout = undefined;
+
+      // Also hide banner if it's already showing
+      if (!banner.classList.contains('hidden')) {
+        console.log('[Auth Banner] Hiding banner after successful auth');
+        banner.classList.add('hidden');
+      }
+    }
+  });
+
+  // Handle "Reset & Try Again" button - FULL RESET FLOW
+  resetRetryBtn.addEventListener('click', async () => {
+    try {
+      console.log('[Auth Banner] Starting reset & retry flow...');
+
+      // Step 1: Sign out current user (clear broken auth state)
+      await signOut(auth);
+      console.log('[Auth Banner] ✅ Signed out current user');
+
+      // Step 2: Hide the banner
+      banner.classList.add('hidden');
+
+      // Step 3: Wait a moment for auth state to clear
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Step 4: Open auth modal with helpful message
+      const { openAuthModal } = await import('./components/authModal');
+
+      // Show modal in sign-in mode
+      openAuthModal('signin');
+      console.log('[Auth Banner] ✅ Opened auth modal for retry');
+
+      // Step 5: Show notification about which provider to use
+      if (detectedProvider) {
+        const providerName = detectedProvider === 'google' ? 'Google' :
+                           detectedProvider === 'github' ? 'GitHub' :
+                           detectedProvider === 'microsoft' ? 'Microsoft' :
+                           'Email/Password';
+
+        setTimeout(async () => {
+          const { showInfo } = await import('./utils/modalUtils');
+          showInfo(`💡 Tip: Use ${providerName} sign-in to access your encrypted data.`);
+        }, 500);
+      }
+
+      console.log('[Auth Banner] Reset & retry flow complete');
+
+    } catch (error) {
+      console.error('[Auth Banner] Failed to reset:', error);
+
+      // Fallback: Just reload the page to clear everything
+      console.log('[Auth Banner] Falling back to page reload...');
+      window.location.reload();
+    }
+  });
+}
 
 // ========== FIREBASE AUTH STATE MANAGEMENT ==========
 
@@ -91,6 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initTabNavigation();
   initKeyboardShortcuts();
+  setupAuthIssueBanner();
 
   // Wait for Firebase to initialize and restore auth session
   console.log('[Popup Init] Waiting for Firebase auth to initialize...');
@@ -140,6 +266,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       payload: finalState.profiles
     }).catch(err => console.error('[Popup] Failed to send profiles to background:', err));
   }
+
+  // Request any queued activity logs from background
+  console.log('[Popup] Requesting queued activity logs from background...');
+  chrome.runtime.sendMessage({
+    type: 'FLUSH_ACTIVITY_LOGS'
+  }).then((response) => {
+    if (response && response.flushed > 0) {
+      console.log('[Popup] ✅ Received', response.flushed, 'queued activity logs');
+    } else {
+      console.log('[Popup] No queued activity logs');
+    }
+  }).catch(err => console.error('[Popup] Failed to flush activity logs:', err));
 
   // TEMPORARY: Test Firebase connection
   // TODO: Remove after verification
@@ -234,6 +372,41 @@ async function loadInitialData() {
     console.error('[Popup V2] Error loading data:', error);
   }
 }
+
+// ========== MESSAGE HANDLER FOR ACTIVITY LOGGING ==========
+/**
+ * Listen for activity log messages from service worker
+ * Service worker can't encrypt logs (no Firebase auth), so popup handles it
+ */
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === 'ADD_ACTIVITY_LOG') {
+    const entry = message.payload;
+    console.log('[Popup] Received activity log from background:', entry.message);
+
+    // Add activity log entry via store (will encrypt and save)
+    const store = useAppStore.getState();
+
+    // addActivityLog is synchronous, but we wrap in async to handle errors
+    (async () => {
+      try {
+        await store.addActivityLog(entry);
+        console.log('[Popup] ✅ Activity log encrypted and saved');
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error('[Popup] ❌ Failed to save activity log:', error);
+        sendResponse({ success: false, error: (error as Error).message });
+      }
+    })();
+
+    // Return true to indicate async response
+    return true;
+  }
+
+  // Return false for unhandled messages
+  return false;
+});
+
+console.log('[Popup] Activity log message handler registered');
 
 // ========== EXPORTS FOR CONSOLE DEBUGGING ==========
 (window as any).popupV2 = {

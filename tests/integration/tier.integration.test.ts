@@ -31,10 +31,21 @@ describe('Tier System', () => {
     (global as any).document = {};
 
     testUser = await setupIntegrationTests();
+
+    // Configure StorageManager to use test auth instance
+    // This allows tests to use a separate Firebase instance from production
+    const testAuth = require('./setup').getTestAuth();
+    storage = StorageManager.getInstance();
+    storage.setCustomAuth(testAuth);
+    console.log('[Test Setup] Configured StorageManager with test auth instance');
   }, 30000);
 
   // Clean up after all tests
   afterAll(async () => {
+    // Clear custom auth before teardown
+    if (storage) {
+      storage.clearCustomAuth();
+    }
     await teardownIntegrationTests();
   }, 30000);
 

@@ -171,6 +171,9 @@ export interface UserConfig {
     firebaseUid?: string;        // Firebase user ID
     displayName?: string;        // User's display name from Firebase
     photoURL?: string;           // User's photo URL from Firebase/Google
+    // Encryption tracking (for multi-provider support)
+    encryptionProvider?: 'google' | 'github' | 'microsoft' | 'email';  // Which provider's UID encrypted the data
+    encryptionEmail?: string;    // Email used when data was first encrypted (for troubleshooting)
   };
 
   // Global settings
@@ -355,6 +358,7 @@ export type MessageType =
   | 'GET_ACTIVITY_LOG'
   | 'CLEAR_ACTIVITY_LOG'
   | 'ADD_ACTIVITY_LOG'
+  | 'FLUSH_ACTIVITY_LOGS'
 
   // API Key Vault
   | 'ADD_API_KEY'

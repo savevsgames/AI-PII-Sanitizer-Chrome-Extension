@@ -613,3 +613,34 @@
 .btn-add-variation:active {
   transform: translateY(0);
 }
+
+/* ============================================================================
+ * Platform Guidance
+ * Mac-specific auth guidance messages
+ * ========================================================================== */
+
+.platform-guidance {
+  margin-bottom: var(--space-lg);
+}
+
+.info-message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--info-bg, rgba(59, 130, 246, 0.1));
+  border: 1px solid var(--info-border, rgba(59, 130, 246, 0.3));
+  border-radius: var(--radius-md);
+  color: var(--info-text, var(--text-primary));
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.info-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.info-text {
+  flex: 1;
+}

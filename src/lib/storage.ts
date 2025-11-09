@@ -31,6 +31,9 @@ export class StorageManager {
   private configCacheTimestamp: number = 0;
   private readonly CACHE_TTL_MS = 5000; // 5 second cache (longer due to cross-context issues)
 
+  // Optional custom Firebase Auth instance (for testing with separate instances)
+  private customAuthInstance: any = null;
+
   private constructor() {
     // Listen for storage changes from OTHER contexts to invalidate cache
     chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -79,6 +82,25 @@ export class StorageManager {
   }
 
   /**
+   * Set custom Firebase Auth instance (for testing with separate Firebase instances)
+   * This allows integration tests to use a separate test auth instance while
+   * production code uses the default instance
+   * @param auth - Firebase Auth instance to use for encryption key derivation
+   */
+  public setCustomAuth(auth: any): void {
+    this.customAuthInstance = auth;
+    console.log('[StorageManager] Custom auth instance configured for testing');
+  }
+
+  /**
+   * Clear custom auth instance (restore default behavior)
+   */
+  public clearCustomAuth(): void {
+    this.customAuthInstance = null;
+    console.log('[StorageManager] Cleared custom auth instance');
+  }
+
+  /**
    * Initialize storage with default values
    * Handles v1 to v2 migration if needed
    * Gracefully handles unauthenticated state (returns empty data)
@@ -116,6 +138,23 @@ export class StorageManager {
       // If user not authenticated, skip initialization (data locked)
       if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
         console.log('[StorageManager] User not authenticated - skipping data initialization');
+        return;
+      }
+      // If decryption fails (wrong UID), allow app to function with empty profiles
+      if (error instanceof Error && error.message.includes('DECRYPTION_FAILED')) {
+        console.warn('[StorageManager] ⚠️ Decryption failed - possible UID mismatch');
+        console.warn('[StorageManager] App will run with empty profiles. Sign in with original provider to access encrypted data.');
+
+        // Show auth issue banner in popup (not in service worker)
+        if (typeof document !== 'undefined') {
+          // Notify popup to show the banner
+          setTimeout(() => {
+            const event = new CustomEvent('auth-decryption-failed');
+            window.dispatchEvent(event);
+          }, 100);
+        }
+
+        // Don't throw - allow app to continue
         return;
       }
       // Re-throw other errors
@@ -283,6 +322,11 @@ export class StorageManager {
       return profiles;
 
     } catch (error) {
+      // Log the ACTUAL decryption error for debugging
+      console.error('[StorageManager] ❌ Profiles decryption failed:', error);
+      console.error('[StorageManager] Error type:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('[StorageManager] Error message:', error instanceof Error ? error.message : String(error));
+
       // Check if legacy key material exists (indicates data not yet migrated)
       const legacyKeyData = await chrome.storage.local.get('_encryptionKeyMaterial');
       const hasLegacyKey = !!legacyKeyData['_encryptionKeyMaterial'];
@@ -299,7 +343,9 @@ export class StorageManager {
           throw error;
         }
 
-        throw new Error('DECRYPTION_FAILED: Profiles encrypted with Firebase UID. Authentication required.');
+        // Include the original error in the new error message
+        const originalError = error instanceof Error ? error.message : String(error);
+        throw new Error(`DECRYPTION_FAILED: Profiles encrypted with Firebase UID. Authentication required. Original error: ${originalError}`);
       }
 
       console.warn('[StorageManager] Legacy key found - attempting legacy key migration...');
@@ -1735,16 +1781,25 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
       // Check if we're in a service worker context (no DOM)
       const isServiceWorker = typeof document === 'undefined';
 
-      if (isServiceWorker) {
+      if (isServiceWorker && !this.customAuthInstance) {
         // In service worker, Firebase auth won't work (no DOM)
-        // Immediately throw auth unavailable error
+        // Immediately throw auth unavailable error (unless custom auth provided for tests)
         throw new Error(
           'ENCRYPTION_KEY_UNAVAILABLE: Firebase auth not available in service worker context. ' +
           'Encrypted data can only be accessed from popup/content contexts.'
         );
       }
 
-      const { auth } = await import('./firebase');
+      // Use custom auth instance if provided (for integration tests)
+      // Otherwise, import default production auth
+      let auth;
+      if (this.customAuthInstance) {
+        auth = this.customAuthInstance;
+        console.log('[StorageManager] Using custom auth instance (test mode)');
+      } else {
+        const firebaseModule = await import('./firebase');
+        auth = firebaseModule.auth;
+      }
 
       // Wait for Firebase to initialize if needed (max 300ms, instant if already loaded)
       // This handles cases where auth is still initializing in popup
