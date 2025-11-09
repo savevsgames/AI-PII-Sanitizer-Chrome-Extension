@@ -14,6 +14,10 @@ import {
   type GeneratedProfile,
   type TierLevel,
 } from '../src/lib/aliasGenerator';
+import { VINTAGE_DOMAINS } from '../src/lib/data/vintageNames';
+import { CODER_DOMAINS } from '../src/lib/data/coderNames';
+import { FANTASY_DOMAINS } from '../src/lib/data/fantasyNames';
+import { FUNNY_DOMAINS } from '../src/lib/data/funnyNames';
 
 describe('aliasGenerator', () => {
   describe('generateProfile', () => {
@@ -77,8 +81,9 @@ describe('aliasGenerator', () => {
       expect(profile.company).toBeTruthy();
       expect(profile.template).toBe('coder-dev');
 
-      // Coder emails should use dev/tech domains
-      expect(profile.email).toMatch(/\.dev|\.io|\.app|\.tech/);
+      // Coder emails should use one of the coder domains
+      const emailDomain = profile.email.split('@')[1];
+      expect(CODER_DOMAINS).toContain(emailDomain);
     });
 
     it('should generate vintage profile (PRO)', () => {
@@ -89,8 +94,9 @@ describe('aliasGenerator', () => {
       expect(profile.company).toBeTruthy();
       expect(profile.template).toBe('vintage-aristocrat');
 
-      // Vintage emails should use estate/trust domains
-      expect(profile.email).toMatch(/\.estate|\.trust|\.society|\.firm/);
+      // Vintage emails should use one of the vintage domains
+      const emailDomain = profile.email.split('@')[1];
+      expect(VINTAGE_DOMAINS).toContain(emailDomain);
     });
 
     it('should throw error for invalid template', () => {
