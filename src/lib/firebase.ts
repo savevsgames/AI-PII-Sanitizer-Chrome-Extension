@@ -32,7 +32,8 @@ if (missingKeys.length > 0) {
 }
 
 // Detect execution context
-const isServiceWorker = typeof document === 'undefined';
+// Check explicit flag first (set by polyfills.ts), then fallback to document check
+const isServiceWorker = (globalThis as any).__IS_SERVICE_WORKER__ === true || typeof document === 'undefined';
 const contextName = isServiceWorker ? 'SERVICE WORKER' : 'POPUP/CONTENT';
 
 // Initialize Firebase App and Firestore (synchronous)

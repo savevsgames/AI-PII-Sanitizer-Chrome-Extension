@@ -4,6 +4,10 @@
  * Provides minimal browser API stubs for Firebase SDK compatibility
  */
 
+// Mark this as service worker context BEFORE adding polyfills
+// This flag is checked by firebase.ts for context detection
+(globalThis as any).__IS_SERVICE_WORKER__ = true;
+
 // Firebase SDK checks for 'document' even in web-extension mode
 // This polyfill prevents "document is not defined" errors
 if (typeof document === 'undefined') {
@@ -21,6 +25,7 @@ if (typeof document === 'undefined') {
       initEvent: () => {},
     }),
     getElementById: () => null,
+    getElementsByTagName: () => [],
     querySelector: () => null,
     querySelectorAll: () => [],
     head: {
