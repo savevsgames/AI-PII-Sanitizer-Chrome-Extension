@@ -58,14 +58,12 @@ try {
 }
 
 // Auth initialization (async - context-dependent)
-let auth: Auth;
-let authInitialized = false;
+// This will be set after async initialization completes
+let auth: Auth = null as any;  // Temporary null, will be set immediately
+let authReady: Promise<Auth>;
 
-async function initializeAuth(): Promise<Auth> {
-  if (authInitialized && auth) {
-    return auth;
-  }
-
+// Initialize auth based on context (runs immediately)
+authReady = (async () => {
   try {
     if (isServiceWorker) {
       // Service Worker: Use web-extension auth module (no DOM required)
@@ -90,17 +88,16 @@ async function initializeAuth(): Promise<Auth> {
       }
     }
 
-    authInitialized = true;
     return auth;
   } catch (error) {
     console.error('[Firebase] Auth initialization failed in', contextName, ':', error);
     throw error;
   }
+})();
+
+// Helper function to ensure auth is ready before using
+export async function waitForAuth(): Promise<Auth> {
+  return authReady;
 }
 
-// Auto-initialize auth immediately
-initializeAuth().catch(error => {
-  console.error('[Firebase] Failed to auto-initialize auth:', error);
-});
-
-export { app, auth, db, initializeAuth };
+export { app, auth, db, authReady };
