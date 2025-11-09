@@ -118,6 +118,13 @@ export class StorageManager {
         console.log('[StorageManager] User not authenticated - skipping data initialization');
         return;
       }
+      // If decryption fails (wrong UID), allow app to function with empty profiles
+      if (error instanceof Error && error.message.includes('DECRYPTION_FAILED')) {
+        console.warn('[StorageManager] ⚠️ Decryption failed - possible UID mismatch');
+        console.warn('[StorageManager] App will run with empty profiles. Sign in with original provider to access encrypted data.');
+        // Don't throw - allow app to continue
+        return;
+      }
       // Re-throw other errors
       throw error;
     }
