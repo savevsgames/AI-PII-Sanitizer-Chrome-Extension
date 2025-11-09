@@ -615,50 +615,6 @@
 }
 
 /* ============================================================================
- * Error Modal Styles
- * Professional error display with actions
- * ========================================================================== */
-
-.error-modal {
-  max-width: 450px;
-  text-align: center;
-}
-
-.error-modal .modal-body {
-  padding: var(--space-xl) 0;
-}
-
-.error-icon {
-  font-size: 48px;
-  margin-bottom: var(--space-lg);
-  animation: shake 0.5s ease;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
-}
-
-.error-message {
-  color: var(--text-primary);
-  line-height: 1.6;
-  margin: 0;
-  white-space: pre-line;
-}
-
-.error-modal .modal-footer {
-  display: flex;
-  gap: var(--space-md);
-  justify-content: center;
-  margin-top: var(--space-xl);
-}
-
-.error-modal .btn {
-  min-width: 120px;
-}
-
-/* ============================================================================
  * Platform Guidance
  * Mac-specific auth guidance messages
  * ========================================================================== */

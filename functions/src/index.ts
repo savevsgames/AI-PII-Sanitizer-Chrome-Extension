@@ -7,3 +7,4 @@ admin.initializeApp();
 export { createCheckoutSession } from './createCheckoutSession';
 export { stripeWebhook } from './stripeWebhook';
 export { createPortalSession } from './createPortalSession';
+export { githubAuth } from './githubAuth';

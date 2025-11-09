@@ -83,7 +83,7 @@ export const AUTH_PROVIDERS: Record<AuthProviderType, AuthProvider> = {
     id: 'github',
     name: 'GitHub',
     icon: '💻',
-    enabled: false, // TODO: Enable in v1.1 (Phase 3)
+    enabled: true, // ✅ Enabled with Cloud Function backend
     platformSupport: {
       windows: 'good',
       mac: 'poor', // Same popup issues as Google
@@ -93,6 +93,10 @@ export const AUTH_PROVIDERS: Record<AuthProviderType, AuthProvider> = {
       buttonText: 'Continue with GitHub',
       buttonClass: 'btn-github',
       order: 3, // Third choice (developer-focused)
+    },
+    oauth: {
+      clientId: 'Ov23li8pSP8uzrl6DN7A', // GitHub OAuth App Client ID
+      scopes: ['user:email', 'read:user'],
     },
   },
 

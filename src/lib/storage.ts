@@ -283,6 +283,11 @@ export class StorageManager {
       return profiles;
 
     } catch (error) {
+      // Log the ACTUAL decryption error for debugging
+      console.error('[StorageManager] ❌ Profiles decryption failed:', error);
+      console.error('[StorageManager] Error type:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('[StorageManager] Error message:', error instanceof Error ? error.message : String(error));
+
       // Check if legacy key material exists (indicates data not yet migrated)
       const legacyKeyData = await chrome.storage.local.get('_encryptionKeyMaterial');
       const hasLegacyKey = !!legacyKeyData['_encryptionKeyMaterial'];
@@ -299,7 +304,9 @@ export class StorageManager {
           throw error;
         }
 
-        throw new Error('DECRYPTION_FAILED: Profiles encrypted with Firebase UID. Authentication required.');
+        // Include the original error in the new error message
+        const originalError = error instanceof Error ? error.message : String(error);
+        throw new Error(`DECRYPTION_FAILED: Profiles encrypted with Firebase UID. Authentication required. Original error: ${originalError}`);
       }
 
       console.warn('[StorageManager] Legacy key found - attempting legacy key migration...');

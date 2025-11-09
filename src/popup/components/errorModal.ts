@@ -1,7 +1,7 @@
 /**
  * Error Modal Component
- * Professional error display with action buttons
- * Used for auth errors and other critical user-facing errors
+ * Uses existing notificationModal system instead of creating new modals
+ * Integrates with app's theme system
  */
 
 export interface ErrorModalOptions {
@@ -18,70 +18,50 @@ export interface ErrorModalOptions {
   dismissable?: boolean; // Default: true
 }
 
-let currentErrorModal: HTMLElement | null = null;
-
 /**
- * Show error modal with custom actions
+ * Show error modal using existing notification modal
  */
 export function showErrorModal(options: ErrorModalOptions): void {
-  // Remove existing error modal if any
-  hideErrorModal();
+  const { title, message, primaryAction } = options;
 
-  const { title, message, primaryAction, secondaryAction, dismissable = true } = options;
+  // Use existing notification modal from popup-v2.html
+  const modal = document.getElementById('notificationModal');
+  const titleEl = document.getElementById('notificationModalTitle');
+  const messageEl = document.getElementById('notificationModalMessage');
+  const okBtn = document.getElementById('notificationModalOk');
+  const closeBtn = document.getElementById('notificationModalClose');
 
-  // Create modal HTML
-  const modal = document.createElement('div');
-  modal.id = 'errorModal';
-  modal.className = 'modal-overlay active';
-  modal.innerHTML = `
-    <div class="modal error-modal">
-      <div class="modal-header">
-        <h2 class="modal-title">${escapeHtml(title)}</h2>
-        ${dismissable ? '<button class="modal-close" id="errorModalClose">✕</button>' : ''}
-      </div>
-      <div class="modal-body">
-        <div class="error-icon">⚠️</div>
-        <p class="error-message">${escapeHtml(message).replace(/\n/g, '<br>')}</p>
-      </div>
-      <div class="modal-footer">
-        ${secondaryAction ? `<button class="btn btn-secondary" id="errorSecondaryAction">${escapeHtml(secondaryAction.text)}</button>` : ''}
-        ${primaryAction ? `<button class="btn btn-primary" id="errorPrimaryAction">${escapeHtml(primaryAction.text)}</button>` : ''}
-        ${!primaryAction && !secondaryAction && dismissable ? '<button class="btn btn-secondary" id="errorDismiss">OK</button>' : ''}
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-  currentErrorModal = modal;
-
-  // Event listeners
-  if (dismissable) {
-    const closeBtn = modal.querySelector('#errorModalClose');
-    const overlay = modal;
-    const dismissBtn = modal.querySelector('#errorDismiss');
-
-    closeBtn?.addEventListener('click', hideErrorModal);
-    overlay?.addEventListener('click', (e) => {
-      if (e.target === overlay) hideErrorModal();
-    });
-    dismissBtn?.addEventListener('click', hideErrorModal);
+  if (!modal || !titleEl || !messageEl || !okBtn) {
+    console.error('[Error Modal] Notification modal elements not found');
+    alert(`${title}\n\n${message}`); // Fallback
+    return;
   }
 
+  // Set content
+  titleEl.textContent = title;
+  messageEl.textContent = message;
+
+  // Update button text and handler
   if (primaryAction) {
-    const primaryBtn = modal.querySelector('#errorPrimaryAction');
-    primaryBtn?.addEventListener('click', () => {
+    okBtn.textContent = primaryAction.text;
+    okBtn.onclick = () => {
       primaryAction.onClick();
-      hideErrorModal();
-    });
+      modal.classList.add('hidden');
+    };
+  } else {
+    okBtn.textContent = 'OK';
+    okBtn.onclick = () => {
+      modal.classList.add('hidden');
+    };
   }
 
-  if (secondaryAction) {
-    const secondaryBtn = modal.querySelector('#errorSecondaryAction');
-    secondaryBtn?.addEventListener('click', () => {
-      secondaryAction.onClick();
-      hideErrorModal();
-    });
-  }
+  // Close button handler
+  closeBtn!.onclick = () => {
+    modal.classList.add('hidden');
+  };
+
+  // Show modal
+  modal.classList.remove('hidden');
 
   console.log('[Error Modal] Shown:', title);
 }
@@ -90,9 +70,9 @@ export function showErrorModal(options: ErrorModalOptions): void {
  * Hide error modal
  */
 export function hideErrorModal(): void {
-  if (currentErrorModal) {
-    currentErrorModal.remove();
-    currentErrorModal = null;
+  const modal = document.getElementById('notificationModal');
+  if (modal) {
+    modal.classList.add('hidden');
   }
 }
 
@@ -113,20 +93,5 @@ export function showAuthErrorModal(
           onClick: onSwitchToEmail,
         }
       : undefined,
-    secondaryAction: {
-      text: 'Try Again',
-      onClick: () => {
-        // Just closes the modal
-      },
-    },
   });
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }

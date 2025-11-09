@@ -27,12 +27,22 @@ import { auth } from '../lib/firebase';
 /**
  * Handle Firebase authentication state changes
  * Reloads encrypted data when user signs in
+ * NOTE: This listener is for FUTURE auth state changes only.
+ * Initial auth state is already handled by waitForAuthInit() + DOMContentLoaded initialization.
  */
 function setupAuthStateListener() {
+  let previousAuthState = auth.currentUser !== null;
+
   auth.onAuthStateChanged(async (user) => {
+    const currentAuthState = user !== null;
+
     console.log('[Auth State] Firebase auth state changed:', user ? `Signed in as ${user.email}` : 'Signed out');
 
-    if (user) {
+    // Only reload data if transitioning from signed-out to signed-in
+    // Skip if we're already authenticated (prevents race condition during initial load)
+    if (currentAuthState && !previousAuthState) {
+      console.log('[Auth State] Auth state transition: signed-out → signed-in');
+
       // User signed in - reload encrypted data
       try {
         // Reload data now that we have Firebase UID for decryption
@@ -62,10 +72,17 @@ function setupAuthStateListener() {
       } catch (error) {
         console.error('[Auth State] Failed to reload data after sign in:', error);
       }
+    } else if (!currentAuthState && previousAuthState) {
+      console.log('[Auth State] Auth state transition: signed-in → signed-out');
+      console.log('[Auth State] Encrypted data unavailable until sign-in');
+    } else if (currentAuthState && previousAuthState) {
+      console.log('[Auth State] Auth state unchanged (already signed in) - skipping re-initialization');
     } else {
-      // User signed out - just log it, don't lock UI
-      console.log('[Auth State] User signed out - encrypted data unavailable until sign-in');
+      console.log('[Auth State] Auth state unchanged (not signed in)');
     }
+
+    // Update previous state for next change
+    previousAuthState = currentAuthState;
   });
 
   console.log('[Auth State] Firebase auth state listener initialized');

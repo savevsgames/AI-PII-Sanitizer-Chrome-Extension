@@ -80,6 +80,22 @@
   font-size: 1.2rem;
 }
 
+.btn-github {
+  background: #24292e;
+  color: white;
+  border: 1px solid #1b1f23;
+  font-weight: 500;
+}
+
+.btn-github:hover {
+  background: #2f363d;
+  border-color: #444d56;
+}
+
+.btn-github .btn-icon {
+  font-size: 1.2rem;
+}
+
 .form-success {
   background: rgba(34, 197, 94, 0.1);
   border: 1px solid rgb(34, 197, 94);

@@ -63,12 +63,16 @@ export async function initAuthModal() {
   // Auth method buttons
   const googleSignInBtn = document.getElementById('googleSignInBtn');
   const googleSignUpBtn = document.getElementById('googleSignUpBtn');
+  const githubSignInBtn = document.getElementById('githubSignInBtn');
+  const githubSignUpBtn = document.getElementById('githubSignUpBtn');
   const emailSignInBtn = document.getElementById('emailSignInBtn');
   const emailSignUpBtn = document.getElementById('emailSignUpBtn');
   const sendResetEmailBtn = document.getElementById('sendResetEmailBtn');
 
   googleSignInBtn?.addEventListener('click', handleGoogleSignIn);
   googleSignUpBtn?.addEventListener('click', handleGoogleSignIn); // Same handler
+  githubSignInBtn?.addEventListener('click', handleGitHubSignIn);
+  githubSignUpBtn?.addEventListener('click', handleGitHubSignIn); // Same handler
   emailSignInBtn?.addEventListener('click', handleEmailSignIn);
   emailSignUpBtn?.addEventListener('click', handleEmailSignUp);
   sendResetEmailBtn?.addEventListener('click', handlePasswordReset);
@@ -270,6 +274,130 @@ async function handleGoogleSignIn() {
 
     // Get provider-specific error guidance
     const guidance = getProviderErrorGuidance('google', errorCode);
+
+    // Show professional error modal with fallback option
+    showAuthErrorModal(
+      guidance.title,
+      guidance.message,
+      guidance.showEmailFallback ? switchToEmailPasswordMode : undefined
+    );
+  }
+}
+
+/**
+ * Handle GitHub Sign-In (uses Chrome Identity API + Firebase)
+ * Same pattern as Google Sign-In to avoid CSP issues
+ */
+async function handleGitHubSignIn() {
+  const githubSignInBtn = (document.getElementById('githubSignInBtn') || document.getElementById('githubSignUpBtn')) as HTMLButtonElement;
+  if (!githubSignInBtn) return;
+
+  try {
+    console.log('[Auth] Starting GitHub Sign-In with Chrome Identity API...');
+    setLoading(githubSignInBtn, true, 'Signing in...');
+    clearErrorMessages();
+
+    // Use Chrome's Identity API to get OAuth token
+    console.log('[Auth] Launching GitHub OAuth flow...');
+
+    const redirectURL = chrome.identity.getRedirectURL();
+
+    // GitHub OAuth App credentials (from GitHub Developer Settings)
+    // TODO: Replace with your actual GitHub OAuth App Client ID
+    const githubClientId = 'Ov23li8pSP8uzrl6DN7A'; // Your GitHub OAuth App Client ID
+    const scopes = ['user:email', 'read:user'];
+
+    const authUrl = `https://github.com/login/oauth/authorize?` +
+      `client_id=${githubClientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectURL)}&` +
+      `scope=${encodeURIComponent(scopes.join(' '))}`;
+
+    // Show helper message about popup
+    setLoading(githubSignInBtn, true, 'Opening popup...');
+    showInfo('githubSignInInfo', 'A popup window will open. Please authorize with GitHub.');
+
+    // Close the modal immediately - user will interact with OAuth popup
+    console.log('[Auth] Closing modal before OAuth popup opens');
+    setTimeout(() => {
+      closeAuthModal();
+    }, 200);
+
+    const responseUrl = await new Promise<string>((resolve, reject) => {
+      chrome.identity.launchWebAuthFlow(
+        {
+          url: authUrl,
+          interactive: true
+        },
+        (redirectUrl) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else if (redirectUrl) {
+            resolve(redirectUrl);
+          } else {
+            reject(new Error('No redirect URL received'));
+          }
+        }
+      );
+    });
+
+    console.log('[Auth] GitHub OAuth completed, response URL received');
+
+    // Extract authorization code from redirect URL
+    const url = new URL(responseUrl);
+    const code = url.searchParams.get('code');
+
+    if (!code) {
+      throw new Error('No authorization code in response');
+    }
+
+    console.log('[Auth] Authorization code received, calling Cloud Function...');
+
+    // Call Cloud Function to exchange code for Firebase custom token
+    const { getFunctions, httpsCallable } = await import('firebase/functions');
+    const functions = getFunctions();
+    const githubAuth = httpsCallable(functions, 'githubAuth');
+
+    const result = await githubAuth({ code });
+    const { token } = result.data as { token: string; user: any };
+
+    console.log('[Auth] Custom token received, signing into Firebase...');
+
+    // Sign in with custom token
+    const { signInWithCustomToken } = await import('firebase/auth');
+    const { auth } = await import('../../lib/firebase');
+
+    const firebaseResult = await signInWithCustomToken(auth, token);
+
+    if (DEBUG_MODE) {
+      console.log('[Auth] GitHub sign-in successful:', firebaseResult.user.uid);
+    }
+
+    console.log('[Auth] Starting onAuthSuccess...');
+    await onAuthSuccess(firebaseResult.user);
+    console.log('[Auth] onAuthSuccess completed');
+    console.log('[Auth] GitHub sign-in flow complete!');
+
+  } catch (error: any) {
+    console.error('[Auth] GitHub sign-in error:', error);
+    console.error('[Auth] Error message:', error.message);
+
+    setLoading(githubSignInBtn, false, 'Continue with GitHub');
+
+    // Detect error type
+    let errorCode: string | undefined;
+    if (error.message?.includes('popup')) {
+      errorCode = 'popup-blocked';
+    } else if (
+      error.message?.includes('cancelled') ||
+      error.message?.includes('closed') ||
+      error.message?.includes('did not approve') ||
+      error.message?.includes('user denied')
+    ) {
+      errorCode = 'popup-closed-by-user';
+    }
+
+    // Get provider-specific error guidance
+    const guidance = getProviderErrorGuidance('github', errorCode);
 
     // Show professional error modal with fallback option
     showAuthErrorModal(
