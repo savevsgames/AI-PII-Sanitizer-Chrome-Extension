@@ -3,22 +3,8 @@
  * Handles request/response interception and message passing
  */
 
-// CRITICAL: Polyfill for Firebase auth/web-extension
-// Firebase SDK checks for 'document' even in web-extension mode
-// Provide minimal stub to prevent "document is not defined" errors
-if (typeof document === 'undefined') {
-  (globalThis as any).document = {
-    // Minimal document stub for Firebase SDK compatibility
-    readyState: 'complete',
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    createElement: () => ({}),
-    createEvent: () => ({
-      initEvent: () => {},
-    }),
-  };
-  console.log('[Background] Document polyfill installed for Firebase SDK');
-}
+// CRITICAL: Import polyfills FIRST before anything else
+import './polyfills';
 
 import { AliasEngine } from '../lib/aliasEngine';
 import { StorageManager } from '../lib/storage';
