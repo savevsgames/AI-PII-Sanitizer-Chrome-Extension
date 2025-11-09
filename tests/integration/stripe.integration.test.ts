@@ -1,18 +1,11 @@
 /**
- * Unit tests for Stripe Integration
- * Tests checkout session creation, customer portal, and utility functions
+ * @jest-environment node
  *
- * NOTE: These are basic unit tests for Stripe integration utilities.
- * Full integration testing (webhooks, actual payment flow) requires:
- * - Stripe test mode API keys
- * - Firebase Functions emulator or deployed functions
- * - E2E testing environment
+ * Integration tests for Stripe Integration with Real Firebase Auth
+ * Tests checkout session creation, customer portal with authenticated user
  *
- * Future enhancements:
- * - Mock Stripe API responses
- * - Test webhook signature verification
- * - Test subscription event handling
- * - Test error scenarios (payment failures, network errors)
+ * These tests use real Firebase authentication to test Stripe integration
+ * in a realistic scenario with actual user authentication.
  */
 
 // Mock environment variables FIRST

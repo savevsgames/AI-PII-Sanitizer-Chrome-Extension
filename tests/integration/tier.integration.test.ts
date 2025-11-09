@@ -1,22 +1,25 @@
 /**
- * Unit tests for Tier System
- * Tests tier limits, feature gating, downgrade/upgrade flows, and archive system
+ * @jest-environment node
  *
- * Coverage:
- * - Profile creation limits (1 FREE, unlimited PRO)
- * - Template creation limits (starter templates vs custom)
- * - Custom rules access (PRO only)
- * - Downgrade flow (archive + wipe)
- * - Upgrade flow (restoration prompt)
- * - Archive system (encryption, expiration)
+ * Integration tests for Tier System with Real Firebase Auth
+ * Tests tier limits, feature gating, downgrade/upgrade flows with real encryption
+ *
+ * These tests use real Firebase authentication to properly test
+ * tier archive encryption with real Firebase UID.
  */
 
+import {
+  setupIntegrationTests,
+  teardownIntegrationTests,
+  getCurrentTestUser,
+} from './setup';
+import { User } from 'firebase/auth';
 import { StorageManager } from '../src/lib/storage';
 import { archiveProData, restoreProData, getArchivedData, clearArchivedData } from '../src/lib/tierArchive';
 import { handleDowngrade, handleDatabaseUpgrade } from '../src/lib/tierMigration';
 
 // Access mock data from global setup
-const { mockStorageData } = require('./setup');
+const { mockStorageData } = require('../setup');
 
 describe('Tier System', () => {
   let storage: StorageManager;
