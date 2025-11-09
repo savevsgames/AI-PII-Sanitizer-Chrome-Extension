@@ -334,6 +334,11 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
     case 'SET_PROFILES':
       return handleSetProfiles(message.payload);
 
+    case 'FLUSH_ACTIVITY_LOGS':
+      // Popup opened - flush queued activity logs
+      await flushActivityLogQueue();
+      return { success: true, flushed: activityLogQueue.length };
+
     case 'GET_ALIASES':
       return handleGetAliases();
 
@@ -1082,6 +1087,28 @@ async function handleUpdateCustomRulesSettings(payload: Partial<import('../lib/t
   }
 }
 
+// ========== ACTIVITY LOG QUEUE ==========
+
+/**
+ * Queue for activity logs waiting to be sent to popup
+ * Service worker can't encrypt logs, so we buffer them until popup is available
+ */
+const activityLogQueue: Array<{
+  type: 'interception' | 'substitution' | 'warning' | 'error';
+  service: import('../lib/types').AIService;
+  details: {
+    url: string;
+    profilesUsed?: string[];
+    piiTypesFound?: string[];
+    substitutionCount: number;
+    error?: string;
+    apiKeysProtected?: number;
+    apiKeysFound?: number;
+    keyTypes?: string[];
+  };
+  message: string;
+}> = [];
+
 /**
  * Log activity to storage for debug console
  */
@@ -1103,19 +1130,64 @@ async function logActivity(entry: {
 }) {
   console.log('[Background] Activity:', entry.message);
 
-  // Send activity log entry to popup for encrypted storage
-  // Service worker can't encrypt logs (no Firebase auth), so popup handles it
+  // Add to queue first
+  activityLogQueue.push(entry);
+  console.log('[Background] Activity queued (queue size:', activityLogQueue.length, ')');
+
+  // Try to send immediately if popup is available
   try {
     await chrome.runtime.sendMessage({
       type: 'ADD_ACTIVITY_LOG',
       payload: entry
     });
-    console.log('[Background] ✅ Activity log sent to popup for encryption');
+    console.log('[Background] ✅ Activity log sent to popup immediately');
+
+    // Remove from queue if sent successfully
+    const index = activityLogQueue.indexOf(entry);
+    if (index > -1) {
+      activityLogQueue.splice(index, 1);
+      console.log('[Background] Removed from queue (remaining:', activityLogQueue.length, ')');
+    }
   } catch (error) {
-    // Popup might not be open - that's OK, logs will be ephemeral
-    // Stats will be updated when popup opens and processes the logs
-    console.log('[Background] Popup not available for activity logging (will track on next popup open)');
+    // Popup not open - entry stays in queue and will be sent when popup opens
+    console.log('[Background] Popup not available - activity queued for next popup open');
   }
+}
+
+/**
+ * Flush activity log queue to popup
+ * Called when popup opens to send all queued activity logs
+ */
+async function flushActivityLogQueue() {
+  if (activityLogQueue.length === 0) {
+    return;
+  }
+
+  console.log('[Background] Flushing', activityLogQueue.length, 'queued activity logs to popup...');
+
+  const logs = [...activityLogQueue]; // Copy to avoid modification during iteration
+  let successCount = 0;
+
+  for (const entry of logs) {
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'ADD_ACTIVITY_LOG',
+        payload: entry
+      });
+      successCount++;
+
+      // Remove from queue after successful send
+      const index = activityLogQueue.indexOf(entry);
+      if (index > -1) {
+        activityLogQueue.splice(index, 1);
+      }
+    } catch (error) {
+      console.error('[Background] Failed to flush activity log:', error);
+      break; // Stop if popup closes mid-flush
+    }
+  }
+
+  console.log('[Background] ✅ Flushed', successCount, 'logs, remaining:', activityLogQueue.length);
 }
 
 // ========== TAB EVENT LISTENERS FOR BADGE UPDATES ==========

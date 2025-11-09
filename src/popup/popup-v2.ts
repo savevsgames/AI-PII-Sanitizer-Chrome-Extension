@@ -267,6 +267,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }).catch(err => console.error('[Popup] Failed to send profiles to background:', err));
   }
 
+  // Request any queued activity logs from background
+  console.log('[Popup] Requesting queued activity logs from background...');
+  chrome.runtime.sendMessage({
+    type: 'FLUSH_ACTIVITY_LOGS'
+  }).then((response) => {
+    if (response && response.flushed > 0) {
+      console.log('[Popup] ✅ Received', response.flushed, 'queued activity logs');
+    } else {
+      console.log('[Popup] No queued activity logs');
+    }
+  }).catch(err => console.error('[Popup] Failed to flush activity logs:', err));
+
   // TEMPORARY: Test Firebase connection
   // TODO: Remove after verification
   // DISABLED: Interferes with authentication flow

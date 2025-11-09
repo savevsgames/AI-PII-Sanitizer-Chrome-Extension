@@ -358,6 +358,7 @@ export type MessageType =
   | 'GET_ACTIVITY_LOG'
   | 'CLEAR_ACTIVITY_LOG'
   | 'ADD_ACTIVITY_LOG'
+  | 'FLUSH_ACTIVITY_LOGS'
 
   // API Key Vault
   | 'ADD_API_KEY'
