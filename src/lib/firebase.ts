@@ -1,10 +1,14 @@
 /**
  * Firebase Initialization
  * Connects Chrome extension to Firebase Authentication and Firestore
+ *
+ * Context-Aware Auth:
+ * - Service Worker: Uses firebase/auth/web-extension (no DOM required)
+ * - Popup/Content: Uses firebase/auth (standard web auth)
  */
 
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth';
+import { Auth } from 'firebase/auth';
 import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
 
 // Firebase configuration from environment variables
@@ -27,28 +31,76 @@ if (missingKeys.length > 0) {
   );
 }
 
-// Initialize Firebase
+// Detect execution context
+const isServiceWorker = typeof document === 'undefined';
+const contextName = isServiceWorker ? 'SERVICE WORKER' : 'POPUP/CONTENT';
+
+// Initialize Firebase App and Firestore (synchronous)
 let app: FirebaseApp;
-let auth: Auth;
 let db: Firestore;
 
 try {
   app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
   db = getFirestore(app);
 
-  console.log('[Firebase] Initialized successfully');
-  console.log('[Firebase] Project ID:', firebaseConfig.projectId);
-
-  // For local development with emulators (optional)
+  // Firestore emulator works in both contexts
   if (process.env.NODE_ENV === 'development' && process.env.USE_FIREBASE_EMULATORS === 'true') {
-    connectAuthEmulator(auth, 'http://localhost:9099');
     connectFirestoreEmulator(db, 'localhost', 8080);
-    console.log('[Firebase] Connected to local emulators');
+    console.log('[Firebase] Connected Firestore to local emulator');
   }
+
+  console.log('[Firebase] App initialized successfully');
+  console.log('[Firebase] Context:', contextName);
+  console.log('[Firebase] Project ID:', firebaseConfig.projectId);
 } catch (error) {
-  console.error('[Firebase] Initialization failed:', error);
+  console.error('[Firebase] App initialization failed in', contextName, ':', error);
   throw error;
 }
 
-export { app, auth, db };
+// Auth initialization (async - context-dependent)
+let auth: Auth;
+let authInitialized = false;
+
+async function initializeAuth(): Promise<Auth> {
+  if (authInitialized && auth) {
+    return auth;
+  }
+
+  try {
+    if (isServiceWorker) {
+      // Service Worker: Use web-extension auth module (no DOM required)
+      const { getAuth: getWebExtAuth, indexedDBLocalPersistence } = await import('firebase/auth/web-extension');
+      auth = getWebExtAuth(app);
+
+      // Enable IndexedDB persistence for service worker
+      await auth.setPersistence(indexedDBLocalPersistence);
+
+      console.log('[Firebase] ✅ Initialized with WEB-EXTENSION auth for service worker');
+    } else {
+      // Popup/Content: Use standard auth module (requires DOM)
+      const { getAuth: getStandardAuth, connectAuthEmulator } = await import('firebase/auth');
+      auth = getStandardAuth(app);
+
+      console.log('[Firebase] ✅ Initialized with STANDARD auth for popup/content');
+
+      // Auth emulator only in popup/content (service worker doesn't support it)
+      if (process.env.NODE_ENV === 'development' && process.env.USE_FIREBASE_EMULATORS === 'true') {
+        connectAuthEmulator(auth, 'http://localhost:9099');
+        console.log('[Firebase] Connected auth to local emulator');
+      }
+    }
+
+    authInitialized = true;
+    return auth;
+  } catch (error) {
+    console.error('[Firebase] Auth initialization failed in', contextName, ':', error);
+    throw error;
+  }
+}
+
+// Auto-initialize auth immediately
+initializeAuth().catch(error => {
+  console.error('[Firebase] Failed to auto-initialize auth:', error);
+});
+
+export { app, auth, db, initializeAuth };
