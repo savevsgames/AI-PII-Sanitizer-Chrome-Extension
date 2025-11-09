@@ -525,12 +525,33 @@ async function handlePasswordReset() {
 async function onAuthSuccess(user: User) {
   const store = useAppStore.getState();
 
+  // Detect provider from UID format
+  let provider: 'google' | 'github' | 'microsoft' | 'email' = 'email';
+  if (user.uid.startsWith('google:')) {
+    provider = 'google';
+  } else if (user.uid.startsWith('github:')) {
+    provider = 'github';
+  } else if (user.uid.startsWith('microsoft:')) {
+    provider = 'microsoft';
+  }
+
+  // Check if this is first-time encryption (no encryptionProvider set)
+  const currentConfig = store.config;
+  const isFirstEncryption = !currentConfig?.account?.encryptionProvider;
+
+  if (isFirstEncryption) {
+    console.log(`[Auth] 🔐 First-time encryption - tracking provider: ${provider}`);
+  }
+
   // Update account in config with Firebase user info
   await store.updateAccount({
     email: user.email || undefined,
     firebaseUid: user.uid,
     displayName: user.displayName || undefined,
     photoURL: user.photoURL || undefined,
+    // Track encryption provider on first sign-in
+    encryptionProvider: isFirstEncryption ? provider : (currentConfig?.account?.encryptionProvider || provider),
+    encryptionEmail: isFirstEncryption ? (user.email || undefined) : currentConfig?.account?.encryptionEmail,
   });
 
   // Create/update user document in Firestore
@@ -538,6 +559,7 @@ async function onAuthSuccess(user: User) {
 
   if (DEBUG_MODE) {
     console.log('[Auth] User authenticated and synced:', user.uid);
+    console.log('[Auth] Encryption provider:', provider);
   }
 }
 

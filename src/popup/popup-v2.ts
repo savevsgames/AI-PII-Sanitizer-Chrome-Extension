@@ -31,6 +31,89 @@ import { signOut } from 'firebase/auth';
 };
 console.log('[Debug] To sign out, run: debugSignOut()');
 
+// ========== AUTH ISSUE BANNER ==========
+/**
+ * Show auth issue banner when decryption fails
+ */
+function setupAuthIssueBanner() {
+  const banner = document.getElementById('authIssueBanner');
+  const bannerText = document.getElementById('authIssueBannerText');
+  const resetRetryBtn = document.getElementById('resetAndRetrySignInBtn');
+
+  if (!banner || !bannerText || !resetRetryBtn) return;
+
+  // Store the encryption provider for the retry flow
+  let detectedProvider: string | undefined;
+
+  // Listen for decryption failure event
+  window.addEventListener('auth-decryption-failed', () => {
+    const config = useAppStore.getState().config;
+    const encryptionProvider = config?.account?.encryptionProvider;
+    const encryptionEmail = config?.account?.encryptionEmail;
+
+    // Store for retry button
+    detectedProvider = encryptionProvider;
+
+    // Update banner text with helpful message
+    if (encryptionProvider && encryptionEmail) {
+      bannerText.textContent = `Your data was encrypted with ${encryptionProvider === 'google' ? 'Google' : encryptionProvider === 'github' ? 'GitHub' : encryptionProvider} sign-in (${encryptionEmail}). Please use that provider to unlock your data.`;
+    } else if (encryptionProvider) {
+      bannerText.textContent = `Your data was encrypted with ${encryptionProvider === 'google' ? 'Google' : encryptionProvider === 'github' ? 'GitHub' : encryptionProvider} sign-in. Please use that provider to unlock your data.`;
+    } else {
+      bannerText.textContent = 'Sign in with the original provider to unlock your encrypted data.';
+    }
+
+    banner.classList.remove('hidden');
+    console.log('[Auth Banner] Showing decryption failure banner');
+  });
+
+  // Handle "Reset & Try Again" button - FULL RESET FLOW
+  resetRetryBtn.addEventListener('click', async () => {
+    try {
+      console.log('[Auth Banner] Starting reset & retry flow...');
+
+      // Step 1: Sign out current user (clear broken auth state)
+      await signOut(auth);
+      console.log('[Auth Banner] ✅ Signed out current user');
+
+      // Step 2: Hide the banner
+      banner.classList.add('hidden');
+
+      // Step 3: Wait a moment for auth state to clear
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Step 4: Open auth modal with helpful message
+      const { openAuthModal } = await import('./components/authModal');
+
+      // Show modal in sign-in mode
+      openAuthModal('signin');
+      console.log('[Auth Banner] ✅ Opened auth modal for retry');
+
+      // Step 5: Show notification about which provider to use
+      if (detectedProvider) {
+        const providerName = detectedProvider === 'google' ? 'Google' :
+                           detectedProvider === 'github' ? 'GitHub' :
+                           detectedProvider === 'microsoft' ? 'Microsoft' :
+                           'Email/Password';
+
+        setTimeout(async () => {
+          const { showInfo } = await import('./utils/modalUtils');
+          showInfo(`💡 Tip: Use ${providerName} sign-in to access your encrypted data.`);
+        }, 500);
+      }
+
+      console.log('[Auth Banner] Reset & retry flow complete');
+
+    } catch (error) {
+      console.error('[Auth Banner] Failed to reset:', error);
+
+      // Fallback: Just reload the page to clear everything
+      console.log('[Auth Banner] Falling back to page reload...');
+      window.location.reload();
+    }
+  });
+}
+
 // ========== FIREBASE AUTH STATE MANAGEMENT ==========
 
 /**
@@ -100,6 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   initTabNavigation();
   initKeyboardShortcuts();
+  setupAuthIssueBanner();
 
   // Wait for Firebase to initialize and restore auth session
   console.log('[Popup Init] Waiting for Firebase auth to initialize...');
