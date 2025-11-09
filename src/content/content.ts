@@ -63,6 +63,15 @@ async function showActivationToast() {
       return; // Current domain is not protected
     }
 
+    // Check if profiles are loaded in service worker
+    const profilesResponse = await chrome.runtime.sendMessage({ type: 'GET_PROFILES' });
+    const hasProfiles = profilesResponse?.success && profilesResponse.data?.length > 0;
+
+    if (!hasProfiles) {
+      console.log('[Content] Skipping protection toast - no profiles loaded yet');
+      return; // No profiles loaded = not actually protected
+    }
+
     // Create toast container with glassmorphism
     const toast = document.createElement('div');
     toast.id = 'ai-pii-sanitizer-toast';
