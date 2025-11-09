@@ -31,6 +31,9 @@ export class StorageManager {
   private configCacheTimestamp: number = 0;
   private readonly CACHE_TTL_MS = 5000; // 5 second cache (longer due to cross-context issues)
 
+  // Optional custom Firebase Auth instance (for testing with separate instances)
+  private customAuthInstance: any = null;
+
   private constructor() {
     // Listen for storage changes from OTHER contexts to invalidate cache
     chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -76,6 +79,25 @@ export class StorageManager {
       StorageManager.instance = new StorageManager();
     }
     return StorageManager.instance;
+  }
+
+  /**
+   * Set custom Firebase Auth instance (for testing with separate Firebase instances)
+   * This allows integration tests to use a separate test auth instance while
+   * production code uses the default instance
+   * @param auth - Firebase Auth instance to use for encryption key derivation
+   */
+  public setCustomAuth(auth: any): void {
+    this.customAuthInstance = auth;
+    console.log('[StorageManager] Custom auth instance configured for testing');
+  }
+
+  /**
+   * Clear custom auth instance (restore default behavior)
+   */
+  public clearCustomAuth(): void {
+    this.customAuthInstance = null;
+    console.log('[StorageManager] Cleared custom auth instance');
   }
 
   /**
@@ -1759,16 +1781,25 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
       // Check if we're in a service worker context (no DOM)
       const isServiceWorker = typeof document === 'undefined';
 
-      if (isServiceWorker) {
+      if (isServiceWorker && !this.customAuthInstance) {
         // In service worker, Firebase auth won't work (no DOM)
-        // Immediately throw auth unavailable error
+        // Immediately throw auth unavailable error (unless custom auth provided for tests)
         throw new Error(
           'ENCRYPTION_KEY_UNAVAILABLE: Firebase auth not available in service worker context. ' +
           'Encrypted data can only be accessed from popup/content contexts.'
         );
       }
 
-      const { auth } = await import('./firebase');
+      // Use custom auth instance if provided (for integration tests)
+      // Otherwise, import default production auth
+      let auth;
+      if (this.customAuthInstance) {
+        auth = this.customAuthInstance;
+        console.log('[StorageManager] Using custom auth instance (test mode)');
+      } else {
+        const firebaseModule = await import('./firebase');
+        auth = firebaseModule.auth;
+      }
 
       // Wait for Firebase to initialize if needed (max 300ms, instant if already loaded)
       // This handles cases where auth is still initializing in popup

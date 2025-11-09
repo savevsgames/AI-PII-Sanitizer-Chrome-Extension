@@ -1,1 +1,8 @@
 - The Product is called Prompt Blocker - promptblocker.com is our site - NOT AI PII Sanitizer - THAT was the development title of the original concept project. PROMPTBLOCKER is the name
+- INVESTIGATION PROTOCOL:
+  - When investigating test failures or bugs, you MUST read at least 3-5 related files completely before proposing solutions
+  - Never propose code changes after a single grep or search - always verify with multiple sources
+  - When user says "tests were passing before", believe them and assume YOUR changes broke it
+  - Present findings FIRST, then ask what approach to take
+  - Never edit production code to "fix tests" without explicit approval
+  - If unsure about root cause, say "I need to investigate further" instead of guessing

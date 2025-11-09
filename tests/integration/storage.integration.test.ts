@@ -30,10 +30,21 @@ describe('StorageManager', () => {
     (global as any).document = {};
 
     testUser = await setupIntegrationTests();
+
+    // Configure StorageManager to use test auth instance
+    // This allows tests to use a separate Firebase instance from production
+    const testAuth = require('./setup').getTestAuth();
+    storage = StorageManager.getInstance();
+    storage.setCustomAuth(testAuth);
+    console.log('[Test Setup] Configured StorageManager with test auth instance');
   }, 30000);
 
   // Clean up after all tests
   afterAll(async () => {
+    // Clear custom auth before teardown
+    if (storage) {
+      storage.clearCustomAuth();
+    }
     await teardownIntegrationTests();
   }, 30000);
 
@@ -324,10 +335,9 @@ describe('StorageManager', () => {
       // Manually corrupt the encrypted data
       mockStorageData.profiles = 'corrupted-encrypted-data-that-cannot-be-decrypted';
 
-      const profiles = await storage.loadProfiles();
-
-      // Should return empty array instead of throwing
-      expect(profiles).toEqual([]);
+      // Should throw DECRYPTION_FAILED error when data is corrupted
+      // This is correct behavior - we don't want to silently lose user data
+      await expect(storage.loadProfiles()).rejects.toThrow('DECRYPTION_FAILED');
     });
 
     test('validates encryption configuration without Web Crypto', async () => {
