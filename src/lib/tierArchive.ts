@@ -100,8 +100,8 @@ export async function restoreProData(userId: string): Promise<boolean> {
   const config = await storage.loadConfig();
   if (config) {
     config.promptTemplates!.templates = [
-      ...storage['getStarterTemplates'](), // Keep starters (using bracket notation to access private method)
-      ...proData.customTemplates,          // Add custom
+      ...storage.getStarterTemplates(), // Keep starters
+      ...proData.customTemplates,       // Add custom
     ];
     config.customRules = { enabled: true, rules: proData.customRules };
     config.settings = { ...config.settings, ...proData.settings };

@@ -42,9 +42,14 @@ if ((window as any).__AI_PII_CONTENT_INJECTED__) {
 
 /**
  * Show auto-activation toast when visiting protected pages
+ * Includes retry logic to wait for service worker initialization
  */
 async function showActivationToast() {
   try {
+    // Wait a bit for service worker to initialize Firebase auth
+    // This prevents showing toast before profiles are actually loaded
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     // Check if extension is active (has config)
     const response = await chrome.runtime.sendMessage({ type: 'GET_CONFIG' });
 
@@ -63,13 +68,29 @@ async function showActivationToast() {
       return; // Current domain is not protected
     }
 
-    // Check if profiles are loaded in service worker
-    const profilesResponse = await chrome.runtime.sendMessage({ type: 'GET_PROFILES' });
-    const hasProfiles = profilesResponse?.success && profilesResponse.data?.length > 0;
+    // Check if active profiles are loaded in service worker
+    // Retry logic: Wait for profiles to load (Firebase auth may still be initializing)
+    let hasActiveProfiles = false;
+    let attempts = 0;
+    const maxAttempts = 3;
+    const retryDelay = 300; // ms
 
-    if (!hasProfiles) {
-      console.log('[Content] Skipping protection toast - no profiles loaded yet');
-      return; // No profiles loaded = not actually protected
+    while (!hasActiveProfiles && attempts < maxAttempts) {
+      const profilesResponse = await chrome.runtime.sendMessage({ type: 'GET_PROFILES' });
+      hasActiveProfiles = profilesResponse?.success &&
+                          profilesResponse.data?.length > 0 &&
+                          profilesResponse.data.some((p: any) => p.enabled);
+
+      if (!hasActiveProfiles && attempts < maxAttempts - 1) {
+        console.log(`[Content] No active profiles yet, retrying in ${retryDelay}ms (attempt ${attempts + 1}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+      attempts++;
+    }
+
+    if (!hasActiveProfiles) {
+      console.log('[Content] Skipping protection toast - no active profiles loaded after retries');
+      return; // No active profiles = not actually protected
     }
 
     // Create toast container with glassmorphism

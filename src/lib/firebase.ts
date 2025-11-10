@@ -1,11 +1,19 @@
 /**
  * Firebase Initialization
  * Connects Chrome extension to Firebase Authentication and Firestore
+ *
+ * Context-Aware Auth:
+ * - Service Worker: Uses firebase/auth/web-extension (no DOM required)
+ * - Popup/Content: Uses firebase/auth (standard web auth)
  */
 
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth';
+import { Auth } from 'firebase/auth';
 import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
+
+// Static imports for both auth modules (webpack will tree-shake unused code)
+import { getAuth as getWebExtAuth, indexedDBLocalPersistence } from 'firebase/auth/web-extension';
+import { getAuth as getStandardAuth, connectAuthEmulator } from 'firebase/auth';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -27,28 +35,80 @@ if (missingKeys.length > 0) {
   );
 }
 
-// Initialize Firebase
+// Detect execution context
+// Check explicit flag first (set by polyfills.ts), then fallback to document check
+const isServiceWorker = (globalThis as any).__IS_SERVICE_WORKER__ === true || typeof document === 'undefined';
+const contextName = isServiceWorker ? 'SERVICE WORKER' : 'POPUP/CONTENT';
+
+// Initialize Firebase App and Firestore (synchronous)
 let app: FirebaseApp;
-let auth: Auth;
 let db: Firestore;
 
 try {
   app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
   db = getFirestore(app);
 
-  console.log('[Firebase] Initialized successfully');
-  console.log('[Firebase] Project ID:', firebaseConfig.projectId);
-
-  // For local development with emulators (optional)
+  // Firestore emulator works in both contexts
   if (process.env.NODE_ENV === 'development' && process.env.USE_FIREBASE_EMULATORS === 'true') {
-    connectAuthEmulator(auth, 'http://localhost:9099');
     connectFirestoreEmulator(db, 'localhost', 8080);
-    console.log('[Firebase] Connected to local emulators');
+    console.log('[Firebase] Connected Firestore to local emulator');
   }
+
+  console.log('[Firebase] App initialized successfully');
+  console.log('[Firebase] Context:', contextName);
+  console.log('[Firebase] Project ID:', firebaseConfig.projectId);
 } catch (error) {
-  console.error('[Firebase] Initialization failed:', error);
+  console.error('[Firebase] App initialization failed in', contextName, ':', error);
   throw error;
 }
 
-export { app, auth, db };
+// Auth initialization (async - context-dependent)
+// This will be set after async initialization completes
+let auth: Auth = null as any;  // Temporary null, will be set immediately
+let authReady: Promise<Auth>;
+
+// Initialize auth based on context (runs immediately)
+authReady = (async () => {
+  try {
+    console.log('[Firebase] Starting auth initialization for', contextName);
+
+    if (isServiceWorker) {
+      // Service Worker: Use web-extension auth module (no DOM required)
+      console.log('[Firebase] Calling getAuth with web-extension module...');
+      auth = getWebExtAuth(app);
+      console.log('[Firebase] Auth instance created, setting persistence...');
+
+      // Enable IndexedDB persistence for service worker
+      await auth.setPersistence(indexedDBLocalPersistence);
+      console.log('[Firebase] Persistence set to IndexedDB');
+
+      console.log('[Firebase] ✅ Initialized with WEB-EXTENSION auth for service worker');
+    } else {
+      // Popup/Content: Use standard auth module (requires DOM)
+      console.log('[Firebase] Calling getAuth with standard module...');
+      auth = getStandardAuth(app);
+      console.log('[Firebase] Auth instance created');
+
+      console.log('[Firebase] ✅ Initialized with STANDARD auth for popup/content');
+
+      // Auth emulator only in popup/content (service worker doesn't support it)
+      if (process.env.NODE_ENV === 'development' && process.env.USE_FIREBASE_EMULATORS === 'true') {
+        connectAuthEmulator(auth, 'http://localhost:9099');
+        console.log('[Firebase] Connected auth to local emulator');
+      }
+    }
+
+    console.log('[Firebase] Auth initialization complete, returning auth');
+    return auth;
+  } catch (error) {
+    console.error('[Firebase] Auth initialization failed in', contextName, ':', error);
+    throw error;
+  }
+})();
+
+// Helper function to ensure auth is ready before using
+export async function waitForAuth(): Promise<Auth> {
+  return authReady;
+}
+
+export { app, auth, db, authReady };

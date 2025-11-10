@@ -341,7 +341,6 @@ export type MessageType =
   | 'REMOVE_PROFILE'
   | 'TOGGLE_PROFILE'
   | 'RELOAD_PROFILES'
-  | 'SET_PROFILES'
 
   // Legacy alias management (v1 - deprecated)
   | 'GET_ALIASES'
@@ -357,8 +356,6 @@ export type MessageType =
   | 'UPDATE_STATS'
   | 'GET_ACTIVITY_LOG'
   | 'CLEAR_ACTIVITY_LOG'
-  | 'ADD_ACTIVITY_LOG'
-  | 'FLUSH_ACTIVITY_LOGS'
 
   // API Key Vault
   | 'ADD_API_KEY'
