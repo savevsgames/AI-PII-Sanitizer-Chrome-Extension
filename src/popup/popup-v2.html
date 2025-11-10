@@ -490,6 +490,22 @@
             <button class="btn btn-secondary" id="exportProfilesBtn" title="Download all your data (GDPR-compliant export)">📥 Download All My Data</button>
           </div>
         </div>
+
+        <!-- DANGER ZONE (GDPR Account Deletion) -->
+        <div class="settings-section danger-zone" style="margin-top: 2rem; padding: 1.5rem; border: 2px solid #e74c3c; border-radius: 8px; background-color: rgba(231, 76, 60, 0.05);">
+          <h3 style="color: #e74c3c; margin-top: 0;">⚠️ Danger Zone</h3>
+          <p style="color: #666; margin-bottom: 1rem;">
+            Once you delete your account, there is no going back. This will permanently erase all your data including profiles, activity logs, and account information.
+          </p>
+          <button
+            id="deleteAccountBtn"
+            class="btn"
+            style="background-color: #e74c3c; color: white;"
+            title="Permanently delete your account and all data (GDPR Right to Erasure)"
+          >
+            🗑️ Delete Account Permanently
+          </button>
+        </div>
       </section>
 
       <!-- DEBUG CONSOLE TAB -->

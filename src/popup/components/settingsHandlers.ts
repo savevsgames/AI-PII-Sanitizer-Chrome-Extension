@@ -27,6 +27,7 @@ export function initSettingsHandlers() {
   const subscribeBtn = document.getElementById('subscribeBtn');
   const clearStatsBtn = document.getElementById('clearStatsBtn');
   const exportProfilesBtn = document.getElementById('exportProfilesBtn');
+  const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 
   // Service toggles
   const chatgptToggle = document.getElementById('chatgptToggle') as HTMLInputElement;
@@ -40,6 +41,7 @@ export function initSettingsHandlers() {
   subscribeBtn?.addEventListener('click', handleSubscribe);
   clearStatsBtn?.addEventListener('click', handleClearStats);
   exportProfilesBtn?.addEventListener('click', handleExportProfiles);
+  deleteAccountBtn?.addEventListener('click', handleDeleteAccount);
 
   // Service toggle handlers
   chatgptToggle?.addEventListener('change', () => handleServiceToggle('chatgpt', chatgptToggle.checked));
@@ -205,6 +207,99 @@ async function handleClearStats() {
 
     console.log('[Settings] Stats cleared');
     alert('Stats cleared successfully!');
+  }
+}
+
+/**
+ * Handle delete account button (GDPR Right to Erasure)
+ * Permanently deletes:
+ * - Firestore user document
+ * - Firestore subscription document
+ * - All local storage data (encrypted profiles, settings, stats)
+ * - Firebase Auth account
+ */
+async function handleDeleteAccount() {
+  // First confirmation
+  const confirmed = confirm(
+    '⚠️ DELETE ACCOUNT?\n\n' +
+    'This will PERMANENTLY delete:\n' +
+    '• All profiles and aliases\n' +
+    '• Activity logs and statistics\n' +
+    '• Account information\n' +
+    '• Subscription data (if any)\n\n' +
+    'This action CANNOT be undone.\n\n' +
+    'Click OK to continue'
+  );
+
+  if (!confirmed) {
+    console.log('[Settings] Account deletion cancelled by user (first prompt)');
+    return;
+  }
+
+  // Second confirmation (requires typing "DELETE")
+  const confirmText = prompt(
+    'Type DELETE in ALL CAPS to confirm account deletion:\n\n' +
+    'This will permanently erase all your data.'
+  );
+
+  if (confirmText !== 'DELETE') {
+    console.log('[Settings] Account deletion cancelled - confirmation text did not match');
+    alert('Account deletion cancelled.');
+    return;
+  }
+
+  try {
+    // Import Firebase modules
+    const { auth } = await import('../../lib/firebase');
+    const { deleteUser } = await import('firebase/auth');
+    const { deleteUserAccount } = await import('../../lib/firebaseService');
+
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error('Not authenticated - please sign in first');
+    }
+
+    console.log('[Settings] Starting account deletion for user:', user.uid);
+
+    // Step 1: Delete Firestore data (user document + subscription document)
+    await deleteUserAccount(user.uid);
+    console.log('[Settings] ✅ Firestore data deleted');
+
+    // Step 2: Delete all local storage data
+    await chrome.storage.local.clear();
+    console.log('[Settings] ✅ Local storage cleared');
+
+    // Step 3: Delete Firebase Auth account
+    await deleteUser(user);
+    console.log('[Settings] ✅ Firebase Auth account deleted');
+
+    // Step 4: Show confirmation and close popup
+    alert(
+      '✅ Your account has been permanently deleted.\n\n' +
+      'All your data has been erased:\n' +
+      '• Profiles and aliases\n' +
+      '• Activity logs and statistics\n' +
+      '• Account information\n' +
+      '• Subscription data\n\n' +
+      'Thank you for using Prompt Blocker.'
+    );
+
+    console.log('[Settings] ✅ Account deletion complete');
+
+    // Close popup
+    window.close();
+
+  } catch (error) {
+    console.error('[Settings] ❌ Failed to delete account:', error);
+
+    // Show user-friendly error message
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    alert(
+      '❌ Failed to delete account\n\n' +
+      `Error: ${errorMessage}\n\n` +
+      'Please try again or contact support@promptblocker.com'
+    );
   }
 }
 

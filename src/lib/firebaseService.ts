@@ -10,6 +10,7 @@ import {
   setDoc,
   getDoc,
   updateDoc,
+  deleteDoc,
   serverTimestamp,
   onSnapshot,
   Timestamp,
@@ -237,6 +238,40 @@ export async function downgradeUserToFree(userId: string): Promise<void> {
     console.log('[Firebase Service] User downgraded to FREE:', userId);
   } catch (error) {
     console.error('[Firebase Service] Error downgrading user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete user account data from Firestore (GDPR Right to Erasure)
+ * Deletes user document and subscription document (if exists)
+ *
+ * NOTE: This does NOT delete the Firebase Auth account - that must be done separately
+ * using deleteUser() from firebase/auth
+ */
+export async function deleteUserAccount(userId: string): Promise<void> {
+  try {
+    console.log('[Firebase Service] Deleting user data for:', userId);
+
+    // Delete user document
+    const userRef = doc(db, 'users', userId);
+    await deleteDoc(userRef);
+    console.log('[Firebase Service] ✅ User document deleted');
+
+    // Delete subscription document if it exists
+    const subscriptionRef = doc(db, 'subscriptions', userId);
+    const subscriptionSnap = await getDoc(subscriptionRef);
+
+    if (subscriptionSnap.exists()) {
+      await deleteDoc(subscriptionRef);
+      console.log('[Firebase Service] ✅ Subscription document deleted');
+    } else {
+      console.log('[Firebase Service] No subscription document found (user may be on free tier)');
+    }
+
+    console.log('[Firebase Service] ✅ User data deleted from Firestore:', userId);
+  } catch (error) {
+    console.error('[Firebase Service] ❌ Error deleting user data:', error);
     throw error;
   }
 }
