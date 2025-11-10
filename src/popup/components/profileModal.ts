@@ -9,9 +9,13 @@ import { isValidEmail } from './utils';
 import { generateIdentityVariations } from '../../lib/aliasVariations';
 import { handleGoogleQuickStart } from './userProfile';
 import { sanitizeHtml, escapeHtml } from '../../lib/sanitizer';
+import { EventManager } from '../utils/eventManager';
 
 // Track currently editing profile ID
 let currentEditingProfileId: string | null = null;
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 /**
  * Initialize profile modal event listeners
@@ -23,12 +27,12 @@ export function initProfileModal() {
   const googleQuickStartBtn = document.getElementById('googleQuickStartBtn');
   const googleQuickStartBtnEmpty = document.getElementById('googleQuickStartBtnEmpty');
 
-  addProfileBtn?.addEventListener('click', () => openProfileModal('create'));
-  addProfileBtnEmpty?.addEventListener('click', () => openProfileModal('create'));
+  eventManager.add(addProfileBtn, 'click', () => openProfileModal('create'));
+  eventManager.add(addProfileBtnEmpty, 'click', () => openProfileModal('create'));
 
   // Google Quick Start buttons - only visible when user is authenticated
-  googleQuickStartBtn?.addEventListener('click', handleGoogleQuickStart);
-  googleQuickStartBtnEmpty?.addEventListener('click', handleGoogleQuickStart);
+  eventManager.add(googleQuickStartBtn, 'click', handleGoogleQuickStart);
+  eventManager.add(googleQuickStartBtnEmpty, 'click', handleGoogleQuickStart);
 
   // Profile Editor Modal handlers
   const modalClose = document.getElementById('modalClose');
@@ -36,46 +40,46 @@ export function initProfileModal() {
   const modalSave = document.getElementById('modalSave');
   const modalDelete = document.getElementById('modalDelete');
 
-  modalClose?.addEventListener('click', closeProfileModal);
-  modalCancel?.addEventListener('click', closeProfileModal);
-  modalSave?.addEventListener('click', saveProfile);
-  modalDelete?.addEventListener('click', () => showDeleteConfirmation());
+  eventManager.add(modalClose, 'click', closeProfileModal);
+  eventManager.add(modalCancel, 'click', closeProfileModal);
+  eventManager.add(modalSave, 'click', saveProfile);
+  eventManager.add(modalDelete, 'click', () => showDeleteConfirmation());
 
   // Close modal on overlay click
-  const modalOverlay = document.querySelector('#profileModal .modal-overlay');
-  modalOverlay?.addEventListener('click', closeProfileModal);
+  const modalOverlay = document.querySelector('#profileModal .modal-overlay') as HTMLElement;
+  eventManager.add(modalOverlay, 'click', closeProfileModal);
 
   // Delete Confirmation Modal handlers
   const deleteModalClose = document.getElementById('deleteModalClose');
   const deleteCancel = document.getElementById('deleteCancel');
   const deleteConfirm = document.getElementById('deleteConfirm');
 
-  deleteModalClose?.addEventListener('click', closeDeleteModal);
-  deleteCancel?.addEventListener('click', closeDeleteModal);
-  deleteConfirm?.addEventListener('click', confirmDeleteProfile);
+  eventManager.add(deleteModalClose, 'click', closeDeleteModal);
+  eventManager.add(deleteCancel, 'click', closeDeleteModal);
+  eventManager.add(deleteConfirm, 'click', confirmDeleteProfile);
 
   // Close delete modal on overlay click
-  const deleteModalOverlay = document.querySelector('#deleteModal .modal-overlay');
-  deleteModalOverlay?.addEventListener('click', closeDeleteModal);
+  const deleteModalOverlay = document.querySelector('#deleteModal .modal-overlay') as HTMLElement;
+  eventManager.add(deleteModalOverlay, 'click', closeDeleteModal);
 
   // Email validation on blur
   const realEmailInput = document.getElementById('realEmail') as HTMLInputElement;
   const aliasEmailInput = document.getElementById('aliasEmail') as HTMLInputElement;
 
-  realEmailInput?.addEventListener('blur', () => validateEmailField(realEmailInput));
-  aliasEmailInput?.addEventListener('blur', () => validateEmailField(aliasEmailInput));
+  eventManager.add(realEmailInput, 'blur', () => validateEmailField(realEmailInput));
+  eventManager.add(aliasEmailInput, 'blur', () => validateEmailField(aliasEmailInput));
 
   // Variations list toggle
   const toggleVariationsBtn = document.getElementById('toggleVariationsList');
-  toggleVariationsBtn?.addEventListener('click', toggleVariationsList);
+  eventManager.add(toggleVariationsBtn, 'click', toggleVariationsList);
 
   // Generate variations button
   const generateVariationsBtn = document.getElementById('generateVariationsBtn');
-  generateVariationsBtn?.addEventListener('click', regenerateVariations);
+  eventManager.add(generateVariationsBtn, 'click', regenerateVariations);
 
   // Enable variations toggle - show/hide management section (PRO only)
   const enableVariationsCheckbox = document.getElementById('enableVariations') as HTMLInputElement;
-  enableVariationsCheckbox?.addEventListener('change', (e) => {
+  eventManager.add(enableVariationsCheckbox, 'change', (e) => {
     const store = useAppStore.getState();
     const isFree = store.config?.account?.tier === 'free';
 

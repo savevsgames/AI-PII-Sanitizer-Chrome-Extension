@@ -6,6 +6,10 @@
 import { DocumentAlias } from './lib/types';
 import { downloadDocumentPair } from './lib/downloadUtils';
 import { useAppStore } from './lib/store';
+import { EventManager } from './popup/utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 // Types for message passing
 interface DocumentPreviewData {
@@ -320,59 +324,59 @@ function goToPage(page: number) {
 function setupEventListeners() {
   // Close button
   const closeBtn = document.getElementById('closeBtn');
-  closeBtn?.addEventListener('click', handleClose);
+  eventManager.add(closeBtn, 'click', handleClose);
 
   // Cancel button
   const cancelBtn = document.getElementById('cancelBtn');
-  cancelBtn?.addEventListener('click', handleClose);
+  eventManager.add(cancelBtn, 'click', handleClose);
 
   // Download button
   const downloadBtn = document.getElementById('downloadBtn');
-  downloadBtn?.addEventListener('click', handleDownload);
+  eventManager.add(downloadBtn, 'click', handleDownload);
 
   // Save button
   const saveBtn = document.getElementById('saveBtn');
-  saveBtn?.addEventListener('click', handleSave);
+  eventManager.add(saveBtn, 'click', handleSave);
 
   // Save & Download Both button
   const saveBothBtn = document.getElementById('saveBothBtn');
-  saveBothBtn?.addEventListener('click', handleSaveBoth);
+  eventManager.add(saveBothBtn, 'click', handleSaveBoth);
 
   // Copy button
   const copyBtn = document.getElementById('copyBtn');
-  copyBtn?.addEventListener('click', handleCopy);
+  eventManager.add(copyBtn, 'click', handleCopy);
 
   // Send to Chat button
   const sendToChatBtn = document.getElementById('sendToChatBtn');
-  sendToChatBtn?.addEventListener('click', handleSendToChat);
+  eventManager.add(sendToChatBtn, 'click', handleSendToChat);
 
   // PII Drawer toggle
   const piiDrawerToggle = document.getElementById('piiDrawerToggle');
-  piiDrawerToggle?.addEventListener('click', togglePIIDrawer);
+  eventManager.add(piiDrawerToggle, 'click', togglePIIDrawer);
 
   // Pagination controls
   const firstPageBtn = document.getElementById('firstPageBtn');
-  firstPageBtn?.addEventListener('click', () => goToPage(1));
+  eventManager.add(firstPageBtn, 'click', () => goToPage(1));
 
   const prevPageBtn = document.getElementById('prevPageBtn');
-  prevPageBtn?.addEventListener('click', () => goToPage(currentPage - 1));
+  eventManager.add(prevPageBtn, 'click', () => goToPage(currentPage - 1));
 
   const nextPageBtn = document.getElementById('nextPageBtn');
-  nextPageBtn?.addEventListener('click', () => goToPage(currentPage + 1));
+  eventManager.add(nextPageBtn, 'click', () => goToPage(currentPage + 1));
 
   const lastPageBtn = document.getElementById('lastPageBtn');
-  lastPageBtn?.addEventListener('click', () => goToPage(totalPages));
+  eventManager.add(lastPageBtn, 'click', () => goToPage(totalPages));
 
   const pageInput = document.getElementById('pageInput') as HTMLInputElement;
-  pageInput?.addEventListener('change', (e) => {
+  eventManager.add(pageInput, 'change', (e) => {
     const page = parseInt((e.target as HTMLInputElement).value, 10);
     if (!isNaN(page)) {
       goToPage(page);
     }
   });
 
-  pageInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
+  eventManager.add(pageInput, 'keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') {
       const page = parseInt((e.target as HTMLInputElement).value, 10);
       if (!isNaN(page)) {
         goToPage(page);
@@ -381,8 +385,8 @@ function setupEventListeners() {
   });
 
   // ESC key to close
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
+  eventManager.add(document, 'keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Escape') {
       handleClose();
     }
   });
