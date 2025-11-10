@@ -255,29 +255,99 @@ async function handleServiceToggle(service: string, enabled: boolean) {
 }
 
 /**
- * Handle export profiles button
+ * Handle export profiles button (GDPR-compliant complete data export)
+ * Exports ALL user data: profiles, activity logs, stats, account metadata, settings
  */
 async function handleExportProfiles() {
-  const store = useAppStore.getState();
-  const profiles = store.profiles;
+  try {
+    const store = useAppStore.getState();
 
-  const exportData = {
-    version: 2,
-    exportDate: new Date().toISOString(),
-    profiles: profiles,
-  };
+    // Get Firebase user data
+    const { auth } = await import('../../lib/firebase');
+    const user = auth.currentUser;
 
-  const dataStr = JSON.stringify(exportData, null, 2);
-  const dataBlob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(dataBlob);
+    // Prepare complete data export
+    const exportData = {
+      // Export metadata
+      version: 3, // Incremented from v2 to v3 (complete export)
+      exportDate: new Date().toISOString(),
+      exportType: 'complete', // 'complete' vs 'profiles-only' (legacy)
 
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `ai-pii-sanitizer-profiles-${Date.now()}.json`;
-  link.click();
+      // User profiles (core data)
+      profiles: store.profiles || [],
 
-  URL.revokeObjectURL(url);
-  console.log('[Settings] Exported', profiles.length, 'profiles');
+      // Activity logs (debugging/audit trail)
+      activityLog: store.activityLog || [],
+
+      // Usage statistics
+      stats: {
+        totalSubstitutions: store.config?.stats?.totalSubstitutions || 0,
+        totalInterceptions: store.config?.stats?.totalInterceptions || 0,
+        totalWarnings: store.config?.stats?.totalWarnings || 0,
+        successRate: store.config?.stats?.successRate || 0,
+        lastSyncTimestamp: store.config?.stats?.lastSyncTimestamp || 0,
+        byService: store.config?.stats?.byService || {},
+      },
+
+      // Account metadata
+      account: {
+        uid: user?.uid || null,
+        email: user?.email || null,
+        displayName: user?.displayName || null,
+        photoURL: user?.photoURL || null,
+        provider: user?.providerData?.[0]?.providerId || null,
+        createdAt: user?.metadata?.creationTime || null,
+        lastSignIn: user?.metadata?.lastSignInTime || null,
+        tier: store.config?.account?.tier || 'free',
+        emailOptIn: store.config?.account?.emailOptIn || false,
+        encryptionProvider: store.config?.account?.encryptionProvider || null,
+        encryptionEmail: store.config?.account?.encryptionEmail || null,
+      },
+
+      // Settings (non-sensitive)
+      settings: {
+        enabled: store.config?.settings?.enabled,
+        theme: store.config?.settings?.theme,
+        protectedDomains: store.config?.settings?.protectedDomains || [],
+        excludedDomains: store.config?.settings?.excludedDomains || [],
+        defaultMode: store.config?.settings?.defaultMode,
+        decodeResponses: store.config?.settings?.decodeResponses,
+        showNotifications: store.config?.settings?.showNotifications,
+        cloudSync: store.config?.settings?.cloudSync,
+      },
+    };
+
+    // Download as JSON
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `promptblocker-data-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+
+    console.log('[Settings] ✅ Complete data export successful:', {
+      profiles: exportData.profiles.length,
+      activityLogs: exportData.activityLog.length,
+      totalSubstitutions: exportData.stats.totalSubstitutions,
+    });
+
+    // Show success message
+    const profileCount = exportData.profiles.length;
+    const logCount = exportData.activityLog.length;
+    alert(`✅ Data exported successfully!\n\n` +
+          `Profiles: ${profileCount}\n` +
+          `Activity logs: ${logCount}\n` +
+          `Stats: ${exportData.stats.totalSubstitutions} total substitutions\n\n` +
+          `File saved as: promptblocker-data-${new Date().toISOString().split('T')[0]}.json`);
+
+  } catch (error) {
+    console.error('[Settings] ❌ Failed to export data:', error);
+    alert('❌ Failed to export data. Please try again or contact support@promptblocker.com');
+  }
 }
 
 /**
