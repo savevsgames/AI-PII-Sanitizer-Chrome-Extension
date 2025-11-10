@@ -7,6 +7,7 @@
  */
 
 import { initObservers } from './observers';
+import { sanitizeHtml } from '../lib/sanitizer';
 
 // Guard against multiple injections (happens when extension is reloaded)
 if ((window as any).__AI_PII_CONTENT_INJECTED__) {
@@ -312,7 +313,12 @@ async function injectTemplateIntoChat(content: string): Promise<void> {
         .join('<br><br>');  // Join paragraphs with double <br>
 
       console.log('[Content] 🎨 HTML content (first 200 chars):', htmlContent.substring(0, 200));
-      div.innerHTML = htmlContent;
+
+      // SECURITY: Sanitize HTML to prevent XSS attacks from AI-generated content
+      div.innerHTML = sanitizeHtml(htmlContent, {
+        ALLOWED_TAGS: ['br', 'p', 'b', 'i', 'em', 'strong', 'code', 'pre'],
+        ALLOWED_ATTR: [],
+      });
 
       // Trigger input event to notify the page
       div.dispatchEvent(new Event('input', { bubbles: true }));
