@@ -9,6 +9,7 @@ import { chromeApi } from '../api/chromeApi';
 import { RULE_TEMPLATES } from '../../lib/ruleTemplates';
 import { RedactionEngine } from '../../lib/redactionEngine';
 import { escapeHtml } from './utils';
+import { sanitizeHtml } from '../../lib/sanitizer';
 
 /**
  * Render custom rules list
@@ -45,9 +46,10 @@ export function renderCustomRules(config: UserConfig) {
     // Group rules by category
     const rulesByCategory = groupRulesByCategory(rules);
 
-    // Render grouped rules
-    rulesList.innerHTML = renderRuleStats(rules, enabled) +
-                          renderCategoryGroups(rulesByCategory);
+    // Render grouped rules (sanitized to prevent XSS)
+    rulesList.innerHTML = sanitizeHtml(
+      renderRuleStats(rules, enabled) + renderCategoryGroups(rulesByCategory)
+    );
 
     // Add event listeners
     attachRuleEventListeners(rules);
@@ -374,7 +376,8 @@ export function showAddRuleModal() {
   modal.id = 'addRuleModal';
   modal.className = 'modal-overlay';
 
-  modal.innerHTML = `
+  // Sanitize modal HTML to prevent XSS (template contains user-generated rule data)
+  modal.innerHTML = sanitizeHtml(`
     <div class="modal-content modal-large">
       <div class="modal-header">
         <h3>Add Custom Rule</h3>
@@ -460,7 +463,7 @@ export function showAddRuleModal() {
         <button class="btn btn-primary" id="saveRuleBtn">Add Rule</button>
       </div>
     </div>
-  `;
+  `);
 
   document.body.appendChild(modal);
 
@@ -502,13 +505,13 @@ export function showAddRuleModal() {
     const resultDiv = modal.querySelector('#testResult') as HTMLElement;
 
     if (!pattern || !testInput) {
-      resultDiv.innerHTML = '<div class="test-error">Please enter both pattern and test text</div>';
+      resultDiv.innerHTML = sanitizeHtml('<div class="test-error">Please enter both pattern and test text</div>');
       return;
     }
 
     const validation = RedactionEngine.validatePattern(pattern);
     if (!validation.valid) {
-      resultDiv.innerHTML = `<div class="test-error">Invalid pattern: ${escapeHtml(validation.error || 'Unknown error')}</div>`;
+      resultDiv.innerHTML = sanitizeHtml(`<div class="test-error">Invalid pattern: ${escapeHtml(validation.error || 'Unknown error')}</div>`);
       return;
     }
 
@@ -527,16 +530,16 @@ export function showAddRuleModal() {
     const result = RedactionEngine.testRule(testRule, testInput);
 
     if (result.error) {
-      resultDiv.innerHTML = `<div class="test-error">Test failed: ${escapeHtml(result.error)}</div>`;
+      resultDiv.innerHTML = sanitizeHtml(`<div class="test-error">Test failed: ${escapeHtml(result.error)}</div>`);
       return;
     }
 
     if (result.matches.length === 0) {
-      resultDiv.innerHTML = '<div class="test-warning">No matches found</div>';
+      resultDiv.innerHTML = sanitizeHtml('<div class="test-warning">No matches found</div>');
       return;
     }
 
-    resultDiv.innerHTML = `
+    resultDiv.innerHTML = sanitizeHtml(`
       <div class="test-success">
         <strong>Found ${result.matches.length} match(es):</strong>
         ${result.matches.map((match, i) => `
@@ -545,7 +548,7 @@ export function showAddRuleModal() {
           </div>
         `).join('')}
       </div>
-    `;
+    `);
   });
 
   // Save rule
@@ -791,14 +794,14 @@ function handleTestPattern() {
   if (!resultDiv) return;
 
   if (!pattern || !testInput) {
-    resultDiv.innerHTML = '<div class="test-result warning">Please enter both a pattern and test text</div>';
+    resultDiv.innerHTML = sanitizeHtml('<div class="test-result warning">Please enter both a pattern and test text</div>');
     return;
   }
 
   // Validate pattern
   const validation = RedactionEngine.validatePattern(pattern);
   if (!validation.valid) {
-    resultDiv.innerHTML = `<div class="test-result error">Invalid pattern: ${escapeHtml(validation.error || 'Unknown error')}</div>`;
+    resultDiv.innerHTML = sanitizeHtml(`<div class="test-result error">Invalid pattern: ${escapeHtml(validation.error || 'Unknown error')}</div>`);
     return;
   }
 
@@ -818,11 +821,11 @@ function handleTestPattern() {
   const result = RedactionEngine.testRule(testRule, testInput);
 
   if (result.error) {
-    resultDiv.innerHTML = `<div class="test-result error">Error: ${escapeHtml(result.error)}</div>`;
+    resultDiv.innerHTML = sanitizeHtml(`<div class="test-result error">Error: ${escapeHtml(result.error)}</div>`);
   } else if (result.matches.length === 0) {
-    resultDiv.innerHTML = '<div class="test-result warning">No matches found</div>';
+    resultDiv.innerHTML = sanitizeHtml('<div class="test-result warning">No matches found</div>');
   } else {
-    resultDiv.innerHTML = `
+    resultDiv.innerHTML = sanitizeHtml(`
       <div class="test-result success">
         <strong>✅ ${result.matches.length} match(es) found</strong>
         <div style="margin-top: 8px;">
@@ -830,7 +833,7 @@ function handleTestPattern() {
           <code>${result.replacements.join(', ')}</code>
         </div>
       </div>
-    `;
+    `);
   }
 }
 
@@ -876,7 +879,7 @@ function renderTemplates() {
     custom: '⚙️'
   };
 
-  grid.innerHTML = RULE_TEMPLATES.map(template => `
+  grid.innerHTML = sanitizeHtml(RULE_TEMPLATES.map(template => `
     <div class="template-card" data-template='${JSON.stringify(template)}'>
       <div class="template-header">
         <span class="template-icon">${categoryIcons[template.category]}</span>
@@ -886,7 +889,7 @@ function renderTemplates() {
       <div class="template-category">${template.category.toUpperCase()}</div>
       <button class="btn btn-sm btn-primary use-template-btn">Use Template</button>
     </div>
-  `).join('');
+  `).join(''));
 
   // Add click handlers
   grid.querySelectorAll('.use-template-btn').forEach((btn, index) => {

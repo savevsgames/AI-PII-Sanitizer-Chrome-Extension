@@ -7,7 +7,7 @@
  */
 
 import { initObservers } from './observers';
-import { sanitizeHtml } from '../lib/sanitizer';
+import { sanitizeHtml, escapeHtml } from '../lib/sanitizer';
 
 // Guard against multiple injections (happens when extension is reloaded)
 if ((window as any).__AI_PII_CONTENT_INJECTED__) {
@@ -592,7 +592,7 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
           box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
         ">
           <div style="font-size: 13px; color: #92400e; font-weight: 600;">
-            ${payload.keyTypes.map(type => `• ${type.toUpperCase()} API Key`).join('<br>')}
+            ${payload.keyTypes.map(type => `• ${escapeHtml(type.toUpperCase())} API Key`).join('<br>')}
           </div>
         </div>
         <p style="margin: 0 0 12px 0; font-size: 14px; color: #374151; line-height: 1.5;">

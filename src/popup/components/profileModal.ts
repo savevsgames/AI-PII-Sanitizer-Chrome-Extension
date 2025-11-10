@@ -8,6 +8,7 @@ import { AliasProfile } from '../../lib/types';
 import { isValidEmail } from './utils';
 import { generateIdentityVariations } from '../../lib/aliasVariations';
 import { handleGoogleQuickStart } from './userProfile';
+import { sanitizeHtml, escapeHtml } from '../../lib/sanitizer';
 
 // Track currently editing profile ID
 let currentEditingProfileId: string | null = null;
@@ -511,12 +512,12 @@ function renderVariationsManagement(profile: AliasProfile) {
                          customVariations.filter(v => v.enabled).length;
     const totalCount = autoVariations.length + customVariations.length;
 
-    header.innerHTML = `
+    header.innerHTML = sanitizeHtml(`
       <div class="variation-field-title">
-        ${fieldLabels[field] || field}
+        ${escapeHtml(fieldLabels[field] || field)}
         <span class="badge">${totalEnabled}/${totalCount}</span>
       </div>
-    `;
+    `);
     fieldGroup.appendChild(header);
 
     // Items container
