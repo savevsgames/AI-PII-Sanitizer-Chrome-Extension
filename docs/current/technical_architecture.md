@@ -2069,11 +2069,31 @@ export class APIKeyDetector {
 
 | Module | File | Lines | Responsibility | Status |
 |--------|------|-------|---------------|--------|
-| **Background** | `serviceWorker.ts` | 543 | Request interception, substitution routing | ✅ Stable |
+| **Background** | `serviceWorker.ts` | ~150 | Service worker orchestration, event listeners | ✅ Refactored |
+| **Background - Handlers** | `MessageRouter.ts` | ~140 | Central message routing | ✅ Modular |
+| **Background - Handlers** | `AliasHandlers.ts` | ~110 | Alias CRUD operations | ✅ Modular |
+| **Background - Handlers** | `ConfigHandlers.ts` | ~35 | Config get/set | ✅ Modular |
+| **Background - Handlers** | `APIKeyHandlers.ts` | ~85 | API key CRUD | ✅ Modular |
+| **Background - Handlers** | `CustomRulesHandlers.ts` | ~70 | Custom rules CRUD | ✅ Modular |
+| **Background - Processors** | `RequestProcessor.ts` | ~270 | PII/API key substitution | ✅ Modular |
+| **Background - Processors** | `ResponseProcessor.ts` | ~50 | Alias decoding | ✅ Modular |
+| **Background - Managers** | `BadgeManager.ts` | ~145 | Badge state & visual updates | ✅ Modular |
+| **Background - Managers** | `ContentScriptManager.ts` | ~70 | Script injection logic | ✅ Modular |
+| **Background - Managers** | `ActivityLogger.ts` | ~100 | Queue-based activity logging | ✅ Modular |
+| **Background - Utils** | `ServiceDetector.ts` | ~20 | AI service URL detection | ✅ Modular |
 | **Content** | `content.ts` | 62 | Message relay (inject.js ↔ background) | ✅ Stable |
 | **Content** | `inject.js` | 219 | Fetch override, page-level intercept | ✅ Stable |
 | **Engine** | `aliasEngine.ts` | 366 | Core substitution logic, case preservation | ✅ Needs variations |
-| **Storage** | `storage.ts` | 618 | Encryption, profile management, migrations | ✅ Complex but solid |
+| **Storage** | `storage/index.ts` | ~300 | Main orchestrator, singleton | ✅ Refactored |
+| **Storage** | `StorageEncryptionManager.ts` | ~420 | AES-256-GCM encryption core | ✅ Modular |
+| **Storage** | `StorageConfigManager.ts` | ~220 | Config operations, caching | ✅ Modular |
+| **Storage** | `StorageProfileManager.ts` | ~290 | Profile CRUD operations | ✅ Modular |
+| **Storage** | `StorageAPIKeyVaultManager.ts` | ~175 | API key management | ✅ Modular |
+| **Storage** | `StorageCustomRulesManager.ts` | ~155 | Custom redaction rules | ✅ Modular |
+| **Storage** | `StoragePromptTemplatesManager.ts` | ~150 | Prompt templates | ✅ Modular |
+| **Storage** | `StorageDocumentAliasManager.ts` | ~115 | Document analysis | ✅ Modular |
+| **Storage** | `StorageMigrationManager.ts` | ~280 | V1→V2 migrations | ✅ Modular |
+| **Storage** | `storage-utils.ts` | ~50 | Shared utilities | ✅ Modular |
 | **State** | `store.ts` | 268 | Centralized state management | ✅ New in V2 |
 | **Types** | `types.ts` | 383 | TypeScript definitions | ✅ Comprehensive |
 | **Security** | `apiKeyDetector.ts` | 170 | API key pattern matching | ⚠️ Not integrated |
@@ -2087,7 +2107,11 @@ export class APIKeyDetector {
 | **UI - Settings** | `settingsHandlers.ts` | 120 | Settings management | ✅ Complete |
 | **UI - Utils** | `utils.ts` | 60 | Shared utilities (escapeHtml, formatTime) | ✅ Complete |
 
-**Total source lines:** ~3,300 (excluding tests, docs, config)
+**Total source lines:** ~5,300 (excluding tests, docs, config)
+
+**Modular Architecture Achieved:**
+- Storage: 1 main file + 9 sub-managers (2,455 lines modularized)
+- Background: 1 main file + 12 modules in 4 subdirectories (handlers/, processors/, managers/, utils/) (1,245 lines modularized)
 
 #### Data Flow (Current)
 

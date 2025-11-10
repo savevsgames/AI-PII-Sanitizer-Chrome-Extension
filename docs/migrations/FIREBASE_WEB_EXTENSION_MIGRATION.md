@@ -1,8 +1,30 @@
 # Firebase Web Extension Migration Plan
 **Date Created:** 2025-01-09
-**Status:** 🟡 PLANNING
+**Status:** 🟢 READY TO START (Phase 1 Complete)
 **Complexity:** ⚠️ CRITICAL - App-wide architectural change
 **Estimated Time:** 2-3 days (careful implementation required)
+
+---
+
+## ⚠️ IMPORTANT: Phase 0 Prerequisite Completed
+
+**Phase 0: Code Refactoring (COMPLETED ✅)**
+
+Before beginning this Firebase Web Extension migration, the codebase underwent a comprehensive refactoring to break apart monolithic files into focused modules. This was completed successfully on 2025-01-10.
+
+### Phase 0 Results:
+- ✅ **Storage system modularized:** `storage.ts` (2,270 lines) → 10 focused managers
+- ✅ **Service worker modularized:** `serviceWorker.ts` (1,259 lines) → 13 modules in 4 subdirectories
+- ✅ **All tests passing:** No regressions introduced
+- ✅ **Build successful:** TypeScript compilation clean
+
+**Benefits for this migration:**
+- 🔍 **Easier to locate code:** Clear module boundaries and descriptive names
+- 🧪 **Safer to modify:** Isolated changes with dependency injection
+- 📝 **Simpler testing:** Each module can be tested independently
+- 🚀 **Faster development:** Parallel work possible on different modules
+
+See `docs/development/REFACTORING_PLAN_PHASE_1.md` for complete refactoring details.
 
 ---
 
@@ -101,16 +123,32 @@ chrome.runtime.sendMessage({ type: 'GET_CONFIG' });
 
 ## Target Architecture (AFTER)
 
-### New File Structure
+### New File Structure (Post-Refactoring)
 ```
 src/
 ├── lib/
 │   ├── firebase.ts              ← Context-aware: web-extension OR auth
-│   ├── firebase-web-ext.ts      ← NEW: Service worker-specific auth
-│   ├── storage.ts               ← Works in ALL contexts
+│   ├── storage/                 ← ✅ MODULAR (10 files)
+│   │   ├── index.ts             ← Main StorageManager orchestrator
+│   │   ├── StorageEncryptionManager.ts    ← Encryption key derivation
+│   │   ├── StorageProfileManager.ts       ← Profile loading
+│   │   └── ... (7 more managers)
 │   └── store.ts                 ← Zustand (no changes needed)
-├── background/
-│   └── serviceWorker.ts         ← HAS Firebase auth access
+├── background/                  ← ✅ MODULAR (13 files in 4 subdirs)
+│   ├── serviceWorker.ts         ← Main orchestrator (~150 lines)
+│   ├── handlers/                ← Message routing (5 files)
+│   │   ├── MessageRouter.ts
+│   │   ├── AliasHandlers.ts
+│   │   └── ... (3 more)
+│   ├── processors/              ← Request/response (2 files)
+│   │   ├── RequestProcessor.ts  ← PII substitution logic
+│   │   └── ResponseProcessor.ts
+│   ├── managers/                ← Feature managers (3 files)
+│   │   ├── ActivityLogger.ts    ← Will be simplified/deprecated
+│   │   ├── BadgeManager.ts
+│   │   └── ContentScriptManager.ts
+│   └── utils/
+│       └── ServiceDetector.ts
 ├── popup/
 │   ├── popup-v2.ts              ← No longer sends profiles
 │   └── components/
@@ -186,29 +224,30 @@ if (isServiceWorker) {
 
 ---
 
-#### 1.2 `src/lib/storage.ts`
+#### 1.2 `src/lib/storage/index.ts` (Main StorageManager)
 **Current State:**
 ```typescript
-// Line 1787 - Throws error in service worker
-throw new Error('ENCRYPTION_KEY_UNAVAILABLE: Firebase auth not available...');
-
-// Line 127-128 - Skips profile loading in service worker
+// Service worker context detection - skips profile loading
 console.log('[StorageManager] Service worker context - skipping profile initialization');
 console.log('[StorageManager] Profiles will be sent from popup via SET_PROFILES message');
 ```
 
+**Related Files:**
+- `src/lib/storage/StorageEncryptionManager.ts` - Encryption key derivation
+- `src/lib/storage/StorageProfileManager.ts` - Profile loading logic
+
 **Required Changes:**
 ```typescript
-// REMOVE Lines 127-128 - Service worker CAN load profiles now
-// REMOVE error throw at line 1787 - Auth IS available
+// REMOVE service worker skip logic - profiles can now load
+// Auth is available via firebase/auth/web-extension
 
-// Keep the context detection but allow loading:
+// Update context detection to allow loading:
 if (isServiceWorker) {
   console.log('[StorageManager] Service worker context - loading profiles with web-extension auth');
 }
 
 // Load profiles normally in ALL contexts
-const profiles = await this.loadProfiles();
+const profiles = await this.profileManager.loadProfiles();
 ```
 
 **Complexity:** 🟡 MEDIUM
@@ -262,9 +301,11 @@ console.log('[Background] ✅ Loaded', profiles.length, 'profiles with web-exten
 ---
 
 #### 2.2 Activity Logging in Service Worker
+**Current File:** `src/background/managers/ActivityLogger.ts`
+
 **Current State:**
 ```typescript
-// Line 1126-1150 - Queues activity, tries to send to popup
+// Queues activity, tries to send to popup
 async function logActivity(entry) {
   activityLogQueue.push(entry);
   try {
@@ -277,17 +318,20 @@ async function logActivity(entry) {
 
 **Required Changes:**
 ```typescript
+// Update ActivityLogger.ts to encrypt directly instead of queuing
 async function logActivity(entry) {
-  // Service worker can encrypt now - save directly
+  // Service worker can encrypt now - save directly via storage manager
   const storage = StorageManager.getInstance();
   await storage.addActivityLog(entry);
-  console.log('[Background] ✅ Activity log encrypted and saved');
+  console.log('[ActivityLogger] ✅ Activity log encrypted and saved');
 }
 ```
 
 **Complexity:** 🟢 LOW
 **Risk:** None - simplification
 **Test:** Verify stats track immediately after substitution
+
+**Note:** After migration, the ActivityLogger class may be deprecated entirely as its queueing functionality becomes unnecessary.
 
 ---
 
@@ -466,6 +510,7 @@ async function checkAndUpdateBadge(tabId: number, url?: string) {
 
 ### Pre-Migration
 - [x] Create this migration document
+- [x] **Phase 0: Modular refactoring completed (2025-01-10)**
 - [ ] Review with team
 - [ ] Create backup branch
 - [ ] Document rollback plan

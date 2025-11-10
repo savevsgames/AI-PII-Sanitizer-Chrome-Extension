@@ -716,10 +716,40 @@ dist/
 ```
 PromptBlocker/
 ├── src/                  # Source code
-│   ├── background/       # Service worker
+│   ├── background/       # Service worker (modular architecture)
+│   │   ├── serviceWorker.ts         # Main orchestrator (~150 lines)
+│   │   ├── handlers/                # Message handlers
+│   │   │   ├── MessageRouter.ts     # Central routing
+│   │   │   ├── AliasHandlers.ts     # Alias CRUD
+│   │   │   ├── ConfigHandlers.ts    # Config operations
+│   │   │   ├── APIKeyHandlers.ts    # API key management
+│   │   │   └── CustomRulesHandlers.ts # Custom rules
+│   │   ├── processors/              # Request/response processing
+│   │   │   ├── RequestProcessor.ts  # PII substitution
+│   │   │   └── ResponseProcessor.ts # Alias decoding
+│   │   ├── managers/                # Feature managers
+│   │   │   ├── BadgeManager.ts      # Badge state
+│   │   │   ├── ContentScriptManager.ts # Script injection
+│   │   │   └── ActivityLogger.ts    # Logging
+│   │   └── utils/                   # Utilities
+│   │       └── ServiceDetector.ts   # AI service detection
 │   ├── content/          # Content scripts
 │   ├── popup/            # Popup UI
 │   └── lib/              # Shared libraries
+│       ├── storage/      # Modular storage system
+│       │   ├── index.ts                        # Public API
+│       │   ├── StorageEncryptionManager.ts     # Encryption
+│       │   ├── StorageConfigManager.ts         # Config
+│       │   ├── StorageProfileManager.ts        # Profiles
+│       │   ├── StorageAPIKeyVaultManager.ts    # API keys
+│       │   ├── StorageCustomRulesManager.ts    # Custom rules
+│       │   ├── StoragePromptTemplatesManager.ts # Templates
+│       │   ├── StorageDocumentAliasManager.ts  # Documents
+│       │   ├── StorageMigrationManager.ts      # Migrations
+│       │   └── storage-utils.ts                # Utilities
+│       ├── aliasEngine.ts    # Substitution logic
+│       ├── store.ts          # State management
+│       └── types.ts          # TypeScript definitions
 ├── dist/                 # Build output (gitignored)
 ├── tests/                # Test suite
 ├── docs/                 # Documentation
