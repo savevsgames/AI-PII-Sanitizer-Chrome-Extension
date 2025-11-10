@@ -155,7 +155,27 @@ export class BadgeManager {
       // Check if content script is injected and responding
       const isInjected = await this.contentScriptManager.isContentScriptInjected(tabId);
 
-      if (isInjected) {
+      // Check if profiles are loaded and active
+      let hasActiveProfiles = false;
+      try {
+        const profiles = await this.storage.loadProfiles();
+        hasActiveProfiles = profiles.some(p => p.enabled);
+      } catch (error) {
+        // If profiles can't be loaded, assume no active profiles
+        if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {
+          console.log(`[BadgeManager] Tab ${tabId}: Profiles locked (user not authenticated)`);
+        }
+      }
+
+      // All three conditions must be true for full protection
+      const isProtected = isInjected && hasActiveProfiles;
+
+      if (!isProtected && isInjected && !hasActiveProfiles) {
+        // Extension enabled but no active profiles - show warning
+        console.log(`[BadgeManager] Tab ${tabId}: NO ACTIVE PROFILES (Warning)`);
+      }
+
+      if (isProtected) {
         await this.updateBadge(tabId, 'protected');
       } else {
         await this.updateBadge(tabId, 'unprotected');

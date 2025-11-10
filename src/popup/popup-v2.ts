@@ -175,13 +175,6 @@ function setupAuthStateListener() {
           renderFeaturesHub(state.config);
         }
 
-        // Send decrypted profiles to background worker (service worker can't decrypt)
-        console.log('[Popup] Sending', state.profiles.length, 'profiles to background worker');
-        chrome.runtime.sendMessage({
-          type: 'SET_PROFILES',
-          payload: state.profiles
-        }).catch(err => console.error('[Popup] Failed to send profiles to background:', err));
-
         console.log('[Auth State] ✅ Data reloaded with Firebase UID encryption');
 
       } catch (error) {
@@ -257,27 +250,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initUI(); // Wait for auth redirect check
   await loadInitialData();
 
-  // Send decrypted profiles to background worker after initial load
-  const finalState = useAppStore.getState();
-  if (finalState.profiles.length > 0) {
-    console.log('[Popup] Sending', finalState.profiles.length, 'profiles to background worker');
-    chrome.runtime.sendMessage({
-      type: 'SET_PROFILES',
-      payload: finalState.profiles
-    }).catch(err => console.error('[Popup] Failed to send profiles to background:', err));
-  }
-
-  // Request any queued activity logs from background
-  console.log('[Popup] Requesting queued activity logs from background...');
-  chrome.runtime.sendMessage({
-    type: 'FLUSH_ACTIVITY_LOGS'
-  }).then((response) => {
-    if (response && response.flushed > 0) {
-      console.log('[Popup] ✅ Received', response.flushed, 'queued activity logs');
-    } else {
-      console.log('[Popup] No queued activity logs');
-    }
-  }).catch(err => console.error('[Popup] Failed to flush activity logs:', err));
+  // All data now loaded directly in service worker via Firebase auth/web-extension
+  console.log('[Popup] Service worker can now load profiles directly with Firebase auth');
 
   // TEMPORARY: Test Firebase connection
   // TODO: Remove after verification
@@ -373,40 +347,8 @@ async function loadInitialData() {
   }
 }
 
-// ========== MESSAGE HANDLER FOR ACTIVITY LOGGING ==========
-/**
- * Listen for activity log messages from service worker
- * Service worker can't encrypt logs (no Firebase auth), so popup handles it
- */
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.type === 'ADD_ACTIVITY_LOG') {
-    const entry = message.payload;
-    console.log('[Popup] Received activity log from background:', entry.message);
-
-    // Add activity log entry via store (will encrypt and save)
-    const store = useAppStore.getState();
-
-    // addActivityLog is synchronous, but we wrap in async to handle errors
-    (async () => {
-      try {
-        await store.addActivityLog(entry);
-        console.log('[Popup] ✅ Activity log encrypted and saved');
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error('[Popup] ❌ Failed to save activity log:', error);
-        sendResponse({ success: false, error: (error as Error).message });
-      }
-    })();
-
-    // Return true to indicate async response
-    return true;
-  }
-
-  // Return false for unhandled messages
-  return false;
-});
-
-console.log('[Popup] Activity log message handler registered');
+// ========== MESSAGE HANDLER REMOVED ==========
+// Service worker now encrypts activity logs directly with Firebase auth/web-extension
 
 // ========== EXPORTS FOR CONSOLE DEBUGGING ==========
 (window as any).popupV2 = {

@@ -41,10 +41,10 @@ export class StorageMigrationManager {
    * Initialize storage with default values
    * Handles v1 to v2 migration if needed
    * Gracefully handles unauthenticated state (returns empty data)
-   * In service worker context, skips profile loading (profiles sent from popup)
+   * Works in both service worker and popup contexts (Firebase auth/web-extension support)
    */
   async initialize(): Promise<void> {
-    // Check if we're in service worker context
+    // Detect context for logging
     const isServiceWorker = typeof document === 'undefined';
 
     try {
@@ -59,18 +59,14 @@ export class StorageMigrationManager {
         await this.configManager.saveConfig(this.configManager.getDefaultConfig());
       }
 
-      // Skip profile loading in service worker - profiles will be sent from popup
-      if (isServiceWorker) {
-        console.log('[StorageMigrationManager] Service worker context - skipping profile initialization');
-        console.log('[StorageMigrationManager] Profiles will be sent from popup via SET_PROFILES message');
-        return;
-      }
-
+      // Load profiles in ALL contexts (service worker can now decrypt with web-extension auth)
       const profiles = await this.profileManager.loadProfiles();
       if (!profiles || profiles.length === 0) {
         // Initialize with empty profiles array
         await this.profileManager.saveProfiles([]);
       }
+
+      console.log(`[StorageMigrationManager] ✅ Initialized with ${profiles.length} profiles in ${isServiceWorker ? 'SERVICE WORKER' : 'POPUP'} context`);
     } catch (error) {
       // If user not authenticated, skip initialization (data locked)
       if (error instanceof Error && error.message.includes('ENCRYPTION_KEY_UNAVAILABLE')) {

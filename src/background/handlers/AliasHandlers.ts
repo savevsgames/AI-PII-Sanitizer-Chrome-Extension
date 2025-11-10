@@ -69,17 +69,6 @@ export class AliasHandlers {
   }
 
   /**
-   * Set profiles directly from popup (bypasses encryption in service worker)
-   * Called when popup loads profiles with Firebase auth
-   */
-  async handleSetProfiles(profiles: any[]): Promise<{ success: boolean; profileCount: number }> {
-    console.log('[AliasHandlers] Receiving', profiles.length, 'profiles from popup');
-    this.aliasEngine.setProfiles(profiles);
-    console.log('[AliasHandlers] ✅ Profiles loaded:', profiles.length, 'active profiles');
-    return { success: true, profileCount: profiles.length };
-  }
-
-  /**
    * Reload profiles in AliasEngine
    * Called when profiles are added/updated/deleted from popup
    */

@@ -42,7 +42,7 @@ waitForAuth().then(() => {
 
   // ========== INITIALIZE MANAGERS ==========
 
-  const activityLogger = new ActivityLogger();
+  const activityLogger = new ActivityLogger(storage);
   const badgeManager = new BadgeManager(storage, null as any); // Will set contentScriptManager next
   const contentScriptManager = new ContentScriptManager(badgeManager);
   // Set circular reference
@@ -71,8 +71,7 @@ waitForAuth().then(() => {
     requestProcessor,
     responseProcessor,
     badgeManager,
-    contentScriptManager,
-    activityLogger
+    contentScriptManager
   );
 
   // ========== EVENT LISTENERS ==========

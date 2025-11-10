@@ -106,20 +106,8 @@ export class StorageEncryptionManager {
    */
   private async getFirebaseKeyMaterial(): Promise<string> {
     try {
-      // Check if we're in a service worker context (no DOM)
-      const isServiceWorker = typeof document === 'undefined';
-
-      if (isServiceWorker && !this.customAuthInstance) {
-        // In service worker, Firebase auth won't work (no DOM)
-        // Immediately throw auth unavailable error (unless custom auth provided for tests)
-        throw new Error(
-          'ENCRYPTION_KEY_UNAVAILABLE: Firebase auth not available in service worker context. ' +
-          'Encrypted data can only be accessed from popup/content contexts.'
-        );
-      }
-
       // Use custom auth instance if provided (for integration tests)
-      // Otherwise, import default production auth
+      // Otherwise, import default production auth (works in both popup and service worker)
       let auth;
       if (this.customAuthInstance) {
         auth = this.customAuthInstance;

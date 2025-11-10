@@ -13,7 +13,6 @@ import { RequestProcessor } from '../processors/RequestProcessor';
 import { ResponseProcessor } from '../processors/ResponseProcessor';
 import { BadgeManager } from '../managers/BadgeManager';
 import { ContentScriptManager } from '../managers/ContentScriptManager';
-import { ActivityLogger } from '../managers/ActivityLogger';
 
 /**
  * Debug mode - set to false for production to reduce log spam
@@ -30,8 +29,7 @@ export class MessageRouter {
     private requestProcessor: RequestProcessor,
     private responseProcessor: ResponseProcessor,
     private badgeManager: BadgeManager,
-    private contentScriptManager: ContentScriptManager,
-    private activityLogger: ActivityLogger
+    private contentScriptManager: ContentScriptManager
   ) {}
 
   /**
@@ -115,14 +113,6 @@ export class MessageRouter {
 
       case 'RELOAD_PROFILES':
         return this.aliasHandlers.handleReloadProfiles();
-
-      case 'SET_PROFILES':
-        return this.aliasHandlers.handleSetProfiles(message.payload);
-
-      case 'FLUSH_ACTIVITY_LOGS':
-        // Popup opened - flush queued activity logs
-        const flushed = await this.activityLogger.flushQueueToPopup();
-        return { success: true, flushed };
 
       case 'GET_ALIASES':
         return this.aliasHandlers.handleGetAliases();

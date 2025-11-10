@@ -1,14 +1,16 @@
 /**
  * Activity Logger
- * Manages activity log queue for popup debug console
+ * Logs activity directly to encrypted storage
+ * Service worker can now encrypt with Firebase auth/web-extension support
  */
 
 import type { AIService } from '../../lib/types';
+import { StorageManager } from '../../lib/storage';
 
 /**
- * Activity log entry
+ * Activity log entry (without id/timestamp - added when saving)
  */
-export interface ActivityLogEntry {
+export interface ActivityLogEntryInput {
   type: 'interception' | 'substitution' | 'warning' | 'error';
   service: AIService;
   details: {
@@ -25,83 +27,51 @@ export interface ActivityLogEntry {
 }
 
 export class ActivityLogger {
-  /**
-   * Queue for activity logs waiting to be sent to popup
-   * Service worker can't encrypt logs, so we buffer them until popup is available
-   */
-  private activityLogQueue: ActivityLogEntry[] = [];
+  constructor(private storage: StorageManager) {}
 
   /**
-   * Log activity to storage for debug console
+   * Log activity directly to encrypted storage
    */
-  async logActivity(entry: ActivityLogEntry): Promise<void> {
+  async logActivity(entry: ActivityLogEntryInput): Promise<void> {
     console.log('[ActivityLogger] Activity:', entry.message);
 
-    // Add to queue first
-    this.activityLogQueue.push(entry);
-    console.log('[ActivityLogger] Activity queued (queue size:', this.activityLogQueue.length, ')');
-
-    // Try to send immediately if popup is available
     try {
-      await chrome.runtime.sendMessage({
-        type: 'ADD_ACTIVITY_LOG',
-        payload: entry
+      // Load current config
+      const config = await this.storage.loadConfig();
+      if (!config) {
+        console.warn('[ActivityLogger] No config found - skipping activity log');
+        return;
+      }
+
+      // Get current activity logs (decrypted)
+      const currentLogs = config.stats?.activityLog || [];
+
+      // Add new entry with id and timestamp
+      const newEntry = {
+        ...entry,
+        id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        timestamp: Date.now(),
+      };
+
+      // Add to beginning (most recent first)
+      const updatedLogs = [newEntry, ...currentLogs];
+
+      // Keep only last 100 entries to prevent unbounded growth
+      const trimmedLogs = updatedLogs.slice(0, 100);
+
+      // Save back to encrypted storage
+      await this.storage.saveConfig({
+        ...config,
+        stats: {
+          ...config.stats,
+          activityLog: trimmedLogs,
+        },
       });
-      console.log('[ActivityLogger] ✅ Activity log sent to popup immediately');
 
-      // Remove from queue if sent successfully
-      const index = this.activityLogQueue.indexOf(entry);
-      if (index > -1) {
-        this.activityLogQueue.splice(index, 1);
-        console.log('[ActivityLogger] Removed from queue (remaining:', this.activityLogQueue.length, ')');
-      }
+      console.log('[ActivityLogger] ✅ Activity logged to encrypted storage');
     } catch (error) {
-      // Popup not open - entry stays in queue and will be sent when popup opens
-      console.log('[ActivityLogger] Popup not available - activity queued for next popup open');
+      console.error('[ActivityLogger] Failed to log activity:', error);
+      // Don't throw - activity logging is non-critical
     }
-  }
-
-  /**
-   * Flush activity log queue to popup
-   * Called when popup opens to send all queued activity logs
-   */
-  async flushQueueToPopup(): Promise<number> {
-    if (this.activityLogQueue.length === 0) {
-      return 0;
-    }
-
-    console.log('[ActivityLogger] Flushing', this.activityLogQueue.length, 'queued activity logs to popup...');
-
-    const logs = [...this.activityLogQueue]; // Copy to avoid modification during iteration
-    let successCount = 0;
-
-    for (const entry of logs) {
-      try {
-        await chrome.runtime.sendMessage({
-          type: 'ADD_ACTIVITY_LOG',
-          payload: entry
-        });
-        successCount++;
-
-        // Remove from queue after successful send
-        const index = this.activityLogQueue.indexOf(entry);
-        if (index > -1) {
-          this.activityLogQueue.splice(index, 1);
-        }
-      } catch (error) {
-        console.error('[ActivityLogger] Failed to flush activity log:', error);
-        break; // Stop if popup closes mid-flush
-      }
-    }
-
-    console.log('[ActivityLogger] ✅ Flushed', successCount, 'logs, remaining:', this.activityLogQueue.length);
-    return successCount;
-  }
-
-  /**
-   * Get current queue size
-   */
-  getQueueSize(): number {
-    return this.activityLogQueue.length;
   }
 }
