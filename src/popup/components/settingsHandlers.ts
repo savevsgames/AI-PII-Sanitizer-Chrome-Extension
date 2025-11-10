@@ -9,6 +9,10 @@ import { isValidEmail } from './utils';
 import { applyChromeTheme } from '../../lib/chromeTheme';
 import { updateStatusIndicator } from './statusIndicator';
 import { onThemeChange, initializeBackgroundSettings, onClassicThemeSelected } from './backgroundManager';
+import { EventManager } from '../utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 const DEBUG_MODE = false; // Set to true for development debugging
 
@@ -36,19 +40,19 @@ export function initSettingsHandlers() {
   const perplexityToggle = document.getElementById('perplexityToggle') as HTMLInputElement;
   const copilotToggle = document.getElementById('copilotToggle') as HTMLInputElement;
 
-  enabledToggle?.addEventListener('change', handleEnabledToggle);
-  emailOptInToggle?.addEventListener('change', handleEmailOptInToggle);
-  subscribeBtn?.addEventListener('click', handleSubscribe);
-  clearStatsBtn?.addEventListener('click', handleClearStats);
-  exportProfilesBtn?.addEventListener('click', handleExportProfiles);
-  deleteAccountBtn?.addEventListener('click', handleDeleteAccount);
+  eventManager.add(enabledToggle, 'change', handleEnabledToggle);
+  eventManager.add(emailOptInToggle, 'change', handleEmailOptInToggle);
+  eventManager.add(subscribeBtn, 'click', handleSubscribe);
+  eventManager.add(clearStatsBtn, 'click', handleClearStats);
+  eventManager.add(exportProfilesBtn, 'click', handleExportProfiles);
+  eventManager.add(deleteAccountBtn, 'click', handleDeleteAccount);
 
   // Service toggle handlers
-  chatgptToggle?.addEventListener('change', () => handleServiceToggle('chatgpt', chatgptToggle.checked));
-  claudeToggle?.addEventListener('change', () => handleServiceToggle('claude', claudeToggle.checked));
-  geminiToggle?.addEventListener('change', () => handleServiceToggle('gemini', geminiToggle.checked));
-  perplexityToggle?.addEventListener('change', () => handleServiceToggle('perplexity', perplexityToggle.checked));
-  copilotToggle?.addEventListener('change', () => handleServiceToggle('copilot', copilotToggle.checked));
+  eventManager.add(chatgptToggle, 'change', () => handleServiceToggle('chatgpt', chatgptToggle.checked));
+  eventManager.add(claudeToggle, 'change', () => handleServiceToggle('claude', claudeToggle.checked));
+  eventManager.add(geminiToggle, 'change', () => handleServiceToggle('gemini', geminiToggle.checked));
+  eventManager.add(perplexityToggle, 'change', () => handleServiceToggle('perplexity', perplexityToggle.checked));
+  eventManager.add(copilotToggle, 'change', () => handleServiceToggle('copilot', copilotToggle.checked));
 
   // Theme picker
   initThemePicker();
@@ -452,7 +456,7 @@ function initThemePicker() {
   const themeSwatches = document.querySelectorAll('.theme-swatch, .theme-card');
 
   themeSwatches.forEach((swatch) => {
-    swatch.addEventListener('click', async () => {
+    eventManager.add(swatch as HTMLElement, 'click', async () => {
       const theme = swatch.getAttribute('data-theme') as ThemeName;
       if (theme) {
         await handleThemeChange(theme);
@@ -488,7 +492,7 @@ function initThemePicker() {
     };
 
     // Listen for background changes and reapply transparency
-    window.addEventListener('bgTransparencyUpdate', ((event: CustomEvent) => {
+    eventManager.add(window, 'bgTransparencyUpdate', ((event: CustomEvent) => {
       const transparency = event.detail;
       applyBackgroundTransparency(transparency);
     }) as EventListener);
