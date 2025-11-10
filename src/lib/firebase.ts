@@ -11,6 +11,10 @@ import { initializeApp, FirebaseApp } from 'firebase/app';
 import { Auth } from 'firebase/auth';
 import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
 
+// Static imports for both auth modules (webpack will tree-shake unused code)
+import { getAuth as getWebExtAuth, indexedDBLocalPersistence } from 'firebase/auth/web-extension';
+import { getAuth as getStandardAuth, connectAuthEmulator } from 'firebase/auth';
+
 // Firebase configuration from environment variables
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -70,24 +74,18 @@ authReady = (async () => {
 
     if (isServiceWorker) {
       // Service Worker: Use web-extension auth module (no DOM required)
-      console.log('[Firebase] Importing firebase/auth/web-extension...');
-      const { getAuth: getWebExtAuth, indexedDBLocalPersistence } = await import('firebase/auth/web-extension');
-      console.log('[Firebase] Module imported, calling getAuth...');
-
+      console.log('[Firebase] Calling getAuth with web-extension module...');
       auth = getWebExtAuth(app);
       console.log('[Firebase] Auth instance created, setting persistence...');
 
       // Enable IndexedDB persistence for service worker
       await auth.setPersistence(indexedDBLocalPersistence);
-      console.log('[Firebase] Persistence set');
+      console.log('[Firebase] Persistence set to IndexedDB');
 
       console.log('[Firebase] ✅ Initialized with WEB-EXTENSION auth for service worker');
     } else {
       // Popup/Content: Use standard auth module (requires DOM)
-      console.log('[Firebase] Importing firebase/auth...');
-      const { getAuth: getStandardAuth, connectAuthEmulator } = await import('firebase/auth');
-      console.log('[Firebase] Module imported, calling getAuth...');
-
+      console.log('[Firebase] Calling getAuth with standard module...');
       auth = getStandardAuth(app);
       console.log('[Firebase] Auth instance created');
 

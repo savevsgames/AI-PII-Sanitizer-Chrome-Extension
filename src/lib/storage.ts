@@ -14,6 +14,7 @@ import {
   PromptTemplate
 } from './types';
 import { generateIdentityVariations } from './aliasVariations';
+import { User } from 'firebase/auth';
 
 export class StorageManager {
   private static instance: StorageManager;
@@ -61,9 +62,13 @@ export class StorageManager {
     }
 
     // Dynamically import Firebase to avoid circular dependencies
-    // This only runs in popup/content contexts where DOM is available
-    import('./firebase').then(({ auth }) => {
-      auth.onAuthStateChanged((user) => {
+    // Use webpack magic comments to enable conditional imports
+    import(
+      /* webpackMode: "eager" */
+      /* webpackChunkName: "firebase-context" */
+      './firebase'
+    ).then(({ auth }) => {
+      auth.onAuthStateChanged((user: User | null) => {
         console.log('[Storage] 🔐 Auth state changed:', user ? 'Signed in' : 'Signed out');
         console.log('[Storage] 🔄 Invalidating cache due to auth state change');
         this.configCache = null;
@@ -1797,7 +1802,12 @@ Keep it concise and professional, suitable for sharing with stakeholders.`,
         auth = this.customAuthInstance;
         console.log('[StorageManager] Using custom auth instance (test mode)');
       } else {
-        const firebaseModule = await import('./firebase');
+        // Import firebase.ts which auto-detects context and loads correct auth module
+        const firebaseModule = await import(
+          /* webpackMode: "eager" */
+          /* webpackChunkName: "firebase-context" */
+          './firebase'
+        );
         auth = firebaseModule.auth;
       }
 
