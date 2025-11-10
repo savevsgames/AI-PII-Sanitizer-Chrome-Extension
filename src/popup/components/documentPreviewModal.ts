@@ -4,6 +4,7 @@
 
 import { DocumentAlias } from '../../lib/types';
 import { downloadDocumentPair, downloadDocumentJSON } from '../../lib/downloadUtils';
+import { EventManager } from '../utils/eventManager';
 
 interface DocumentPreviewModalConfig {
   documentAlias: DocumentAlias;
@@ -13,6 +14,7 @@ interface DocumentPreviewModalConfig {
 export class DocumentPreviewModal {
   private config: DocumentPreviewModalConfig;
   private modalElement: HTMLElement | null = null;
+  private eventManager: EventManager = new EventManager();
 
   constructor(config: DocumentPreviewModalConfig) {
     this.config = config;
@@ -310,11 +312,11 @@ export class DocumentPreviewModal {
 
     // Close button
     this.modalElement.querySelectorAll('[data-action="close"]').forEach((btn) => {
-      btn.addEventListener('click', () => this.close());
+      this.eventManager.add(btn as HTMLElement, 'click', () => this.close());
     });
 
     // Overlay click
-    this.modalElement.addEventListener('click', (e) => {
+    this.eventManager.add(this.modalElement, 'click', (e) => {
       if (e.target === this.modalElement) {
         this.close();
       }
@@ -322,29 +324,34 @@ export class DocumentPreviewModal {
 
     // Tab switching
     this.modalElement.querySelectorAll('[data-tab]').forEach((tab) => {
-      tab.addEventListener('click', (e) => {
+      this.eventManager.add(tab as HTMLElement, 'click', (e) => {
         const tabName = (e.currentTarget as HTMLElement).getAttribute('data-tab');
         this.switchTab(tabName!);
       });
     });
 
     // Download buttons
-    this.modalElement.querySelector('[data-action="download-pair"]')?.addEventListener('click', () => {
-      this.handleDownloadPair();
-    });
+    const downloadPairBtn = this.modalElement.querySelector('[data-action="download-pair"]');
+    if (downloadPairBtn) {
+      this.eventManager.add(downloadPairBtn as HTMLElement, 'click', () => {
+        this.handleDownloadPair();
+      });
+    }
 
-    this.modalElement.querySelector('[data-action="download-json"]')?.addEventListener('click', () => {
-      this.handleDownloadJSON();
-    });
+    const downloadJsonBtn = this.modalElement.querySelector('[data-action="download-json"]');
+    if (downloadJsonBtn) {
+      this.eventManager.add(downloadJsonBtn as HTMLElement, 'click', () => {
+        this.handleDownloadJSON();
+      });
+    }
 
     // ESC key to close
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+    const handleEscape = (e: Event) => {
+      if ((e as KeyboardEvent).key === 'Escape') {
         this.close();
-        document.removeEventListener('keydown', handleEscape);
       }
     };
-    document.addEventListener('keydown', handleEscape);
+    this.eventManager.add(document, 'keydown', handleEscape);
   }
 
   /**

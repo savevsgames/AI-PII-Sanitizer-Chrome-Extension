@@ -4,6 +4,11 @@
  * Allows users to scale and compress custom background images
  */
 
+import { EventManager } from '../utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
+
 interface ImageEditorResult {
   success: boolean;
   dataURL?: string;
@@ -154,35 +159,38 @@ function createImageEditorModal(): void {
 function setupCanvasListeners(): void {
   if (!canvas) return;
 
-  canvas.addEventListener('mousedown', (e) => {
+  eventManager.add(canvas, 'mousedown', (e) => {
+    const mouseEvent = e as MouseEvent;
     viewState.isDragging = true;
-    viewState.dragStartX = e.clientX - viewState.offsetX;
-    viewState.dragStartY = e.clientY - viewState.offsetY;
+    viewState.dragStartX = mouseEvent.clientX - viewState.offsetX;
+    viewState.dragStartY = mouseEvent.clientY - viewState.offsetY;
     canvas!.style.cursor = 'grabbing';
   });
 
-  canvas.addEventListener('mousemove', (e) => {
+  eventManager.add(canvas, 'mousemove', (e) => {
+    const mouseEvent = e as MouseEvent;
     if (viewState.isDragging) {
-      viewState.offsetX = e.clientX - viewState.dragStartX;
-      viewState.offsetY = e.clientY - viewState.dragStartY;
+      viewState.offsetX = mouseEvent.clientX - viewState.dragStartX;
+      viewState.offsetY = mouseEvent.clientY - viewState.dragStartY;
       renderCanvas();
     }
   });
 
-  canvas.addEventListener('mouseup', () => {
+  eventManager.add(canvas, 'mouseup', () => {
     viewState.isDragging = false;
     canvas!.style.cursor = 'grab';
   });
 
-  canvas.addEventListener('mouseleave', () => {
+  eventManager.add(canvas, 'mouseleave', () => {
     viewState.isDragging = false;
     canvas!.style.cursor = 'grab';
   });
 
   // Mouse wheel zoom
-  canvas.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+  eventManager.add(canvas, 'wheel', (e) => {
+    const wheelEvent = e as WheelEvent;
+    wheelEvent.preventDefault();
+    const delta = wheelEvent.deltaY > 0 ? -0.1 : 0.1;
     viewState.scale = Math.max(0.1, Math.min(5, viewState.scale + delta));
     updateZoomDisplay();
     renderCanvas();

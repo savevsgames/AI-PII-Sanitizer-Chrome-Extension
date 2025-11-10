@@ -7,6 +7,10 @@ import { APIKey, APIKeyVaultConfig, UserConfig } from '../../lib/types';
 import { useAppStore } from '../../lib/store';
 import { chromeApi } from '../api/chromeApi';
 import { escapeHtml } from './utils';
+import { EventManager } from '../utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 /**
  * Render API keys list with project grouping
@@ -42,62 +46,70 @@ export function renderAPIKeys(config: UserConfig) {
 
       // Toggle enable/disable
       const toggleBtn = card.querySelector('.api-key-toggle');
-      toggleBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleAPIKey(key.id);
-      });
+      if (toggleBtn) {
+        eventManager.add(toggleBtn as HTMLElement, 'click', (e) => {
+          e.stopPropagation();
+          toggleAPIKey(key.id);
+        });
+      }
 
       // Delete key
       const deleteBtn = card.querySelector('.api-key-delete');
-      deleteBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        deleteAPIKey(key.id, key.name || 'Unnamed key');
-      });
+      if (deleteBtn) {
+        eventManager.add(deleteBtn as HTMLElement, 'click', (e) => {
+          e.stopPropagation();
+          deleteAPIKey(key.id, key.name || 'Unnamed key');
+        });
+      }
 
       // Show/hide key value
       const showBtn = card.querySelector('.api-key-show');
       const keyValue = card.querySelector('.api-key-value');
-      showBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isHidden = keyValue?.getAttribute('data-hidden') === 'true';
-        if (isHidden) {
-          keyValue?.setAttribute('data-hidden', 'false');
-          keyValue!.textContent = key.keyValue;
-          const icon = showBtn.querySelector('.show-icon');
-          if (icon) icon.textContent = '👁️‍🗨️';
-        } else {
-          keyValue?.setAttribute('data-hidden', 'true');
-          keyValue!.textContent = maskAPIKey(key.keyValue);
-          const icon = showBtn.querySelector('.show-icon');
-          if (icon) icon.textContent = '👁️';
-        }
-      });
+      if (showBtn) {
+        eventManager.add(showBtn as HTMLElement, 'click', (e) => {
+          e.stopPropagation();
+          const isHidden = keyValue?.getAttribute('data-hidden') === 'true';
+          if (isHidden) {
+            keyValue?.setAttribute('data-hidden', 'false');
+            keyValue!.textContent = key.keyValue;
+            const icon = showBtn.querySelector('.show-icon');
+            if (icon) icon.textContent = '👁️‍🗨️';
+          } else {
+            keyValue?.setAttribute('data-hidden', 'true');
+            keyValue!.textContent = maskAPIKey(key.keyValue);
+            const icon = showBtn.querySelector('.show-icon');
+            if (icon) icon.textContent = '👁️';
+          }
+        });
+      }
 
       // Copy key value
       const copyBtn = card.querySelector('.api-key-copy');
-      copyBtn?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        try {
-          await navigator.clipboard.writeText(key.keyValue);
+      if (copyBtn) {
+        eventManager.add(copyBtn as HTMLElement, 'click', async (e) => {
+          e.stopPropagation();
+          try {
+            await navigator.clipboard.writeText(key.keyValue);
 
-          // Visual feedback
-          const icon = copyBtn.querySelector('.copy-icon');
-          const originalIcon = icon?.textContent;
+            // Visual feedback
+            const icon = copyBtn.querySelector('.copy-icon');
+            const originalIcon = icon?.textContent;
 
-          if (icon) icon.textContent = '✓';
-          copyBtn.classList.add('copied');
+            if (icon) icon.textContent = '✓';
+            copyBtn.classList.add('copied');
 
-          setTimeout(() => {
-            if (icon && originalIcon) icon.textContent = originalIcon;
-            copyBtn.classList.remove('copied');
-          }, 2000);
+            setTimeout(() => {
+              if (icon && originalIcon) icon.textContent = originalIcon;
+              copyBtn.classList.remove('copied');
+            }, 2000);
 
-          console.log('[API Key Vault] Copied key to clipboard');
-        } catch (error) {
-          console.error('[API Key Vault] Failed to copy:', error);
-          alert('Failed to copy to clipboard.');
-        }
-      });
+            console.log('[API Key Vault] Copied key to clipboard');
+          } catch (error) {
+            console.error('[API Key Vault] Failed to copy:', error);
+            alert('Failed to copy to clipboard.');
+          }
+        });
+      }
     });
   }
 
@@ -359,7 +371,7 @@ function updateProtectionMode(config: UserConfig) {
     radioInput.checked = radioInput.value === currentMode;
 
     // Add change listener
-    radioInput.addEventListener('change', async () => {
+    eventManager.add(radioInput, 'change', async () => {
       if (radioInput.checked) {
         await updateProtectionModeSetting(radioInput.value as APIKeyVaultConfig['mode']);
       }
@@ -395,13 +407,17 @@ export function initAPIKeyVaultUI() {
     const addKeyBtn = document.getElementById('addAPIKeyBtn');
     const addKeyBtnEmpty = document.getElementById('addAPIKeyBtnEmpty');
 
-    addKeyBtn?.addEventListener('click', () => {
-      showAddAPIKeyModal();
-    });
+    if (addKeyBtn) {
+      eventManager.add(addKeyBtn as HTMLElement, 'click', () => {
+        showAddAPIKeyModal();
+      });
+    }
 
-    addKeyBtnEmpty?.addEventListener('click', () => {
-      showAddAPIKeyModal();
-    });
+    if (addKeyBtnEmpty) {
+      eventManager.add(addKeyBtnEmpty as HTMLElement, 'click', () => {
+        showAddAPIKeyModal();
+      });
+    }
 
     console.log('[API Key Vault] UI handlers initialized');
   });

@@ -11,6 +11,10 @@ import { openAuthModal, signOutUser } from './authModal';
 import { listenToUserTier } from '../../lib/firebaseService';
 import { handleDowngrade, handleDatabaseUpgrade } from '../../lib/tierMigration';
 import { showError, showInfo, showWarning } from '../utils/modalUtils';
+import { EventManager } from '../utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 const DEBUG_MODE = false;
 
@@ -34,7 +38,7 @@ export function initUserProfile() {
 
   // Sign-in button
   const signInBtn = document.getElementById('headerSignInBtn');
-  signInBtn?.addEventListener('click', () => {
+  eventManager.add(signInBtn, 'click', () => {
     // Show loading state
     if (signInBtn) {
       signInBtn.classList.add('loading');
@@ -47,12 +51,12 @@ export function initUserProfile() {
   const userMenuBtn = document.getElementById('userMenuBtn');
   const userDropdown = document.getElementById('userDropdown');
 
-  userMenuBtn?.addEventListener('click', () => {
+  eventManager.add(userMenuBtn, 'click', () => {
     userDropdown?.classList.toggle('hidden');
   });
 
   // Close dropdown when clicking outside
-  document.addEventListener('click', (e) => {
+  eventManager.add(document, 'click', (e) => {
     if (!userMenuBtn?.contains(e.target as Node) && !userDropdown?.contains(e.target as Node)) {
       userDropdown?.classList.add('hidden');
     }
@@ -65,28 +69,28 @@ export function initUserProfile() {
 
   // Get Started button - opens getting started modal
   const getStartedBtn = document.getElementById('getStartedBtn');
-  getStartedBtn?.addEventListener('click', () => {
+  eventManager.add(getStartedBtn, 'click', () => {
     closeDropdown();
     openGettingStartedModal();
   });
 
   // Account settings - opens account settings modal
   const accountSettingsBtn = document.getElementById('accountSettingsBtn');
-  accountSettingsBtn?.addEventListener('click', () => {
+  eventManager.add(accountSettingsBtn, 'click', () => {
     closeDropdown();
     openAccountSettingsModal();
   });
 
   // Manage billing - opens Stripe Customer Portal
   const manageBillingBtn = document.getElementById('manageBillingBtn');
-  manageBillingBtn?.addEventListener('click', async () => {
+  eventManager.add(manageBillingBtn, 'click', async () => {
     closeDropdown();
     await handleManageBilling();
   });
 
   // Sign-out button
   const signOutBtn = document.getElementById('signOutBtn');
-  signOutBtn?.addEventListener('click', () => {
+  eventManager.add(signOutBtn, 'click', () => {
     closeDropdown();
     handleSignOut();
   });
@@ -308,7 +312,7 @@ async function handleSignOut() {
   const closeBtn = document.getElementById('signOutModalClose');
   const cancelBtn = document.getElementById('signOutCancel');
   const confirmBtn = document.getElementById('signOutConfirm');
-  const overlay = modal.querySelector('.modal-overlay');
+  const overlay = modal.querySelector('.modal-overlay') as HTMLElement;
 
   const closeModal = () => {
     modal.classList.add('hidden');
@@ -326,10 +330,10 @@ async function handleSignOut() {
   };
 
   // Add event listeners
-  closeBtn?.addEventListener('click', closeModal, { once: true });
-  cancelBtn?.addEventListener('click', closeModal, { once: true });
-  confirmBtn?.addEventListener('click', handleConfirm, { once: true });
-  overlay?.addEventListener('click', closeModal, { once: true });
+  eventManager.add(closeBtn, 'click', closeModal);
+  eventManager.add(cancelBtn, 'click', closeModal);
+  eventManager.add(confirmBtn, 'click', handleConfirm);
+  eventManager.add(overlay, 'click', closeModal);
 }
 
 /**
