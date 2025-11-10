@@ -122,25 +122,9 @@ This is a **major milestone release** with all 8 launch blockers complete:
 
 ## 🐛 Known Issues
 
-### 1. Firebase Google Sign-In Unavailable (Expected)
+None currently known! This beta includes a stable extension ID with working Firebase authentication.
 
-**Issue:** Google Sign-In shows "Error 400: redirect_uri_mismatch"
-
-**Why:** Unpacked extensions get random IDs that aren't registered with Firebase OAuth. This is a Chrome limitation, not a bug.
-
-**Impact:** **No impact on testing!** All features work without signing in:
-- ✅ Profile management (create/edit/delete)
-- ✅ PII substitution on all platforms
-- ✅ Document & image processing
-- ✅ All core features
-
-**When Fixed:** Automatically works once published to Chrome Web Store (fixed ID).
-
-**For Testing:** Skip Google Sign-In - test everything else. The auth system is production-ready.
-
----
-
-If you find any OTHER issues, please report them using the `BETA_TESTING.md` form.
+If you find any issues, please report them using the `BETA_TESTING.md` form.
 
 ---
 
