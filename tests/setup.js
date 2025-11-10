@@ -59,8 +59,8 @@ const crypto = new Crypto();
 global.chrome = {
   storage: mockStorage,
   runtime: {
-    id: 'test-extension-id',
-    getURL: jest.fn((path) => `chrome-extension://test-extension-id/${path}`),
+    id: 'hwkgjuwvftjkmgja',
+    getURL: jest.fn((path) => `chrome-extension://hwkgjuwvftjkmgja/${path}`),
   },
 };
 

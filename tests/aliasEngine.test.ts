@@ -20,7 +20,7 @@ const mockStorage = {
 (global as any).chrome = {
   storage: mockStorage,
   runtime: {
-    id: 'test-extension-id',
+    id: 'hwkgjuwvftjkmgja',
   },
 };
 

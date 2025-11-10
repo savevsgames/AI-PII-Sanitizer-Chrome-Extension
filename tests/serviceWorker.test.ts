@@ -27,7 +27,7 @@ const mockRuntime = {
     addListener: jest.fn(),
   },
   sendMessage: jest.fn(),
-  id: 'test-extension-id',
+  id: 'hwkgjuwvftjkmgja',
 };
 
 (global as any).chrome = {
