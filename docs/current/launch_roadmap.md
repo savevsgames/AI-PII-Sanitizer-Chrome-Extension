@@ -60,20 +60,38 @@ Don't build features no one uses. Get free tier perfect, share with devs, build 
   - User rights (access, export, delete)
   - Contact: GitHub Issues
   - Created: `PRIVACY_POLICY.md` and `privacy-policy.html`
+  - Fixed false information about cloud storage
+  - Added Firebase, OAuth, Stripe disclosures
   - **TODO:** Host on GitHub Pages and update manifest.json
 
-- [ ] **Terms of Service** (recommended)
+- [x] **Terms of Service** (recommended) ✅ COMPLETED
   - Acceptance of terms
+  - Subscription plans (Free vs PRO)
+  - Payment terms & refunds
   - User responsibilities
   - Limitation of liability
   - Governing law
+  - Created: `TERMS_OF_SERVICE.md`
 
-### 2C. Code Cleanup
+### 2C. Code Cleanup & Security Hardening
+- [x] **Security Audit - XSS** ✅ COMPLETED (January 10, 2025)
+  - Installed DOMPurify for HTML sanitization
+  - Created comprehensive sanitizer utility
+  - Audited all 89 innerHTML instances across 20 files
+  - Fixed 17 critical instances
+  - Verified 72 instances already safe
+  - Hardened DOM utilities with automatic sanitization
+- [x] **PBKDF2 Iteration Count** ✅ COMPLETED
+  - Upgraded from 210k → 600k iterations (OWASP 2023 compliant)
+- [x] **GDPR Compliance** ✅ COMPLETED
+  - Data export (all user data)
+  - Account deletion (complete removal)
 - [ ] Remove debug console.logs (or make conditional on debugMode)
 - [ ] Add production error handling (graceful failures)
 - [ ] Add user-facing error messages (not just console errors)
 - [ ] Test error states (network failure, storage full, etc.)
-- [ ] Final security audit (no hardcoded keys, proper CSP)
+- [ ] Add Content Security Policy to manifest
+- [ ] Memory leak fixes (147 event listeners)
 
 ### 2D. Store Listing
 - [ ] **Extension name:** Pick one (see naming section below)
