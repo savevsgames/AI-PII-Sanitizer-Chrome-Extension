@@ -7,6 +7,10 @@ import { UserConfig, PromptTemplate } from '../../lib/types';
 import { useAppStore } from '../../lib/store';
 import { validateTemplate, getUsedPlaceholders, SUPPORTED_PLACEHOLDERS } from '../../lib/templateEngine';
 import { escapeHtml } from './utils';
+import { EventManager } from '../utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 let currentEditingTemplate: PromptTemplate | null = null;
 
@@ -49,7 +53,7 @@ export function initPromptTemplatesUI() {
 
     if (addBtn) {
       console.log('[Prompt Templates UI] Attaching click handler to addBtn');
-      addBtn.addEventListener('click', (e) => {
+      eventManager.add(addBtn, 'click', (e) => {
         console.log('[Prompt Templates UI] Add button CLICKED!', e);
         try {
           console.log('[Prompt Templates UI] About to call showTemplateModal...');
@@ -63,7 +67,7 @@ export function initPromptTemplatesUI() {
 
     if (addBtnEmpty) {
       console.log('[Prompt Templates UI] Attaching click handler to addBtnEmpty');
-      addBtnEmpty.addEventListener('click', (e) => {
+      eventManager.add(addBtnEmpty, 'click', (e) => {
         console.log('[Prompt Templates UI] Add button (empty) CLICKED!', e);
         try {
           console.log('[Prompt Templates UI] About to call showTemplateModal...');
@@ -190,7 +194,7 @@ function renderTemplateCard(template: PromptTemplate): string {
 function attachTemplateEventListeners(templates: PromptTemplate[]) {
   // Use buttons
   document.querySelectorAll('.template-use-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+    eventManager.add(btn as HTMLElement, 'click', async (e) => {
       e.stopPropagation();
       const templateId = (btn as HTMLElement).dataset.templateId;
       if (templateId) {
@@ -201,7 +205,7 @@ function attachTemplateEventListeners(templates: PromptTemplate[]) {
 
   // Edit buttons
   document.querySelectorAll('.template-edit-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    eventManager.add(btn as HTMLElement, 'click', (e) => {
       e.stopPropagation();
       const templateId = (btn as HTMLElement).dataset.templateId;
       const template = templates.find(t => t.id === templateId);
@@ -213,7 +217,7 @@ function attachTemplateEventListeners(templates: PromptTemplate[]) {
 
   // Delete buttons
   document.querySelectorAll('.template-delete-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+    eventManager.add(btn as HTMLElement, 'click', async (e) => {
       e.stopPropagation();
       const templateId = (btn as HTMLElement).dataset.templateId;
       if (templateId && confirm('Delete this template? This cannot be undone.')) {
@@ -356,23 +360,23 @@ function showTemplateModal(template?: PromptTemplate) {
   console.log('[Prompt Templates] ✅ Modal added to DOM');
 
   // Add event listeners
-  document.getElementById('closeTemplateModal')?.addEventListener('click', () => {
+  eventManager.add(document.getElementById('closeTemplateModal'), 'click', () => {
     console.log('[Prompt Templates] ❌ Close button clicked');
     closeTemplateModal();
   });
 
-  document.getElementById('cancelTemplateModal')?.addEventListener('click', () => {
+  eventManager.add(document.getElementById('cancelTemplateModal'), 'click', () => {
     closeTemplateModal();
   });
 
-  document.getElementById('saveTemplateModal')?.addEventListener('click', async () => {
+  eventManager.add(document.getElementById('saveTemplateModal'), 'click', async () => {
     await handleSaveTemplate();
   });
 
   // Real-time validation
   const contentInput = document.getElementById('templateContent') as HTMLTextAreaElement;
   if (contentInput) {
-    contentInput.addEventListener('input', () => {
+    eventManager.add(contentInput, 'input', () => {
       validateTemplateContent();
     });
   }
@@ -383,7 +387,7 @@ function showTemplateModal(template?: PromptTemplate) {
 
   if (insertVariableBtn && variableDropdown) {
     // Toggle dropdown on button click
-    insertVariableBtn.addEventListener('click', (e) => {
+    eventManager.add(insertVariableBtn, 'click', (e) => {
       e.stopPropagation();
       const isVisible = variableDropdown.style.display === 'block';
       variableDropdown.style.display = isVisible ? 'none' : 'block';
@@ -392,7 +396,7 @@ function showTemplateModal(template?: PromptTemplate) {
     // Insert variable when dropdown item is clicked
     const dropdownItems = variableDropdown.querySelectorAll('.variable-dropdown-item-inline');
     dropdownItems.forEach(item => {
-      item.addEventListener('click', (e) => {
+      eventManager.add(item as HTMLElement, 'click', (e) => {
         e.stopPropagation();
         const placeholder = (item as HTMLElement).getAttribute('data-placeholder');
         if (placeholder && contentInput) {
@@ -404,7 +408,7 @@ function showTemplateModal(template?: PromptTemplate) {
     });
 
     // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
+    eventManager.add(document, 'click', (e) => {
       if (!insertVariableBtn.contains(e.target as Node) && !variableDropdown.contains(e.target as Node)) {
         variableDropdown.style.display = 'none';
       }
@@ -417,7 +421,7 @@ function showTemplateModal(template?: PromptTemplate) {
   }
 
   // Close on overlay click
-  modal.addEventListener('click', (e) => {
+  eventManager.add(modal, 'click', (e) => {
     if (e.target === modal) {
       closeTemplateModal();
     }
@@ -793,23 +797,23 @@ async function showTemplatePreviewModal(template: PromptTemplate, tab: chrome.ta
     updatePreview();
 
     // Update preview when profile changes
-    selector.addEventListener('change', updatePreview);
+    eventManager.add(selector, 'change', updatePreview);
 
     // Handle close button in header
-    const closeBtn = header.querySelector('.modal-close');
-    closeBtn?.addEventListener('click', () => {
+    const closeBtn = header.querySelector('.modal-close') as HTMLElement;
+    eventManager.add(closeBtn, 'click', () => {
       modal.remove();
       resolve();
     });
 
     // Handle cancel
-    cancelBtn.addEventListener('click', () => {
+    eventManager.add(cancelBtn, 'click', () => {
       modal.remove();
       resolve();
     });
 
     // Handle inject
-    injectBtn.addEventListener('click', async () => {
+    eventManager.add(injectBtn, 'click', async () => {
       try {
         const selectedProfileId = selector.value;
         const profile = profiles.find(p => p.id === selectedProfileId);
@@ -860,7 +864,7 @@ async function showTemplatePreviewModal(template: PromptTemplate, tab: chrome.ta
     });
 
     // Close on background click
-    modal.addEventListener('click', (e) => {
+    eventManager.add(modal, 'click', (e) => {
       if (e.target === modal) {
         modal.remove();
         resolve();

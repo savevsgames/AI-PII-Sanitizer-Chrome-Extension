@@ -16,6 +16,10 @@ import {
 import { useAppStore } from '../../lib/store';
 import { detectPlatform, getPlatformGuidance, getProviderErrorGuidance } from '../../lib/authProviders';
 import { showAuthErrorModal } from './errorModal';
+import { EventManager } from '../utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 const DEBUG_MODE = false;
 
@@ -42,12 +46,12 @@ export async function initAuthModal() {
 
   // Modal close handlers
   const closeBtn = document.getElementById('authModalClose');
-  const overlay = modal.querySelector('.modal-overlay');
+  const overlay = modal.querySelector('.modal-overlay') as HTMLElement;
   const cancelBtn = document.getElementById('authModalCancel');
 
-  closeBtn?.addEventListener('click', closeAuthModal);
-  overlay?.addEventListener('click', closeAuthModal);
-  cancelBtn?.addEventListener('click', closeAuthModal);
+  eventManager.add(closeBtn, 'click', closeAuthModal);
+  eventManager.add(overlay, 'click', closeAuthModal);
+  eventManager.add(cancelBtn, 'click', closeAuthModal);
 
   // Mode switchers
   const showSignInBtn = document.getElementById('showSignIn');
@@ -55,10 +59,10 @@ export async function initAuthModal() {
   const showResetBtn = document.getElementById('showPasswordReset');
   const backToSignInBtn = document.getElementById('backToSignIn');
 
-  showSignInBtn?.addEventListener('click', () => switchMode('signin'));
-  showSignUpBtn?.addEventListener('click', () => switchMode('signup'));
-  showResetBtn?.addEventListener('click', () => switchMode('reset'));
-  backToSignInBtn?.addEventListener('click', () => switchMode('signin'));
+  eventManager.add(showSignInBtn, 'click', () => switchMode('signin'));
+  eventManager.add(showSignUpBtn, 'click', () => switchMode('signup'));
+  eventManager.add(showResetBtn, 'click', () => switchMode('reset'));
+  eventManager.add(backToSignInBtn, 'click', () => switchMode('signin'));
 
   // Auth method buttons
   const googleSignInBtn = document.getElementById('googleSignInBtn');
@@ -69,35 +73,35 @@ export async function initAuthModal() {
   const emailSignUpBtn = document.getElementById('emailSignUpBtn');
   const sendResetEmailBtn = document.getElementById('sendResetEmailBtn');
 
-  googleSignInBtn?.addEventListener('click', handleGoogleSignIn);
-  googleSignUpBtn?.addEventListener('click', handleGoogleSignIn); // Same handler
-  githubSignInBtn?.addEventListener('click', handleGitHubSignIn);
-  githubSignUpBtn?.addEventListener('click', handleGitHubSignIn); // Same handler
-  emailSignInBtn?.addEventListener('click', handleEmailSignIn);
-  emailSignUpBtn?.addEventListener('click', handleEmailSignUp);
-  sendResetEmailBtn?.addEventListener('click', handlePasswordReset);
+  eventManager.add(googleSignInBtn, 'click', handleGoogleSignIn);
+  eventManager.add(googleSignUpBtn, 'click', handleGoogleSignIn); // Same handler
+  eventManager.add(githubSignInBtn, 'click', handleGitHubSignIn);
+  eventManager.add(githubSignUpBtn, 'click', handleGitHubSignIn); // Same handler
+  eventManager.add(emailSignInBtn, 'click', handleEmailSignIn);
+  eventManager.add(emailSignUpBtn, 'click', handleEmailSignUp);
+  eventManager.add(sendResetEmailBtn, 'click', handlePasswordReset);
 
   // Enter key submission
   const emailInput = document.getElementById('authEmail') as HTMLInputElement;
   const passwordInput = document.getElementById('authPassword') as HTMLInputElement;
   const resetEmailInput = document.getElementById('resetEmail') as HTMLInputElement;
 
-  emailInput?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+  eventManager.add(emailInput, 'keypress', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') {
       if (currentMode === 'signin') handleEmailSignIn();
       else if (currentMode === 'signup') handleEmailSignUp();
     }
   });
 
-  passwordInput?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+  eventManager.add(passwordInput, 'keypress', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') {
       if (currentMode === 'signin') handleEmailSignIn();
       else if (currentMode === 'signup') handleEmailSignUp();
     }
   });
 
-  resetEmailInput?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handlePasswordReset();
+  eventManager.add(resetEmailInput, 'keypress', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') handlePasswordReset();
   });
 
   // Show platform-specific guidance
