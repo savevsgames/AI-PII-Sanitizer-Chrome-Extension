@@ -1,0 +1,139 @@
+/**
+ * Minimal Mode Styles
+ */
+
+.minimal-container {
+  width: var(--popup-width-minimal);
+  min-height: var(--popup-height-minimal);
+  position: relative;
+  overflow: hidden;
+
+  /* Background gradient with glassmorphism overlay */
+  background: var(--theme-bg-gradient);
+  /* Dynamic text color: white for dark themes, black for light themes */
+  color: var(--text-primary);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Subtle glassmorphism overlay on minimal container */
+.minimal-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content is above the glass overlay */
+.minimal-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+.minimal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.minimal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+}
+
+.minimal-icon {
+  font-size: var(--font-size-xl);
+}
+
+.minimal-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #4ade80;
+  border-radius: var(--radius-full);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.pulse-dot.active {
+  animation: pulse-fast 0.5s ease-in-out 3;
+}
+
+@keyframes pulse-fast {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.2);
+  }
+}
+
+.status-count {
+  font-weight: var(--font-weight-bold);
+  color: #4ade80;
+}
+
+.minimal-activity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.1);
+  padding: var(--space-sm) 10px;
+  border-radius: var(--radius-sm);
+}
+
+.activity-icon {
+  font-size: var(--font-size-base);
+  animation: flash 3s ease-in-out infinite;
+}
+
+.activity-icon.active {
+  animation: flash-fast 0.5s ease-in-out 3;
+}
+
+@keyframes flash {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes flash-fast {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.activity-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -189,11 +189,12 @@ Please test as many of these items as possible and report any issues:
 **Notes:**
 
 **Firebase Authentication:**
-- [ ] Google Sign-In works
-- [ ] Profile sync across devices works (if tested)
-- [ ] Sign out works correctly
+- [ ] ⚠️ **SKIP Google Sign-In** - Known issue with unpacked extensions (see INSTALL.md)
+- [ ] Email/Password sign-in works (if implemented)
+- [ ] Sign out works correctly (if you signed in another way)
 
 **Notes:**
+⚠️ Google Sign-In will show "Error 400: redirect_uri_mismatch" - this is EXPECTED for unpacked extensions and will be fixed automatically when published to Chrome Web Store. DO NOT report this as a bug - it's documented in INSTALL.md.
 
 ---
 

@@ -216,6 +216,28 @@ PromptBlocker-v0.2.0-beta/
 
 ---
 
+## ⚠️ Known Beta Issue: Firebase Google Sign-In
+
+**Issue:** Google Sign-In shows "redirect_uri_mismatch" error (Error 400)
+
+**Why:** Unpacked extensions get a random ID that changes with each install. Firebase OAuth requires the exact extension ID to be registered in Google Cloud Console.
+
+**Impact:** Google Sign-In is **unavailable** during beta testing with unpacked extension.
+
+**Workaround:** **All core features work without signing in!**
+- ✅ Create, edit, and delete profiles (stored locally)
+- ✅ PII substitution on all 5 AI platforms
+- ✅ Document sanitization (PDF, TXT, DOCX)
+- ✅ Image redaction
+- ✅ Export/import profiles
+- ✅ All protection features
+
+**When Fixed:** Google Sign-In will work automatically once published to Chrome Web Store (fixed extension ID). This is **not a bug** - it's how Chrome handles unpacked extensions.
+
+**For Testing:** Skip Google Sign-In and test all other features. The auth system works perfectly once published.
+
+---
+
 ## Need Help?
 
 **Issues or Questions?**
