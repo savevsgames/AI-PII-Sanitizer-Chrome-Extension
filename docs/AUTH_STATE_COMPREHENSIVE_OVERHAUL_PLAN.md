@@ -2406,6 +2406,298 @@ This plan provides an **enterprise-grade solution** that handles all auth states
 
 ---
 
-**Document Status:** READY FOR IMPLEMENTATION
-**Last Updated:** 2025-11-10
-**Next Steps:** Review with team → Approve → Begin Phase 1 implementation
+## 8. Critical Lessons Learned During Implementation
+
+**Date Added:** 2025-11-10 (Post-Phase 1 & Phase 2 Implementation)
+**Status:** PLAN HAD CRITICAL FLAWS - Additional fixes required
+
+### 8.1 Issue: Massive Config Load Race Condition
+
+**What We Discovered:**
+After implementing Phase 1 and Phase 2, the extension became **completely unusable** with 60+ consecutive config loads causing freezing and preventing sign-in.
+
+**Root Cause #1: Chrome Storage Change Listener Fires for Self-Saves**
+```typescript
+// StorageConfigManager.ts - FLAWED IMPLEMENTATION
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && changes[CONFIG_KEY]) {
+    // ❌ BUG: Fires even when THIS context saves
+    console.log('Config changed in another context, invalidating cache');
+    this.configCache = null;  // Invalidates own cache immediately after saving!
+  }
+});
+```
+
+**Problem:**
+- Context A saves config → `chrome.storage.onChanged` fires in **ALL contexts** (including A)
+- Context A invalidates its own cache immediately after setting it
+- Creates infinite loop: save → invalidate → reload → save → invalidate...
+
+**Fix Applied:**
+```typescript
+private isSaving = false;
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && changes[CONFIG_KEY]) {
+    // Ignore changes made by THIS context (self-saves)
+    if (this.isSaving) {
+      console.log('[StorageConfigManager] 🔕 Ignoring self-save, keeping cache valid');
+      return;
+    }
+    // Only invalidate for OTHER context changes
+    console.log('[StorageConfigManager] 🔄 Config changed in another context, invalidating cache');
+    this.configCache = null;
+  }
+});
+
+async saveConfig(config: UserConfig): Promise<void> {
+  this.isSaving = true;
+  try {
+    // ... save logic ...
+  } finally {
+    setTimeout(() => { this.isSaving = false; }, 100);
+  }
+}
+```
+
+---
+
+**Root Cause #2: Null Config Results Not Cached**
+```typescript
+// StorageConfigManager.ts - FLAWED IMPLEMENTATION
+async loadConfig(): Promise<UserConfig | null> {
+  const config = await chrome.storage.local.get(CONFIG_KEY);
+
+  if (!config) {
+    console.log('No config found');
+    return null;  // ❌ BUG: Returns null WITHOUT caching!
+  }
+
+  // Cache only set for valid configs
+  this.configCache = config;
+  return config;
+}
+```
+
+**Problem:**
+- When config doesn't exist (fresh install, signed out user), null result is NOT cached
+- Every call to `loadConfig()` performs another `chrome.storage.local.get()`
+- 8+ consecutive loads for same null result
+
+**Fix Applied:**
+```typescript
+if (!config) {
+  console.log('[Theme Debug] 📂 No config found in storage');
+  // Cache the null result to prevent repeated storage reads
+  this.configCache = null;
+  this.configCacheTimestamp = Date.now();
+  return null;
+}
+```
+
+---
+
+**Root Cause #3: Concurrent Load Race Condition (THE CRITICAL ONE)**
+```typescript
+// StorageConfigManager.ts - FLAWED IMPLEMENTATION
+async loadConfig(): Promise<UserConfig | null> {
+  // Check cache
+  if (this.configCache && !expired) {
+    return this.configCache;
+  }
+
+  // ❌ BUG: Multiple calls start loading simultaneously
+  const config = await chrome.storage.local.get(CONFIG_KEY);
+  // ... decryption ...
+
+  this.configCache = config;
+  return config;
+}
+```
+
+**Problem:**
+- 60+ calls to `loadConfig()` happen within milliseconds during initialization
+- Each call checks cache (null), starts loading, performs storage read
+- All 60 loads complete independently, causing 60 storage reads + decryption operations
+- Cache is only set AFTER the async operation completes
+- By the time first load finishes and sets cache, other 59 loads are already in progress
+
+**Timeline:**
+```
+t=0ms:   Call #1 checks cache (null) → starts loading
+t=1ms:   Call #2 checks cache (null) → starts loading
+t=2ms:   Call #3 checks cache (null) → starts loading
+...
+t=60ms:  Call #60 checks cache (null) → starts loading
+t=100ms: Call #1 finishes, sets cache
+t=101ms: Calls #2-60 still completing independently (cache already set, but too late)
+```
+
+**Fix Applied: Pending Promise Pattern**
+```typescript
+private pendingLoad: Promise<UserConfig | null> | null = null;
+
+async loadConfig(): Promise<UserConfig | null> {
+  // Check cache first
+  if (this.configCache && !expired) {
+    return this.configCache;
+  }
+
+  // If a load is already in progress, wait for it instead of starting another
+  if (this.pendingLoad) {
+    console.log('[StorageConfigManager] ⏳ Load already in progress, waiting...');
+    return this.pendingLoad;  // All concurrent calls wait for same promise
+  }
+
+  // Start new load and track the promise
+  this.pendingLoad = this.performLoad();
+
+  try {
+    const result = await this.pendingLoad;
+    return result;
+  } finally {
+    this.pendingLoad = null;  // Clear after completion
+  }
+}
+
+private async performLoad(): Promise<UserConfig | null> {
+  // Actual load logic here (storage read + decryption)
+}
+```
+
+**How Pending Promise Pattern Fixes It:**
+```
+t=0ms:   Call #1 checks cache (null) → starts load, sets pendingLoad
+t=1ms:   Call #2 checks cache (null) → sees pendingLoad → waits for Call #1's promise
+t=2ms:   Call #3 checks cache (null) → sees pendingLoad → waits for Call #1's promise
+...
+t=60ms:  Call #60 checks cache (null) → sees pendingLoad → waits for Call #1's promise
+t=100ms: Call #1 finishes → all 60 calls receive same result
+Result: Only 1 actual storage read instead of 60
+```
+
+---
+
+### 8.2 What the Original Plan Missed
+
+**Missing from Plan:**
+1. ❌ No analysis of `chrome.storage.onChanged` listener behavior (self-save invalidation)
+2. ❌ No consideration of null/missing config caching strategy
+3. ❌ No concurrent access protection for async storage operations
+4. ❌ No load testing for initialization burst (60+ calls in <100ms)
+
+**Why These Were Missed:**
+- Plan focused on **auth state handling** (expected errors, badge updates)
+- Plan did NOT analyze **storage layer concurrency** or **cache invalidation timing**
+- Assumed existing StorageManager cache was sufficient
+- Did NOT test high-concurrency scenarios (extension reload with multiple tabs)
+
+---
+
+### 8.3 Updated Implementation Requirements
+
+**Before Implementing Any Phase:**
+1. ✅ **Audit ALL async operations** that might be called concurrently
+2. ✅ **Implement pending promise pattern** for expensive operations (storage, decryption)
+3. ✅ **Cache null/error results** to prevent repeated failed operations
+4. ✅ **Differentiate self-changes from other-context changes** in storage listeners
+5. ✅ **Load test with multiple tabs** and rapid initialization
+
+**Required for StorageManager/StorageConfigManager:**
+```typescript
+// PATTERN: Pending promise for ALL expensive async operations
+private pendingLoad: Promise<T> | null = null;
+
+async load(): Promise<T> {
+  if (cache valid) return cache;
+  if (this.pendingLoad) return this.pendingLoad;  // CRITICAL
+
+  this.pendingLoad = this.performLoad();
+  try {
+    return await this.pendingLoad;
+  } finally {
+    this.pendingLoad = null;
+  }
+}
+```
+
+**Required for Chrome Storage Listeners:**
+```typescript
+// PATTERN: Ignore self-triggered events
+private isSaving = false;
+
+chrome.storage.onChanged.addListener((changes) => {
+  if (this.isSaving) return;  // CRITICAL
+  // Only invalidate for OTHER context changes
+  invalidateCache();
+});
+```
+
+---
+
+### 8.4 Architectural Lesson: Concurrency in Chrome Extensions
+
+**The Chrome Extension Concurrency Model:**
+- Service worker initializes → triggers badge updates for ALL tabs simultaneously
+- Each tab's health check → triggers config/profile loads simultaneously
+- Popup opens → triggers config/profile loads simultaneously
+- All contexts share chrome.storage → writes trigger listeners in ALL contexts
+
+**Key Insight:**
+Chrome Extensions are **highly concurrent** by default:
+- Multiple contexts (service worker, popup, content scripts per tab)
+- Each context has its own JavaScript runtime
+- All contexts race to read/write shared storage on startup
+- Storage listeners fire across ALL contexts for every write
+
+**Required Patterns:**
+1. **Pending Promise** for all expensive async operations
+2. **Self-save detection** in storage change listeners
+3. **Null result caching** to prevent retry storms
+4. **Debouncing** for rapid repeated operations (badge updates, health checks)
+
+---
+
+### 8.5 Testing Gaps in Original Plan
+
+**What Was Tested:**
+- ✅ Sign in/out flows
+- ✅ Badge state transitions
+- ✅ Profile loading after auth
+
+**What Was NOT Tested:**
+- ❌ Extension reload with 10+ open tabs (concurrent initialization)
+- ❌ Rapid sign in/out cycles (cache invalidation stress test)
+- ❌ Multiple contexts loading config simultaneously
+- ❌ Performance profiling (60+ storage reads visible in logs)
+
+**Required Load Tests Going Forward:**
+1. Extension reload with 20+ AI service tabs open
+2. Sign in → immediately sign out → sign in (rapid cache invalidation)
+3. Open popup while content scripts loading (concurrent config reads)
+4. Monitor console for repeated "Loading config" messages (should be 1 per context)
+
+---
+
+### 8.6 Plan Status Update
+
+**Original Status:** READY FOR IMPLEMENTATION
+**Updated Status:** ⚠️ PLAN INCOMPLETE - Storage layer concurrency NOT addressed
+
+**Phases 1 & 2 Results:**
+- ✅ Phase 1: Auth state handling fixes worked as planned
+- ✅ Phase 2: Enhanced state handling worked as planned
+- ❌ **CRITICAL:** Both phases exposed pre-existing race condition in storage layer
+- ❌ **BLOCKER:** Extension unusable until storage concurrency fixes applied
+
+**Revised Implementation Order:**
+1. ✅ **Phase 0 (NEW):** Fix storage layer race conditions (completed post-Phase 2)
+2. ✅ Phase 1: Auth state fixes (completed, works after Phase 0)
+3. ✅ Phase 2: Enhanced state handling (completed, works after Phase 0)
+4. ⏸️ Phase 3: Comprehensive testing (blocked until Phases 0-2 verified stable)
+
+---
+
+**Document Status:** PLAN HAD CRITICAL GAPS - Storage layer fixes required
+**Last Updated:** 2025-11-10 (Post-Implementation Review)
+**Next Steps:** Verify Phase 0 + Phase 1 + Phase 2 work together, then proceed with Phase 3
