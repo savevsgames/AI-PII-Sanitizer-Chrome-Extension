@@ -1,17 +1,17 @@
-# Privacy Policy for AI PII Sanitizer
+# Privacy Policy for Prompt Blocker
 
-**Last Updated:** January 2025
-**Effective Date:** January 2025
+**Last Updated:** January 10, 2025
+**Effective Date:** January 10, 2025
 
 ## Introduction
 
-AI PII Sanitizer ("we", "our", or "the extension") is committed to protecting your privacy. This extension is designed with privacy-first principles: all data remains local, encrypted, and under your complete control.
+Prompt Blocker ("we", "our", or "the extension") is committed to protecting your privacy. This extension is designed with privacy-first principles: your sensitive data is encrypted and under your complete control.
 
 ## What We Collect
 
 ### Information Stored Locally
 
-The extension stores the following data **locally on your device only**:
+The extension stores the following data **encrypted on your device using Chrome's local storage API**:
 
 1. **Identity Profiles**: Your personal information (PII) and corresponding aliases that you create
    - Real information (names, emails, phone numbers, addresses, company names)
@@ -31,30 +31,59 @@ The extension stores the following data **locally on your device only**:
    - Number of substitutions per session
    - Success/error status
 
+### Information Stored in Cloud Services
+
+To provide authentication and optional cloud backup features, we use the following cloud services:
+
+1. **Firebase Authentication** (Google)
+   - Your email address (if you sign in with Google, GitHub, or Microsoft)
+   - Authentication provider information
+   - Firebase User ID (UID)
+   - Used for: Encrypting your local data with your unique Firebase UID
+
+2. **Firebase Firestore** (Google Cloud) - *Optional Premium Feature*
+   - Encrypted profile backups (if you enable cloud sync)
+   - Profile metadata (names, timestamps - NOT your actual PII)
+   - Used for: Syncing profiles across devices (requires paid subscription)
+
+3. **Stripe** (Payment Processing) - *Premium Features Only*
+   - Payment information (credit card, billing address)
+   - Purchase history
+   - Used for: Processing premium feature subscriptions
+   - Note: We DO NOT store credit card numbers - Stripe handles all payment data
+
 ### Information We Do NOT Collect
 
-- ❌ We do NOT send any data to external servers
-- ❌ We do NOT transmit your PII or aliases anywhere
-- ❌ We do NOT track your browsing activity
+- ❌ We do NOT track your browsing activity outside of AI service domains
 - ❌ We do NOT use analytics or telemetry services
-- ❌ We do NOT share data with third parties
-- ❌ We do NOT create user accounts or store data in the cloud
+- ❌ We do NOT sell or share your personal data with third parties
+- ❌ We do NOT read your AI chat conversations beyond the data you choose to protect
 
 ## How We Store Data
 
 ### Local Storage with Encryption
 
-All sensitive data is stored using Chrome's local storage API with the following security measures:
+All sensitive data is encrypted using Chrome's local storage API with the following security measures:
 
 1. **AES-256-GCM Encryption**: Your identity profiles are encrypted using military-grade AES-256-GCM encryption before storage
-2. **Local Only**: All data remains on your device and is never transmitted
-3. **User-Controlled**: You can export, delete, or modify your data at any time
+2. **Firebase UID as Key Material**: Your Firebase User ID is used to derive the encryption key (your PII cannot be decrypted without being signed in)
+3. **True Key Separation**: Encrypted data stays local; key material (Firebase UID) is stored remotely by Firebase
+4. **User-Controlled**: You can export, delete, or modify your data at any time
 
 ### Data Location
 
-- Storage: Chrome Extension Local Storage API
+**Local Storage (Chrome Extension)**
+- Storage: Chrome Extension Local Storage API (`chrome.storage.local`)
 - Location: Your device only
-- Access: Only you and this extension
+- Access: Only you (while signed in) and this extension
+- Contains: Encrypted profiles, encrypted activity logs, encrypted settings
+
+**Cloud Storage (Firebase)**
+- Storage: Firebase Authentication (auth state, email, UID)
+- Storage: Firebase Firestore (optional profile backups - premium feature only)
+- Location: Google Cloud Platform servers (region: us-central1)
+- Access: Only you (authenticated) via this extension
+- Contains: Authentication credentials, optional encrypted profile backups
 
 ## How We Use Your Data
 
@@ -67,9 +96,23 @@ The extension uses your data **exclusively** for the following purposes:
 
 ## Data Retention
 
-- **Local Storage**: Data persists until you manually delete it or uninstall the extension
-- **Uninstall**: All data is automatically deleted when you uninstall the extension
+### Local Storage
+- **Persistence**: Data persists until you manually delete it or uninstall the extension
+- **Uninstall**: All local data is automatically deleted when you uninstall the extension
 - **Manual Deletion**: You can clear all data anytime via Settings → Clear All Stats
+
+### Cloud Storage (Firebase)
+- **Authentication Data**: Retained while your account is active
+- **Account Deletion**: You can delete your account via Settings → Account → Delete Account
+  - This will permanently delete all cloud data (Firebase auth account, Firestore backups)
+  - Local encrypted data will become inaccessible (encryption key lost)
+- **Inactive Accounts**: We do not automatically delete inactive accounts
+- **Data Retention After Deletion**: Firebase may retain logs for up to 180 days for security/audit purposes (per Google's data retention policy)
+
+### Premium Subscription Data (Stripe)
+- **Payment History**: Retained for 7 years for tax/legal compliance
+- **Credit Card Data**: Never stored by us (Stripe handles all payment data)
+- **Cancellation**: You can cancel your subscription anytime; billing data is retained per legal requirements
 
 ## Your Rights and Controls
 
@@ -77,9 +120,13 @@ You have complete control over your data:
 
 1. **Access**: View all your profiles and settings in the extension popup
 2. **Modify**: Edit or update profiles at any time
-3. **Delete**: Remove individual profiles or clear all data
-4. **Export**: Download your profiles as JSON files
+3. **Delete**:
+   - Remove individual profiles
+   - Clear all local data (Settings → Clear All Stats)
+   - Delete your Firebase account (Settings → Account → Delete Account)
+4. **Export**: Download your profiles as JSON files (Settings → Export Data)
 5. **Disable**: Turn off protection temporarily or permanently
+6. **Sign Out**: Sign out to lock your encrypted data (requires sign-in to decrypt)
 
 ## Third-Party Services
 
@@ -124,19 +171,40 @@ This extension complies with Chrome Web Store's [Developer Program Policies](htt
 
 The extension requests the following permissions:
 
-1. **storage**: Store encrypted profiles and settings locally
-2. **webRequest / declarativeNetRequest**: Intercept AI service requests for substitution
-3. **activeTab**: Inject content scripts on AI service pages
-4. **host permissions**: Access specific AI service domains (chatgpt.com, claude.ai, etc.)
+1. **storage**: Store encrypted profiles and settings locally on your device
+2. **unlimitedStorage**: Allow larger profile databases without quota limits (all data remains encrypted)
+3. **activeTab**: Inject content scripts on AI service pages to enable PII substitution
+4. **scripting**: Inject JavaScript to intercept and modify AI chat requests
+5. **tabs**: Monitor when you navigate to AI services to update protection status badge
+6. **identity**: Enable Google/Microsoft sign-in for authentication (encrypts your data with your Firebase UID)
+7. **host_permissions**: Access specific AI service domains to perform substitutions:
+   - `https://chat.openai.com/*` (ChatGPT)
+   - `https://chatgpt.com/*` (ChatGPT)
+   - `https://claude.ai/*` (Claude)
+   - `https://gemini.google.com/*` (Gemini)
+   - `https://perplexity.ai/*` (Perplexity)
+   - `https://*.perplexity.ai/*` (Perplexity subdomains)
+   - `https://copilot.microsoft.com/*` (Copilot)
+   - `https://*.bing.com/*` (Copilot backend)
+
+**Why These Permissions Are Necessary:**
+- Without `host_permissions`, we cannot intercept requests to AI services
+- Without `scripting`, we cannot inject code to perform substitutions
+- Without `storage`, we cannot save your profiles
+- Without `identity`, we cannot provide secure sign-in for encryption
+- Without `tabs`, we cannot show you when protection is active
 
 ## Data Security
 
 ### Security Measures
 
 - **Encryption**: AES-256-GCM encryption for all sensitive data
-- **No Network Transmission**: Data never leaves your device
+- **Key Separation**: Encryption key derived from Firebase UID (stored remotely), encrypted data stored locally
+- **Authentication Required**: Must be signed in to decrypt your data
 - **Manifest V3**: Uses latest Chrome extension security standards
 - **Code Transparency**: Source code available on GitHub for audit
+- **HTTPS Only**: All cloud communication uses encrypted HTTPS connections
+- **No Third-Party Sharing**: We never share your data with advertisers or data brokers
 
 ### Limitations
 
@@ -162,14 +230,15 @@ Continued use after changes constitutes acceptance of the updated policy.
 
 If you have questions about this Privacy Policy:
 
-- **GitHub Issues**: [https://github.com/[YOUR_USERNAME]/ai-pii-sanitizer/issues](https://github.com/[YOUR_USERNAME]/ai-pii-sanitizer/issues)
-- **Email**: [YOUR_SUPPORT_EMAIL]
+- **Website**: https://promptblocker.com
+- **GitHub Issues**: https://github.com/savevsgames/prompt-blocker/issues
+- **Email**: support@promptblocker.com
 
 ## Open Source
 
 This extension is open source. You can review the code, report issues, or contribute:
 
-- **Repository**: [https://github.com/[YOUR_USERNAME]/ai-pii-sanitizer](https://github.com/[YOUR_USERNAME]/ai-pii-sanitizer)
+- **Repository**: https://github.com/savevsgames/prompt-blocker
 - **License**: GNU Affero General Public License v3.0 (AGPL-3.0)
 
 ---
@@ -178,13 +247,25 @@ This extension is open source. You can review the code, report issues, or contri
 
 For users in the European Union, under GDPR:
 
-- **Data Controller**: You are the data controller of your own data
-- **Legal Basis**: Consent (you create and manage profiles voluntarily)
-- **Data Processing**: All processing happens locally on your device
-- **Right to Access**: Full access via extension interface
-- **Right to Deletion**: Delete profiles or uninstall extension
-- **Right to Portability**: Export profiles as JSON
-- **No Data Transfer**: Data never leaves the EU (or your device)
+- **Data Controller**: Prompt Blocker (developer: Greg Barker / Save Vs Games)
+- **Data Processor**: Google LLC (Firebase services), Stripe Inc. (payments)
+- **Legal Basis**:
+  - **Consent**: You create and manage profiles voluntarily
+  - **Contractual Necessity**: Processing needed to provide premium features (if purchased)
+  - **Legitimate Interest**: Fraud prevention, security, service improvement
+- **Data Processing**:
+  - Local processing on your device (profiles, substitutions)
+  - Cloud processing by Firebase (authentication, optional backups)
+  - Payment processing by Stripe (premium subscriptions only)
+- **Right to Access**: Full access via extension interface (Settings → Export Data)
+- **Right to Deletion**: Delete account via Settings → Account → Delete Account
+- **Right to Portability**: Export profiles as JSON (Settings → Export Data)
+- **Right to Object**: Opt out of optional features (cloud sync, etc.)
+- **Data Transfer**:
+  - Firebase data may be processed in USA (Google's EU-US Data Privacy Framework certified)
+  - Stripe data processed according to Stripe's DPA (EU-US Data Privacy Framework certified)
+- **Data Protection Officer**: support@promptblocker.com
+- **Supervisory Authority**: You have the right to lodge a complaint with your local data protection authority
 
 ## CCPA Compliance (California Users)
 
@@ -197,4 +278,29 @@ For California residents, under CCPA:
 
 ---
 
-**Summary**: This extension stores all data locally, encrypts sensitive information, and never transmits data to external servers. You have complete control over your data at all times.
+## Third-Party Service Providers
+
+We use the following third-party services to operate Prompt Blocker:
+
+### Google Firebase
+- **Services Used**: Authentication, Firestore (optional backups)
+- **Data Shared**: Email, Firebase UID, encrypted profile backups (if enabled)
+- **Privacy Policy**: https://firebase.google.com/support/privacy
+- **Purpose**: User authentication and optional cloud sync
+
+### Stripe
+- **Services Used**: Payment processing (premium features only)
+- **Data Shared**: Payment info, billing address, purchase history
+- **Privacy Policy**: https://stripe.com/privacy
+- **Purpose**: Process subscription payments securely
+- **Note**: We never see or store your credit card numbers
+
+### Google Cloud Platform
+- **Services Used**: Firebase backend infrastructure
+- **Data Shared**: Same as Firebase (encrypted backups, auth data)
+- **Privacy Policy**: https://cloud.google.com/privacy
+- **Purpose**: Host Firebase services
+
+---
+
+**Summary**: This extension stores sensitive data locally with AES-256-GCM encryption. Authentication and optional cloud backups use Firebase. Premium payments use Stripe. You have complete control over your data at all times. We never sell or share your data with advertisers or data brokers.
