@@ -25,9 +25,9 @@ Chrome extensions can't use Firebase's `signInWithPopup` or `signInWithRedirect`
    - Get your extension ID from `chrome://extensions`
    - Add this redirect URI:
      ```
-     https://epdcengjjokgilhjfdoielmmkbjbnabk.chromiumapp.org/
+     https://gpmmdongkfeimmejkbcnilmacgngnjgi.chromiumapp.org/
      ```
-   - **IMPORTANT:** Replace `epdcengjjokgilhjfdoielmmkbjbnabk` with YOUR actual extension ID
+   - **IMPORTANT:** Replace `gpmmdongkfeimmejkbcnilmacgngnjgi` with YOUR actual extension ID
 
 4. **Copy the Client ID:**
    - It will look like: `861822607891-abc123def456.apps.googleusercontent.com`

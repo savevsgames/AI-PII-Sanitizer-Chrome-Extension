@@ -53,10 +53,10 @@ firebase deploy --only functions:githubAuth
 
 Updated callback URL to:
 ```
-https://epdcengjjokgilhjfdoielmmkbjbnabk.chromiumapp.org/
+https://gpmmdongkfeimmejkbcnilmacgngnjgi.chromiumapp.org/
 ```
 
-Extension ID: `epdcengjjokgilhjfdoielmmkbjbnabk`
+Extension ID: `gpmmdongkfeimmejkbcnilmacgngnjgi`
 
 ## Step 5: Test GitHub Sign-In
 

@@ -74,7 +74,7 @@ The Cloud Function needs permission to create Firebase custom tokens. This requi
 1. Go back to your GitHub OAuth App settings at https://github.com/settings/developers
 2. Update the **Authorization callback URL** field to:
    ```
-   https://epdcengjjokgilhjfdoielmmkbjbnabk.chromiumapp.org/
+   https://gpmmdongkfeimmejkbcnilmacgngnjgi.chromiumapp.org/
    ```
    (This is the Chrome extension callback URL using the extension ID)
 3. Click **Update application**
@@ -124,10 +124,10 @@ The function will be deployed to: `https://us-central1-promptblocker-prod.cloudf
 **Cause**: Callback URL in GitHub OAuth App doesn't match extension callback URL
 
 **Solution**:
-1. Get extension ID from chrome://extensions (should be `epdcengjjokgilhjfdoielmmkbjbnabk`)
+1. Get extension ID from chrome://extensions (should be `gpmmdongkfeimmejkbcnilmacgngnjgi`)
 2. Go to https://github.com/settings/developers
 3. Update Authorization callback URL to: `https://EXTENSION_ID.chromiumapp.org/`
-4. Example: `https://epdcengjjokgilhjfdoielmmkbjbnabk.chromiumapp.org/`
+4. Example: `https://gpmmdongkfeimmejkbcnilmacgngnjgi.chromiumapp.org/`
 
 ### Issue: "Popup blocked" error
 
