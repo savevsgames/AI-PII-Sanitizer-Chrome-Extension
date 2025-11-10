@@ -34,7 +34,7 @@ export async function handleDowngrade(userId: string): Promise<void> {
   const config = await storage.loadConfig();
   if (config) {
     // Keep only starter templates
-    config.promptTemplates!.templates = storage['getStarterTemplates'](); // Access private method with bracket notation
+    config.promptTemplates!.templates = storage.getStarterTemplates();
 
     // Clear custom rules
     config.customRules = { enabled: false, rules: [] };
