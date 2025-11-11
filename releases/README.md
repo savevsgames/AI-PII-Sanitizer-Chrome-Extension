@@ -19,6 +19,9 @@ Official release packages for PromptBlocker - Privacy protection for AI chat ser
 - ✅ Unlimited storage quota enabled
 - ✅ Complete test coverage passing
 
+**Download:** [Chrome Web Store](link) # future addition activated upon V1.0.0 release in chrome web store
+**Changelog:** [GitHub Releases](link) # future addition activated upon V1.0.0 release in chrome web store
+
 **Installation:**
 See `v0.2.0-beta/INSTALL.md` for step-by-step instructions.
 
