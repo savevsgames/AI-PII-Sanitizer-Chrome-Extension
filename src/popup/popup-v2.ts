@@ -21,6 +21,7 @@ import { updateStatusIndicator } from './components/statusIndicator';
 import { initializeBackgroundOnLoad } from './components/backgroundManager';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
+import { SOCIAL_LINKS } from '../config/constants';
 // import { testFirebaseConnection } from './test-firebase-popup'; // Disabled - interferes with auth
 
 // ========== DEBUG: Expose sign out globally for console access ==========
@@ -204,12 +205,53 @@ async function waitForAuthInit(): Promise<void> {
   });
 }
 
+/**
+ * Initialize social links dynamically from constants
+ */
+function initializeSocialLinks() {
+  const container = document.getElementById('socialLinksContainer');
+  if (!container) {
+    console.warn('[Social Links] Container not found');
+    return;
+  }
+
+  // Clear any existing content
+  container.innerHTML = '';
+
+  // Create link for each social platform
+  Object.entries(SOCIAL_LINKS).forEach(([platform, config]) => {
+    const link = document.createElement('a');
+    link.href = config.url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.className = 'social-link';
+    link.setAttribute('data-platform', platform);
+    link.setAttribute('aria-label', config.ariaLabel);
+
+    // Icon
+    const icon = document.createElement('span');
+    icon.className = 'social-link-icon';
+    icon.textContent = config.icon;
+
+    // Label
+    const label = document.createElement('span');
+    label.textContent = config.label;
+
+    link.appendChild(icon);
+    link.appendChild(label);
+    container.appendChild(link);
+  });
+
+  console.log('[Social Links] ✅ Social links initialized');
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Popup Init] 🎨 DOMContentLoaded event fired');
 
   initTabNavigation();
   initKeyboardShortcuts();
   setupAuthIssueBanner();
+  initializeSocialLinks();
 
   // Wait for Firebase to initialize and restore auth session
   console.log('[Popup Init] Waiting for Firebase auth to initialize...');

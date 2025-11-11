@@ -261,6 +261,10 @@ async function handleBackgroundSelect(backgroundId: string, isAvailable: boolean
   // Save config and wait for it to complete
   await saveBackgroundConfig(newConfig);
 
+  // Get current transparency from storage to check if adjustment is needed
+  const { bgTransparency } = await chrome.storage.local.get('bgTransparency');
+  const currentTransparency = bgTransparency ?? 0;
+
   // Bidirectional sync: Selecting default background sets matching theme + 80% opacity
   if (isThemeDefault) {
     // Set transparency to 80% (show subtle background)
@@ -286,6 +290,25 @@ async function handleBackgroundSelect(backgroundId: string, isAvailable: boolean
     await applyTheme(themeName);
 
     console.log('[Background Manager] Selected default background → Set theme:', themeName, '+ 80% opacity');
+  } else {
+    // For non-default backgrounds: Auto-adjust transparency if background would be invisible
+    // 0% = background completely hidden (solid container)
+    // 100% = container completely opaque (background hidden)
+    // Sweet spot: 50% transparency shows background nicely
+    if (currentTransparency === 0 || currentTransparency >= 100) {
+      const newTransparency = 50; // 50% shows background nicely
+
+      const slider = document.getElementById('bgTransparencySlider') as HTMLInputElement;
+      const valueDisplay = document.getElementById('bgTransparencyValue');
+      if (slider) slider.value = String(newTransparency);
+      if (valueDisplay) valueDisplay.textContent = `${newTransparency}%`;
+
+      // Save and apply
+      await chrome.storage.local.set({ bgTransparency: newTransparency });
+      window.dispatchEvent(new CustomEvent('bgTransparencyUpdate', { detail: newTransparency }));
+
+      console.log('[Background Manager] Selected background with invisible transparency → Auto-adjusted to 50%');
+    }
   }
 
   // Re-render to update selection (now currentConfig is updated)
