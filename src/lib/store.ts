@@ -297,10 +297,26 @@ export const useAppStore = createStore<AppState>((set, get) => ({
     // Also save to config.stats.activityLog
     const currentConfig = get().config;
     if (currentConfig) {
+      const updatedStats = { ...currentConfig.stats };
+
+      // Auto-increment totals for substitution entries
+      if (entry.type === 'substitution') {
+        const substitutionCount = entry.details?.substitutionCount || 0;
+        updatedStats.totalSubstitutions += substitutionCount;
+        updatedStats.totalInterceptions += 1;
+
+        // Also update by-service stats if available
+        if (entry.service && updatedStats.byService[entry.service as keyof typeof updatedStats.byService]) {
+          const serviceStats = updatedStats.byService[entry.service as keyof typeof updatedStats.byService];
+          serviceStats.requests += 1;
+          serviceStats.substitutions += substitutionCount;
+        }
+      }
+
       const updatedConfig = {
         ...currentConfig,
         stats: {
-          ...currentConfig.stats,
+          ...updatedStats,
           activityLog: [newEntry, ...currentConfig.stats.activityLog].slice(0, 100),
         },
       };
