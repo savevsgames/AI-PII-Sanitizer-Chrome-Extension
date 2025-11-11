@@ -65,8 +65,8 @@ export function renderDocumentAnalysis(_config: UserConfig) {
   const documents = state.documentAliases || [];
   const isLoading = state.isLoadingDocuments;
 
-  // Load documents if not already loaded
-  if (documents.length === 0 && !isLoading) {
+  // Load documents if not already loaded (flag prevents infinite loop)
+  if (documents.length === 0 && !isLoading && !state.hasLoadedDocuments) {
     state.loadDocumentAliases();
   }
 

@@ -5,6 +5,7 @@
 
 import { StorageManager } from '../../lib/storage';
 import { AliasEngine } from '../../lib/aliasEngine';
+import { AliasProfile } from '../../lib/types';
 
 export class AliasHandlers {
   constructor(
@@ -71,6 +72,9 @@ export class AliasHandlers {
   /**
    * Reload profiles in AliasEngine
    * Called when profiles are added/updated/deleted from popup
+   *
+   * LEGACY: This method tries to decrypt in service worker context which fails.
+   * Use handleSetProfiles() instead (receives pre-decrypted profiles from popup)
    */
   async handleReloadProfiles(): Promise<{ success: boolean; profileCount: number }> {
     console.log('[AliasHandlers] Reloading profiles...');
@@ -78,5 +82,24 @@ export class AliasHandlers {
     const profiles = this.aliasEngine.getProfiles();
     console.log('[AliasHandlers] ✅ Profiles reloaded:', profiles.length, 'active profiles');
     return { success: true, profileCount: profiles.length };
+  }
+
+  /**
+   * Set profiles directly from popup (pre-decrypted)
+   * This bypasses service worker encryption limitations by receiving profiles
+   * that were already decrypted in the popup context (which has Firebase auth)
+   *
+   * Called when:
+   * - Profiles are created/updated/deleted in popup
+   * - User signs in and popup loads profiles
+   *
+   * @param profiles - Array of decrypted AliasProfile objects from popup
+   */
+  async handleSetProfiles(profiles: AliasProfile[]): Promise<{ success: boolean; profileCount: number }> {
+    console.log('[AliasHandlers] Setting profiles from popup:', profiles.length, 'profiles');
+    this.aliasEngine.setProfiles(profiles);
+    const loadedProfiles = this.aliasEngine.getProfiles();
+    console.log('[AliasHandlers] ✅ Profiles loaded in AliasEngine:', loadedProfiles.length, 'active profiles');
+    return { success: true, profileCount: loadedProfiles.length };
   }
 }

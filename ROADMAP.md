@@ -1,6 +1,6 @@
 # PromptBlocker - Product Roadmap
 
-**Last Updated:** 2025-01-08
+**Last Updated:** 2025-01-10
 **Current Version:** 1.0.0-beta (Core Features Implemented - Testing Phase)
 **Status:** 🚧 **PRE-PRODUCTION** - Core features implemented, testing and verification in progress
 
@@ -26,7 +26,7 @@
 - ✅ **Custom Image Editor** (2025-11-07) - Full-featured crop, zoom, pan, compression (680 lines)
 - ✅ **Alias Variations** (2025-11-01) - Auto-generate name/email/phone format variations (13+ name variations, PRO feature)
 - ✅ **Tier System UI** (2025-11-06) - FREE/PRO gating, downgrade/archive system, account settings modal
-- 🚧 **Stripe Integration** (2025-11-06) - Infrastructure deployed (checkout, webhooks, portal), needs end-to-end testing
+- ✅ **Stripe Integration** (2025-01-10) - Complete (checkout, webhooks, portal, landing pages) - Ready for production
 - ✅ **Feature Gating** (2025-11-06) - Tier limits enforced (profiles, templates, custom rules)
 - ✅ **Build Quality** (2025-11-05) - TypeScript strict mode, 0 compilation errors
 - ✅ **Security Patterns** (2025-11-04) - XSS prevention, DEBUG_MODE flags, localStorage migration
@@ -82,14 +82,16 @@
 **Authentication & Payments:**
 - ✅ **Firebase Auth** - Google Sign-In implemented
 - ✅ **User Profiles** - Firestore sync implemented
-- 🚧 **Stripe Integration** - Infrastructure deployed, end-to-end testing pending
-- 🚧 **Tier System** - FREE/PRO gating implemented, needs testing with real payments
+- ✅ **Stripe Integration** - Complete (checkout, webhooks, portal, landing pages deployed)
+- ✅ **Landing Pages** - Success/cancel pages deployed on promptblocker.com with dynamic extension ID links
+- ✅ **Tier System** - FREE/PRO gating implemented and working
 
 **Current Priorities:**
 1. ✅ **Test Suite Complete** - 750/750 tests passing (100% unit + integration)!
-2. 🔍 **Platform Verification** - Manual testing on all 5 platforms
-3. 💳 **Payment Testing** - End-to-end Stripe checkout and webhook flow
-4. 📋 **Pre-Launch Checklist** - Complete remaining launch requirements
+2. ✅ **Stripe Integration Complete** - Landing pages deployed, extension ID integration working
+3. 🔍 **Platform Verification** - Manual testing on all 5 platforms
+4. 💳 **Payment Testing** - End-to-end Stripe checkout flow verification
+5. 📋 **Pre-Launch Checklist** - Complete remaining launch requirements
 
 **Launch Readiness:** See [docs/current/PRE_LAUNCH_CHECKLIST.md](./docs/current/PRE_LAUNCH_CHECKLIST.md) for Chrome Web Store submission requirements.
 
@@ -1138,12 +1140,25 @@ Users get more value from PRO subscription → Better conversion rates → Stron
    - [ ] **User Benefit:** Backup, disaster recovery, multi-device setup
    - **Files:** Add `src/lib/profileBackup.ts`, add UI buttons
 
-**Deliverable:** 3 high-value PRO features that justify $4.99/month pricing
+4. **Website Firebase Auth Integration** - Day 4 (4-6 hours)
+   - [ ] Add Firebase Auth to promptblocker.com website
+   - [ ] Enable Google Sign-In on website (same Firebase project as extension)
+   - [ ] Website upgrade flow (call existing `createCheckoutSession` function)
+   - [ ] User dashboard showing tier status (FREE/PRO)
+   - [ ] "Manage Billing" button (call existing `createPortalSession` function)
+   - [ ] Account guarantee: Only authenticated user's account gets upgraded
+   - [ ] **User Benefit:** One-click upgrade from website, smooth onboarding for new users
+   - **User Benefit:** Future-proofs for enterprise features (team management, org dashboards)
+   - **Files:** Website codebase (separate from extension), reuses existing Firebase Functions
+
+**Deliverable:** 4 high-value PRO features that justify $4.99/month pricing
 
 **Success Criteria:**
 - [ ] Alias variations generate 5+ variations per field
 - [ ] Export functions work for CSV and JSON formats
 - [ ] Import/export preserves all profile data
+- [ ] Website auth working with same Firebase project
+- [ ] Website upgrade flow correctly updates user tier in Firestore
 - [ ] All features gated behind PRO tier
 - [ ] Smooth UX (fast, intuitive, no crashes)
 

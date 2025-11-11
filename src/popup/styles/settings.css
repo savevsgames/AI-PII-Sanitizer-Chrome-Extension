@@ -333,6 +333,14 @@
   margin-bottom: var(--space-lg);
 }
 
+/* Flexbox layout for items with toggle labels (Protected Services section) */
+.setting-item:has(.toggle-label):has(.service-visit-link) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
 .toggle-label {
   display: flex;
   align-items: center;
@@ -492,5 +500,40 @@ input[type="checkbox"] {
 
 .storage-quota {
   color: var(--text-secondary);
+}
+
+/* ========== SERVICE VISIT LINKS ========== */
+
+/* Service visit links (theme-aware) */
+.service-visit-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.service-visit-link:hover {
+  color: var(--text-primary);
+  background: var(--card-bg-light);
+}
+
+.service-visit-link:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.service-link-icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+  flex-shrink: 0;
 }
 

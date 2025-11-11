@@ -7,6 +7,10 @@ interface CheckoutSessionData {
   mode?: 'subscription' | 'payment';
 }
 
+// Extension ID for redirect URLs
+// This is consistent across all users because we inject the public key during build
+const EXTENSION_ID = process.env.EXTENSION_ID || 'gpmmdongkfeimmejkbcnilmacgngnjgi';
+
 export const createCheckoutSession = onCall(async (request) => {
   // Verify user is authenticated
   if (!request.auth) {
@@ -81,8 +85,8 @@ export const createCheckoutSession = onCall(async (request) => {
           quantity: 1,
         },
       ],
-      success_url: `https://promptblocker.com/welcome-pro`,
-      cancel_url: `https://promptblocker.com/checkout-cancelled`,
+      success_url: `https://promptblocker.com/welcome-pro?extensionId=${EXTENSION_ID}`,
+      cancel_url: `https://promptblocker.com/checkout-cancelled?extensionId=${EXTENSION_ID}`,
       metadata: {
         firebaseUID: userId,
       },

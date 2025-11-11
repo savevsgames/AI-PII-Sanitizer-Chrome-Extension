@@ -336,11 +336,12 @@ export type MessageType =
 
   // Profile management (v2)
   | 'GET_PROFILES'
+  | 'SET_PROFILES' // Send pre-decrypted profiles from popup to service worker
   | 'ADD_PROFILE'
   | 'UPDATE_PROFILE'
   | 'REMOVE_PROFILE'
   | 'TOGGLE_PROFILE'
-  | 'RELOAD_PROFILES'
+  | 'RELOAD_PROFILES' // LEGACY: Doesn't work in service worker (can't decrypt)
 
   // Legacy alias management (v1 - deprecated)
   | 'GET_ALIASES'

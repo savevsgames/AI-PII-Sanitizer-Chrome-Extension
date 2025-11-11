@@ -209,26 +209,79 @@
   color: var(--text-primary);
 }
 
-.discord-link {
+/* ========== SOCIAL LINKS SECTION ========== */
+
+.social-links-section {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-neutral);
+}
+
+.social-links-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-md);
+}
+
+.social-links-container {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* Individual social link button */
+.social-link {
   display: inline-flex;
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-lg);
-  background: #5865F2;
-  color: white;
+  background: var(--card-bg-medium);
+  color: var(--text-primary);
   text-decoration: none;
   border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  transition: all var(--transition-base);
-  margin-top: var(--space-lg);
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-neutral);
+  white-space: nowrap;
 }
 
-.discord-link:hover {
-  background: #4752C4;
+.social-link:hover {
+  background: var(--card-bg);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
-.discord-icon {
-  font-size: var(--font-size-xl);
+.social-link:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.social-link-icon {
+  font-size: var(--font-size-lg);
+  flex-shrink: 0;
+}
+
+/* Platform-specific colors (optional hover states) */
+.social-link[data-platform="discord"]:hover {
+  background: rgba(88, 101, 242, 0.1);
+  border-color: #5865F2;
+}
+
+.social-link[data-platform="twitter"]:hover {
+  background: rgba(29, 155, 240, 0.1);
+  border-color: #1DA1F2;
+}
+
+.social-link[data-platform="github"]:hover {
+  background: rgba(36, 41, 47, 0.1);
+  border-color: #24292f;
+}
+
+/* Dark theme adjustments */
+body[data-theme-mode="dark"] .social-link[data-platform="github"]:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #ffffff;
 }
