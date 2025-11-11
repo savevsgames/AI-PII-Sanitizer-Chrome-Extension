@@ -1,23 +1,29 @@
 # Stripe Payment Integration
 
-**Status:** ✅ WORKING (Core Complete, Security Fix Needed)
+**Status:** ✅ WORKING (Core Complete, Landing Pages Deployed)
 **Priority:** P0 - Required for Monetization
-**Completed:** November 6, 2025
-**Target Release:** v1.1.0
+**Last Updated:** January 10, 2025
+**Target Release:** v1.0.0
 
 ## Implementation Summary
 
-The Stripe payment integration is **WORKING** and deployed. Users can now:
-- ✅ Upgrade to PRO tier (Monthly $4.99 or Yearly $49)
+The Stripe payment integration is **WORKING** with landing pages deployed. Users can now:
+- ✅ Upgrade to PRO tier (Monthly $4.99 or Yearly $49.99)
 - ✅ Complete checkout via Stripe Checkout (hosted)
 - ✅ Manage billing through Stripe Customer Portal
 - ✅ Automatic tier updates via webhooks
 - ✅ Real-time UI updates when tier changes (Firestore listener)
+- ✅ **Landing pages deployed** - Professional success/cancel pages on promptblocker.com
+- ✅ **Extension ID integration** - Dynamic return-to-extension links with correct ID
 
 **Firebase Functions Deployed:**
-- `createCheckoutSession` - Creates checkout sessions ✅ WORKING
+- `createCheckoutSession` - Creates checkout sessions ✅ WORKING (with extensionId parameter)
 - `stripeWebhook` - Handles subscription events ✅ WORKING (signature verification temporarily disabled)
-- `createPortalSession` - Opens billing portal ✅ WORKING
+- `createPortalSession` - Opens billing portal ✅ WORKING (with extensionId parameter)
+
+**Landing Pages:**
+- `https://promptblocker.com/welcome-pro` - Success page with PRO feature showcase ✅ DEPLOYED
+- `https://promptblocker.com/checkout-cancelled` - Cancel page with retry option ✅ DEPLOYED
 
 **Webhook URL:** `https://stripewebhook-plfcofyapq-uc.a.run.app`
 

@@ -1,7 +1,7 @@
 # Stripe Integration - Next Steps
 
-**Last Updated:** 2025-11-06
-**Status:** ✅ Core functionality WORKING + WEBHOOK SECURITY FIXED
+**Last Updated:** 2025-01-10
+**Status:** ✅ WORKING (Landing Pages Deployed)
 
 ---
 
@@ -103,23 +103,39 @@ tier: 'pro',  // PRO-exclusive feature
 
 ## 🟡 High Priority Improvements
 
-### 1. Create Success/Cancel Pages
+### 1. ~~Create Success/Cancel Pages~~ ✅ COMPLETED (2025-01-10)
 
-**Current:**
+**Status:** ✅ DEPLOYED
+
+**Live URLs:**
+- Success page: `https://promptblocker.com/welcome-pro?extensionId={EXTENSION_ID}`
+- Cancel page: `https://promptblocker.com/checkout-cancelled?extensionId={EXTENSION_ID}`
+
+**Implementation:**
+- ✅ Landing page at `promptblocker.com/welcome-pro` - Professional gradient design with feature showcase
+- ✅ Landing page at `promptblocker.com/checkout-cancelled` - Clean cancellation page with retry option
+- ✅ Both pages have dynamic "Return to Extension" button that reads extensionId from URL parameter
+- ✅ Utility functions created (`src/utils/extensionUtils.ts`) for extension ID management
+- ✅ Matches promptblocker.com branding
+- ✅ Shows next steps for PRO users (success page)
+- ✅ Shows support options with Discord/FAQ links (cancel page)
+
+**Technical Details:**
+- Functions pass `?extensionId=gpmmdongkfeimmejkbcnilmacgngnjgi` in redirect URLs
+- Website reads parameter and generates correct `chrome-extension://{extensionId}/popup-v2.html` link
+- Fallback to default ID if parameter missing
+
+**Functions Updated (2025-01-10):**
 ```typescript
-success_url: `https://promptblocker.com/success?session_id={CHECKOUT_SESSION_ID}`,
-cancel_url: `https://promptblocker.com/cancel`,
+// functions/src/createCheckoutSession.ts
+const EXTENSION_ID = process.env.EXTENSION_ID || 'gpmmdongkfeimmejkbcnilmacgngnjgi';
+success_url: `https://promptblocker.com/welcome-pro?extensionId=${EXTENSION_ID}`,
+cancel_url: `https://promptblocker.com/checkout-cancelled?extensionId=${EXTENSION_ID}`,
+
+// functions/src/createPortalSession.ts
+const EXTENSION_ID = process.env.EXTENSION_ID || 'gpmmdongkfeimmejkbcnilmacgngnjgi';
+return_url: `https://promptblocker.com/?extensionId=${EXTENSION_ID}`,
 ```
-
-**Needed:**
-- Landing page at `promptblocker.com/success` welcoming new PRO users
-- Landing page at `promptblocker.com/cancel` offering help or retry
-- Both pages should have "Return to Extension" button
-
-**Design:**
-- Match promptblocker.com branding
-- Show next steps for PRO users (success page)
-- Show support options (cancel page)
 
 ---
 
