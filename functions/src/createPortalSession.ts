@@ -2,6 +2,9 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import Stripe from 'stripe';
 import { getFirestore } from 'firebase-admin/firestore';
 
+// Extension ID for redirect URLs
+const EXTENSION_ID = process.env.EXTENSION_ID || 'gpmmdongkfeimmejkbcnilmacgngnjgi';
+
 export const createPortalSession = onCall(async (request) => {
   // Verify user is authenticated
   if (!request.auth) {
@@ -35,7 +38,7 @@ export const createPortalSession = onCall(async (request) => {
     // Create portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: 'https://promptblocker.com/',
+      return_url: `https://promptblocker.com/?extensionId=${EXTENSION_ID}`,
     });
 
     console.log(`Created portal session for user ${userId}`);
