@@ -14,6 +14,7 @@ interface AppState {
     firestoreUser: FirestoreUser | null;
     documentAliases: DocumentAlias[];
     isLoadingDocuments: boolean;
+    hasLoadedDocuments: boolean;
     loadProfiles: () => Promise<void>;
     addProfile: (profileData: {
         profileName: string;

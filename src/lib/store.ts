@@ -24,6 +24,7 @@ interface AppState {
   firestoreUser: FirestoreUser | null;
   documentAliases: DocumentAlias[];
   isLoadingDocuments: boolean;
+  hasLoadedDocuments: boolean;
 
   // Actions - Profiles
   loadProfiles: () => Promise<void>;
@@ -97,6 +98,7 @@ export const useAppStore = createStore<AppState>((set, get) => ({
   firestoreUser: null,
   documentAliases: [],
   isLoadingDocuments: false,
+  hasLoadedDocuments: false,
 
   // Profile actions
   loadProfiles: async () => {
@@ -406,11 +408,11 @@ export const useAppStore = createStore<AppState>((set, get) => ({
     const storage = StorageManager.getInstance();
     try {
       const documentAliases = await storage.loadDocumentAliases();
-      set({ documentAliases, isLoadingDocuments: false });
+      set({ documentAliases, isLoadingDocuments: false, hasLoadedDocuments: true });
       console.log('[Store] Loaded', documentAliases.length, 'document aliases');
     } catch (error) {
       console.error('[Store] Error loading document aliases:', error);
-      set({ documentAliases: [], isLoadingDocuments: false });
+      set({ documentAliases: [], isLoadingDocuments: false, hasLoadedDocuments: true });
     }
   },
 

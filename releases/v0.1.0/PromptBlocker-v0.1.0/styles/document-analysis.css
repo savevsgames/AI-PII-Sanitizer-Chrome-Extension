@@ -38,7 +38,7 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
-  background: var(--surface-bg, #f3f4f6);
+  background: var(--card-bg-light);
   padding: 4px 12px;
   border-radius: 12px;
 }
@@ -606,7 +606,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: var(--surface-bg, #f9fafb);
+  background: var(--card-bg-light);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -720,7 +720,7 @@
 
 .doc-pii-original code,
 .doc-pii-alias code {
-  background: var(--surface-bg, #f3f4f6);
+  background: var(--card-bg-light);
   padding: 6px 10px;
   border-radius: 4px;
   font-size: 13px;
@@ -769,7 +769,7 @@
 }
 
 .doc-metadata-item code {
-  background: var(--surface-bg, #f3f4f6);
+  background: var(--card-bg-light);
   padding: 6px 10px;
   border-radius: 4px;
   font-family: 'Monaco', 'Courier New', monospace;

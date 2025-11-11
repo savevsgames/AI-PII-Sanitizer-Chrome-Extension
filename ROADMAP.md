@@ -1,6 +1,6 @@
 # PromptBlocker - Product Roadmap
 
-**Last Updated:** 2025-01-08
+**Last Updated:** 2025-01-10
 **Current Version:** 1.0.0-beta (Core Features Implemented - Testing Phase)
 **Status:** 🚧 **PRE-PRODUCTION** - Core features implemented, testing and verification in progress
 
@@ -1140,12 +1140,25 @@ Users get more value from PRO subscription → Better conversion rates → Stron
    - [ ] **User Benefit:** Backup, disaster recovery, multi-device setup
    - **Files:** Add `src/lib/profileBackup.ts`, add UI buttons
 
-**Deliverable:** 3 high-value PRO features that justify $4.99/month pricing
+4. **Website Firebase Auth Integration** - Day 4 (4-6 hours)
+   - [ ] Add Firebase Auth to promptblocker.com website
+   - [ ] Enable Google Sign-In on website (same Firebase project as extension)
+   - [ ] Website upgrade flow (call existing `createCheckoutSession` function)
+   - [ ] User dashboard showing tier status (FREE/PRO)
+   - [ ] "Manage Billing" button (call existing `createPortalSession` function)
+   - [ ] Account guarantee: Only authenticated user's account gets upgraded
+   - [ ] **User Benefit:** One-click upgrade from website, smooth onboarding for new users
+   - **User Benefit:** Future-proofs for enterprise features (team management, org dashboards)
+   - **Files:** Website codebase (separate from extension), reuses existing Firebase Functions
+
+**Deliverable:** 4 high-value PRO features that justify $4.99/month pricing
 
 **Success Criteria:**
 - [ ] Alias variations generate 5+ variations per field
 - [ ] Export functions work for CSV and JSON formats
 - [ ] Import/export preserves all profile data
+- [ ] Website auth working with same Firebase project
+- [ ] Website upgrade flow correctly updates user tier in Firestore
 - [ ] All features gated behind PRO tier
 - [ ] Smooth UX (fast, intuitive, no crashes)
 
