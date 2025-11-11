@@ -8,6 +8,10 @@ import { renderAPIKeys } from './apiKeyVault';
 import { chromeApi } from '../api/chromeApi';
 import { APIKeyDetector } from '../../lib/apiKeyDetector';
 import { escapeHtml } from './utils';
+import { EventManager } from '../utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 interface ParsedEnvKey {
   name: string;
@@ -85,7 +89,7 @@ export function showAddAPIKeyModal() {
   };
 
   keyValueInput.removeEventListener('input', handleKeyInput);
-  keyValueInput.addEventListener('input', handleKeyInput);
+  eventManager.add(keyValueInput, 'input', handleKeyInput);
 
   console.log('[API Key Modal] Modal opened');
 }
@@ -117,26 +121,35 @@ function setupAPIKeyModalHandlers() {
 
   // Close modal handlers
   [closeBtn, cancelBtn].forEach(btn => {
-    btn?.addEventListener('click', () => {
-      modal.classList.add('hidden');
-    });
+    if (btn) {
+      eventManager.add(btn as HTMLElement, 'click', () => {
+        modal.classList.add('hidden');
+      });
+    }
   });
 
   // Overlay click to close
-  modal.querySelector('.modal-overlay')?.addEventListener('click', () => {
-    modal.classList.add('hidden');
-  });
+  const modalOverlay = modal.querySelector('.modal-overlay');
+  if (modalOverlay) {
+    eventManager.add(modalOverlay as HTMLElement, 'click', () => {
+      modal.classList.add('hidden');
+    });
+  }
 
   // Save handler
-  saveBtn?.addEventListener('click', async () => {
-    await handleSaveAPIKey();
-  });
+  if (saveBtn) {
+    eventManager.add(saveBtn as HTMLElement, 'click', async () => {
+      await handleSaveAPIKey();
+    });
+  }
 
   // Form submit handler
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await handleSaveAPIKey();
-  });
+  if (form) {
+    eventManager.add(form, 'submit', async (e) => {
+      e.preventDefault();
+      await handleSaveAPIKey();
+    });
+  }
 
   console.log('[API Key Modal] Modal handlers setup');
 }
@@ -267,7 +280,7 @@ function setupImportMethodTabs() {
   const tabButtons = document.querySelectorAll('.modal-tab-btn');
 
   tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
+    eventManager.add(btn as HTMLElement, 'click', () => {
       const method = btn.getAttribute('data-import-method');
       if (method) {
         switchImportMethod(method);
@@ -311,20 +324,22 @@ function setupPasteButton() {
   const pasteBtn = document.getElementById('pasteKeyBtn');
   const keyValueInput = document.getElementById('apiKeyValue') as HTMLTextAreaElement;
 
-  pasteBtn?.addEventListener('click', async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text && keyValueInput) {
-        keyValueInput.value = text;
-        // Trigger the input event manually to run detection
-        const event = new Event('input', { bubbles: true });
-        keyValueInput.dispatchEvent(event);
+  if (pasteBtn) {
+    eventManager.add(pasteBtn as HTMLElement, 'click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text && keyValueInput) {
+          keyValueInput.value = text;
+          // Trigger the input event manually to run detection
+          const event = new Event('input', { bubbles: true });
+          keyValueInput.dispatchEvent(event);
+        }
+      } catch (error) {
+        console.error('[API Key Modal] Failed to read clipboard:', error);
+        alert('Failed to read clipboard. Please paste manually.');
       }
-    } catch (error) {
-      console.error('[API Key Modal] Failed to read clipboard:', error);
-      alert('Failed to read clipboard. Please paste manually.');
-    }
-  });
+    });
+  }
 }
 
 /**
@@ -334,14 +349,16 @@ function setupEnvParser() {
   const parseBtn = document.getElementById('parseEnvBtn');
   const envTextarea = document.getElementById('envFileContent') as HTMLTextAreaElement;
 
-  parseBtn?.addEventListener('click', () => {
-    const envContent = envTextarea?.value || '';
-    if (!envContent.trim()) {
-      alert('Please paste your .env file content first');
-      return;
-    }
-    parseEnvFile(envContent);
-  });
+  if (parseBtn) {
+    eventManager.add(parseBtn as HTMLElement, 'click', () => {
+      const envContent = envTextarea?.value || '';
+      if (!envContent.trim()) {
+        alert('Please paste your .env file content first');
+        return;
+      }
+      parseEnvFile(envContent);
+    });
+  }
 }
 
 /**
@@ -414,7 +431,7 @@ function renderEnvPreview(keys: ParsedEnvKey[]) {
 
   const checkboxes = detectedKeysContainer.querySelectorAll('.env-key-checkbox');
   checkboxes.forEach((checkbox, index) => {
-    checkbox.addEventListener('change', (e) => {
+    eventManager.add(checkbox as HTMLElement, 'change', (e) => {
       const target = e.target as HTMLInputElement;
       parsedEnvKeys[index].selected = target.checked;
     });

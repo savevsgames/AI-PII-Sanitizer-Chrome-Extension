@@ -7,6 +7,7 @@
  */
 
 import { initObservers } from './observers';
+import { sanitizeHtml, escapeHtml } from '../lib/sanitizer';
 
 // Guard against multiple injections (happens when extension is reloaded)
 if ((window as any).__AI_PII_CONTENT_INJECTED__) {
@@ -312,7 +313,12 @@ async function injectTemplateIntoChat(content: string): Promise<void> {
         .join('<br><br>');  // Join paragraphs with double <br>
 
       console.log('[Content] 🎨 HTML content (first 200 chars):', htmlContent.substring(0, 200));
-      div.innerHTML = htmlContent;
+
+      // SECURITY: Sanitize HTML to prevent XSS attacks from AI-generated content
+      div.innerHTML = sanitizeHtml(htmlContent, {
+        ALLOWED_TAGS: ['br', 'p', 'b', 'i', 'em', 'strong', 'code', 'pre'],
+        ALLOWED_ATTR: [],
+      });
 
       // Trigger input event to notify the page
       div.dispatchEvent(new Event('input', { bubbles: true }));
@@ -586,7 +592,7 @@ function showAPIKeyWarning(payload: { keysDetected: number; keyTypes: string[] }
           box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
         ">
           <div style="font-size: 13px; color: #92400e; font-weight: 600;">
-            ${payload.keyTypes.map(type => `• ${type.toUpperCase()} API Key`).join('<br>')}
+            ${payload.keyTypes.map(type => `• ${escapeHtml(type.toUpperCase())} API Key`).join('<br>')}
           </div>
         </div>
         <p style="margin: 0 0 12px 0; font-size: 14px; color: #374151; line-height: 1.5;">

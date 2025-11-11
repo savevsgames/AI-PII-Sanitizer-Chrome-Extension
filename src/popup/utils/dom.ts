@@ -2,6 +2,8 @@
  * DOM manipulation utilities with XSS protection
  */
 
+import { sanitizeHtml } from '../../lib/sanitizer';
+
 /**
  * Escape HTML to prevent XSS attacks
  * Use this whenever inserting user-generated content into innerHTML
@@ -69,10 +71,11 @@ export function safeMap<T extends Record<string, any>>(
 }
 
 /**
- * Safely set innerHTML with escaped content
+ * Safely set innerHTML with sanitized content
+ * SECURITY: This function sanitizes HTML to prevent XSS attacks
  */
 export function setInnerHTML(element: HTMLElement, html: string): void {
-  element.innerHTML = html;
+  element.innerHTML = sanitizeHtml(html);
 }
 
 /**
@@ -100,7 +103,7 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(
   }
 
   if (options?.innerHTML) {
-    element.innerHTML = options.innerHTML;
+    element.innerHTML = sanitizeHtml(options.innerHTML);
   }
 
   if (options?.attributes) {

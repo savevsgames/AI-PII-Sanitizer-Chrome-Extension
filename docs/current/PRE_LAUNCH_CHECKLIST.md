@@ -47,7 +47,12 @@ Launch with full FREE/PRO tiers and payment system:
 - ✅ **Clean Codebase** - Professional organization
 
 ### What You Need (Before Launch)
-- ❌ **Terms of Service** - Only if doing payments (Option B)
+- ✅ **Terms of Service** ✅ COMPLETED (January 10, 2025)
+- ✅ **Privacy Policy** ✅ UPDATED (corrected false information)
+- ✅ **GDPR Compliance** ✅ COMPLETED (data export + account deletion)
+- ✅ **Permission Justifications** ✅ DOCUMENTED
+- ✅ **Security Hardening - XSS** ✅ COMPLETED (DOMPurify + full audit)
+- ✅ **Security Hardening - Encryption** ✅ COMPLETED (PBKDF2 600k iterations)
 - ❌ **New Icons** - 16, 48, 128, 512 (current ones are old)
 - ❌ **Chrome Web Store Screenshots** - 3-5 high-quality images (1280x800 or 640x400)
 - ❌ **Store Listing Copy** - Title, short description, full description
@@ -56,7 +61,7 @@ Launch with full FREE/PRO tiers and payment system:
 - ❌ **Cross-Browser Testing** - Chrome, Edge, Brave
 - ❌ **Website Copy** - For promptblocker.com
 - ❌ **Stripe Integration** - Only if Option B
-- ❌ **Security Hardening** - XSS fixes, localStorage removal (from ROADMAP Phase 1)
+- ⏳ **Memory Leak Fixes** - 147 event listeners (1 of 8 launch blockers remaining)
 
 ---
 

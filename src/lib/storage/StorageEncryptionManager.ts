@@ -84,12 +84,12 @@ export class StorageEncryptionManager {
     // Get or generate unique salt (salt can be public - stored in chrome.storage is OK)
     const salt = await this.getOrGenerateSalt();
 
-    // Derive AES-256-GCM key with 210k iterations
+    // Derive AES-256-GCM key with 600k iterations (OWASP 2023 compliant)
     return crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
         salt: encoder.encode(salt),
-        iterations: 210000, // OWASP 2023 recommendation
+        iterations: 600000, // OWASP 2023 recommendation: minimum 600,000 iterations
         hash: 'SHA-256',
       },
       importedKey,

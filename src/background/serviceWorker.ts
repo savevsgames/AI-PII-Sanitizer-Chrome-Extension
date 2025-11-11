@@ -74,6 +74,53 @@ waitForAuth().then(() => {
     contentScriptManager
   );
 
+  // ========== FIREBASE AUTH STATE LISTENER ==========
+
+  /**
+   * Listen for Firebase auth state changes
+   * Reload profiles when user signs in (enables PII protection)
+   */
+  const { auth } = await import('../lib/firebase');
+
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      console.log('[Background] 🔐 User signed in:', user.email);
+      console.log('[Background] Reloading profiles with Firebase UID encryption...');
+
+      try {
+        // Reinitialize storage with authenticated user
+        await storage.initialize();
+
+        // Load profiles (now decryptable with Firebase UID)
+        const profiles = await storage.loadProfiles();
+
+        // Update alias engine with loaded profiles
+        aliasEngine.setProfiles(profiles);
+
+        console.log('[Background] ✅ Profiles reloaded:', profiles.length, 'profiles');
+        console.log('[Background] ✅ Active profiles:', profiles.filter(p => p.enabled).length);
+
+        // Update badges for all tabs (protection now active)
+        const tabs = await chrome.tabs.query({});
+        for (const tab of tabs) {
+          if (tab.id) {
+            await badgeManager.checkAndUpdateBadge(tab.id, tab.url);
+          }
+        }
+        console.log('[Background] ✅ Badges updated for all tabs');
+
+      } catch (error) {
+        console.error('[Background] ❌ Failed to reload profiles after sign-in:', error);
+      }
+    } else {
+      console.log('[Background] 🔓 User signed out - profiles locked');
+      // Clear profiles from alias engine (user signed out)
+      aliasEngine.setProfiles([]);
+    }
+  });
+
+  console.log('[Background] ✅ Firebase auth state listener registered');
+
   // ========== EVENT LISTENERS ==========
 
   /**

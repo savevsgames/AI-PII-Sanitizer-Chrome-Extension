@@ -15,6 +15,10 @@ import {
 } from '../../lib/aliasGenerator';
 import { openProfileModal } from './profileModal';
 import { useAppStore } from '../../lib/store';
+import { EventManager } from '../utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 let currentGeneratedProfile: GeneratedProfile | null = null;
 let currentTemplateId: string | null = null;
@@ -207,19 +211,23 @@ function setupGeneratorControls() {
   // Template selection - auto-generate on selection
   const templateRadios = document.querySelectorAll('.template-radio:not([disabled])');
   templateRadios.forEach(radio => {
-    radio.addEventListener('change', handleTemplateChange);
+    eventManager.add(radio as HTMLElement, 'change', handleTemplateChange);
   });
 
   // Bulk generation (PRO only)
   const generateBulkBtn = document.getElementById('generateBulkBtn');
-  generateBulkBtn?.addEventListener('click', handleBulkGenerate);
+  if (generateBulkBtn) {
+    eventManager.add(generateBulkBtn as HTMLElement, 'click', handleBulkGenerate);
+  }
 
   // Upgrade button
   const upgradeBtn = document.getElementById('upgradeBtn');
-  upgradeBtn?.addEventListener('click', () => {
-    console.log('[Quick Alias Generator] Upgrade button clicked');
-    alert('Upgrade functionality coming soon!');
-  });
+  if (upgradeBtn) {
+    eventManager.add(upgradeBtn as HTMLElement, 'click', () => {
+      console.log('[Quick Alias Generator] Upgrade button clicked');
+      alert('Upgrade functionality coming soon!');
+    });
+  }
 }
 
 /**
@@ -368,13 +376,17 @@ function renderPreview(profile: GeneratedProfile, templateId: string) {
   const regenerateBtn = document.getElementById('regenerateBtn');
   const useProfileBtn = document.getElementById('useProfileBtn');
 
-  regenerateBtn?.addEventListener('click', () => {
-    if (currentTemplateId) {
-      handleGenerate(currentTemplateId);
-    }
-  });
+  if (regenerateBtn) {
+    eventManager.add(regenerateBtn as HTMLElement, 'click', () => {
+      if (currentTemplateId) {
+        handleGenerate(currentTemplateId);
+      }
+    });
+  }
 
-  useProfileBtn?.addEventListener('click', handleUseProfile);
+  if (useProfileBtn) {
+    eventManager.add(useProfileBtn as HTMLElement, 'click', handleUseProfile);
+  }
 }
 
 /**
@@ -424,7 +436,7 @@ function renderBulkResults(profiles: GeneratedProfile[]) {
   // Setup bulk result buttons
   const useButtons = bulkResults.querySelectorAll('.bulk-use-btn');
   useButtons.forEach(button => {
-    button.addEventListener('click', (e) => {
+    eventManager.add(button as HTMLElement, 'click', (e) => {
       const index = parseInt((e.currentTarget as HTMLElement).dataset.index || '0', 10);
       handleUseBulkProfile(index);
     });
@@ -432,7 +444,9 @@ function renderBulkResults(profiles: GeneratedProfile[]) {
 
   // Setup export button
   const exportBtn = document.getElementById('exportBulkBtn');
-  exportBtn?.addEventListener('click', handleExportBulk);
+  if (exportBtn) {
+    eventManager.add(exportBtn as HTMLElement, 'click', handleExportBulk);
+  }
 }
 
 /**

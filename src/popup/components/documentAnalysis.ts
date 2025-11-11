@@ -8,6 +8,10 @@ import { parseDocument, getSupportedExtensions } from '../../lib/documentParsers
 import { DocumentAlias, UserConfig, QueuedFile } from '../../lib/types';
 import { DocumentPreviewModal } from './documentPreviewModal';
 import { downloadDocumentPair } from '../../lib/downloadUtils';
+import { EventManager } from '../utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 // Upload Queue State
 let uploadQueue: QueuedFile[] = [];
@@ -271,7 +275,7 @@ function renderDocumentList(documents: DocumentAlias[]): string {
  */
 function setupEventListeners() {
   // File input change
-  document.addEventListener('change', (e) => {
+  eventManager.add(document, 'change', (e) => {
     const target = e.target as HTMLInputElement;
     if (target.id === 'docFileInput' && target.files) {
       addFilesToQueue(target.files);
@@ -280,7 +284,7 @@ function setupEventListeners() {
   });
 
   // Select Files button click
-  document.addEventListener('click', (e) => {
+  eventManager.add(document, 'click', (e) => {
     const target = e.target as HTMLElement;
     if (target.id === 'selectFilesBtn' || target.closest('#selectFilesBtn')) {
       const fileInput = document.getElementById('docFileInput') as HTMLInputElement;
@@ -289,7 +293,7 @@ function setupEventListeners() {
   });
 
   // Dropzone click
-  document.addEventListener('click', (e) => {
+  eventManager.add(document, 'click', (e) => {
     const target = e.target as HTMLElement;
     const dropzone = target.closest('#docUploadDropzone');
     if (dropzone) {
@@ -299,7 +303,7 @@ function setupEventListeners() {
   });
 
   // Drag and drop
-  document.addEventListener('dragover', (e) => {
+  eventManager.add(document, 'dragover', (e) => {
     const target = e.target as HTMLElement;
     const dropzone = target.closest('#docUploadDropzone');
     if (dropzone) {
@@ -308,7 +312,7 @@ function setupEventListeners() {
     }
   });
 
-  document.addEventListener('dragleave', (e) => {
+  eventManager.add(document, 'dragleave', (e) => {
     const target = e.target as HTMLElement;
     const dropzone = target.closest('#docUploadDropzone');
     if (dropzone && e.target === dropzone) {
@@ -316,18 +320,18 @@ function setupEventListeners() {
     }
   });
 
-  document.addEventListener('drop', (e) => {
+  eventManager.add(document, 'drop', (e) => {
     const target = e.target as HTMLElement;
     const dropzone = target.closest('#docUploadDropzone');
-    if (dropzone && e.dataTransfer?.files) {
+    if (dropzone && (e as DragEvent).dataTransfer?.files) {
       e.preventDefault();
       dropzone.classList.remove('dragover');
-      addFilesToQueue(e.dataTransfer.files);
+      addFilesToQueue((e as DragEvent).dataTransfer!.files);
     }
   });
 
   // Document card actions
-  document.addEventListener('click', (e) => {
+  eventManager.add(document, 'click', (e) => {
     const target = e.target as HTMLElement;
     const button = target.closest('[data-action]') as HTMLElement;
     if (!button) return;
@@ -341,7 +345,7 @@ function setupEventListeners() {
   });
 
   // Queue UI - Checkbox changes (update button state)
-  document.addEventListener('change', (e) => {
+  eventManager.add(document, 'change', (e) => {
     const target = e.target as HTMLInputElement;
     console.log('[Document Analysis] Change event detected:', {
       targetId: target.id,
@@ -364,7 +368,7 @@ function setupEventListeners() {
   });
 
   // Additional logging for clicks on toggle area
-  document.addEventListener('click', (e) => {
+  eventManager.add(document, 'click', (e) => {
     const target = e.target as HTMLElement;
     const toggleSwitch = target.closest('.toggle-switch');
     const queueItem = target.closest('.queue-item');
@@ -380,7 +384,7 @@ function setupEventListeners() {
   });
 
   // Queue UI - Analyze Selected button
-  document.addEventListener('click', (e) => {
+  eventManager.add(document, 'click', (e) => {
     const target = e.target as HTMLElement;
     if (target.id === 'analyzeSelectedBtn' || target.closest('#analyzeSelectedBtn')) {
       analyzeSelectedFiles();
@@ -388,7 +392,7 @@ function setupEventListeners() {
   });
 
   // Queue UI - Remove file button
-  document.addEventListener('click', (e) => {
+  eventManager.add(document, 'click', (e) => {
     const target = e.target as HTMLElement;
     const button = target.closest('[data-action="remove"]') as HTMLElement;
     if (button && button.hasAttribute('data-file-id')) {
@@ -400,7 +404,7 @@ function setupEventListeners() {
   });
 
   // Queue UI - Clear All button
-  document.addEventListener('click', (e) => {
+  eventManager.add(document, 'click', (e) => {
     const target = e.target as HTMLElement;
     if (target.id === 'clearQueueBtn' || target.closest('#clearQueueBtn')) {
       clearQueue();

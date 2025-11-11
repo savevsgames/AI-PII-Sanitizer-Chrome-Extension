@@ -9,6 +9,10 @@ import { isValidEmail } from './utils';
 import { applyChromeTheme } from '../../lib/chromeTheme';
 import { updateStatusIndicator } from './statusIndicator';
 import { onThemeChange, initializeBackgroundSettings, onClassicThemeSelected } from './backgroundManager';
+import { EventManager } from '../utils/eventManager';
+
+// Event manager for cleanup
+const eventManager = new EventManager();
 
 const DEBUG_MODE = false; // Set to true for development debugging
 
@@ -27,6 +31,7 @@ export function initSettingsHandlers() {
   const subscribeBtn = document.getElementById('subscribeBtn');
   const clearStatsBtn = document.getElementById('clearStatsBtn');
   const exportProfilesBtn = document.getElementById('exportProfilesBtn');
+  const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 
   // Service toggles
   const chatgptToggle = document.getElementById('chatgptToggle') as HTMLInputElement;
@@ -35,18 +40,19 @@ export function initSettingsHandlers() {
   const perplexityToggle = document.getElementById('perplexityToggle') as HTMLInputElement;
   const copilotToggle = document.getElementById('copilotToggle') as HTMLInputElement;
 
-  enabledToggle?.addEventListener('change', handleEnabledToggle);
-  emailOptInToggle?.addEventListener('change', handleEmailOptInToggle);
-  subscribeBtn?.addEventListener('click', handleSubscribe);
-  clearStatsBtn?.addEventListener('click', handleClearStats);
-  exportProfilesBtn?.addEventListener('click', handleExportProfiles);
+  eventManager.add(enabledToggle, 'change', handleEnabledToggle);
+  eventManager.add(emailOptInToggle, 'change', handleEmailOptInToggle);
+  eventManager.add(subscribeBtn, 'click', handleSubscribe);
+  eventManager.add(clearStatsBtn, 'click', handleClearStats);
+  eventManager.add(exportProfilesBtn, 'click', handleExportProfiles);
+  eventManager.add(deleteAccountBtn, 'click', handleDeleteAccount);
 
   // Service toggle handlers
-  chatgptToggle?.addEventListener('change', () => handleServiceToggle('chatgpt', chatgptToggle.checked));
-  claudeToggle?.addEventListener('change', () => handleServiceToggle('claude', claudeToggle.checked));
-  geminiToggle?.addEventListener('change', () => handleServiceToggle('gemini', geminiToggle.checked));
-  perplexityToggle?.addEventListener('change', () => handleServiceToggle('perplexity', perplexityToggle.checked));
-  copilotToggle?.addEventListener('change', () => handleServiceToggle('copilot', copilotToggle.checked));
+  eventManager.add(chatgptToggle, 'change', () => handleServiceToggle('chatgpt', chatgptToggle.checked));
+  eventManager.add(claudeToggle, 'change', () => handleServiceToggle('claude', claudeToggle.checked));
+  eventManager.add(geminiToggle, 'change', () => handleServiceToggle('gemini', geminiToggle.checked));
+  eventManager.add(perplexityToggle, 'change', () => handleServiceToggle('perplexity', perplexityToggle.checked));
+  eventManager.add(copilotToggle, 'change', () => handleServiceToggle('copilot', copilotToggle.checked));
 
   // Theme picker
   initThemePicker();
@@ -209,6 +215,99 @@ async function handleClearStats() {
 }
 
 /**
+ * Handle delete account button (GDPR Right to Erasure)
+ * Permanently deletes:
+ * - Firestore user document
+ * - Firestore subscription document
+ * - All local storage data (encrypted profiles, settings, stats)
+ * - Firebase Auth account
+ */
+async function handleDeleteAccount() {
+  // First confirmation
+  const confirmed = confirm(
+    '⚠️ DELETE ACCOUNT?\n\n' +
+    'This will PERMANENTLY delete:\n' +
+    '• All profiles and aliases\n' +
+    '• Activity logs and statistics\n' +
+    '• Account information\n' +
+    '• Subscription data (if any)\n\n' +
+    'This action CANNOT be undone.\n\n' +
+    'Click OK to continue'
+  );
+
+  if (!confirmed) {
+    console.log('[Settings] Account deletion cancelled by user (first prompt)');
+    return;
+  }
+
+  // Second confirmation (requires typing "DELETE")
+  const confirmText = prompt(
+    'Type DELETE in ALL CAPS to confirm account deletion:\n\n' +
+    'This will permanently erase all your data.'
+  );
+
+  if (confirmText !== 'DELETE') {
+    console.log('[Settings] Account deletion cancelled - confirmation text did not match');
+    alert('Account deletion cancelled.');
+    return;
+  }
+
+  try {
+    // Import Firebase modules
+    const { auth } = await import('../../lib/firebase');
+    const { deleteUser } = await import('firebase/auth');
+    const { deleteUserAccount } = await import('../../lib/firebaseService');
+
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error('Not authenticated - please sign in first');
+    }
+
+    console.log('[Settings] Starting account deletion for user:', user.uid);
+
+    // Step 1: Delete Firestore data (user document + subscription document)
+    await deleteUserAccount(user.uid);
+    console.log('[Settings] ✅ Firestore data deleted');
+
+    // Step 2: Delete all local storage data
+    await chrome.storage.local.clear();
+    console.log('[Settings] ✅ Local storage cleared');
+
+    // Step 3: Delete Firebase Auth account
+    await deleteUser(user);
+    console.log('[Settings] ✅ Firebase Auth account deleted');
+
+    // Step 4: Show confirmation and close popup
+    alert(
+      '✅ Your account has been permanently deleted.\n\n' +
+      'All your data has been erased:\n' +
+      '• Profiles and aliases\n' +
+      '• Activity logs and statistics\n' +
+      '• Account information\n' +
+      '• Subscription data\n\n' +
+      'Thank you for using Prompt Blocker.'
+    );
+
+    console.log('[Settings] ✅ Account deletion complete');
+
+    // Close popup
+    window.close();
+
+  } catch (error) {
+    console.error('[Settings] ❌ Failed to delete account:', error);
+
+    // Show user-friendly error message
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    alert(
+      '❌ Failed to delete account\n\n' +
+      `Error: ${errorMessage}\n\n` +
+      'Please try again or contact support@promptblocker.com'
+    );
+  }
+}
+
+/**
  * Handle service toggle change
  */
 async function handleServiceToggle(service: string, enabled: boolean) {
@@ -255,29 +354,99 @@ async function handleServiceToggle(service: string, enabled: boolean) {
 }
 
 /**
- * Handle export profiles button
+ * Handle export profiles button (GDPR-compliant complete data export)
+ * Exports ALL user data: profiles, activity logs, stats, account metadata, settings
  */
 async function handleExportProfiles() {
-  const store = useAppStore.getState();
-  const profiles = store.profiles;
+  try {
+    const store = useAppStore.getState();
 
-  const exportData = {
-    version: 2,
-    exportDate: new Date().toISOString(),
-    profiles: profiles,
-  };
+    // Get Firebase user data
+    const { auth } = await import('../../lib/firebase');
+    const user = auth.currentUser;
 
-  const dataStr = JSON.stringify(exportData, null, 2);
-  const dataBlob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(dataBlob);
+    // Prepare complete data export
+    const exportData = {
+      // Export metadata
+      version: 3, // Incremented from v2 to v3 (complete export)
+      exportDate: new Date().toISOString(),
+      exportType: 'complete', // 'complete' vs 'profiles-only' (legacy)
 
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `ai-pii-sanitizer-profiles-${Date.now()}.json`;
-  link.click();
+      // User profiles (core data)
+      profiles: store.profiles || [],
 
-  URL.revokeObjectURL(url);
-  console.log('[Settings] Exported', profiles.length, 'profiles');
+      // Activity logs (debugging/audit trail)
+      activityLog: store.activityLog || [],
+
+      // Usage statistics
+      stats: {
+        totalSubstitutions: store.config?.stats?.totalSubstitutions || 0,
+        totalInterceptions: store.config?.stats?.totalInterceptions || 0,
+        totalWarnings: store.config?.stats?.totalWarnings || 0,
+        successRate: store.config?.stats?.successRate || 0,
+        lastSyncTimestamp: store.config?.stats?.lastSyncTimestamp || 0,
+        byService: store.config?.stats?.byService || {},
+      },
+
+      // Account metadata
+      account: {
+        uid: user?.uid || null,
+        email: user?.email || null,
+        displayName: user?.displayName || null,
+        photoURL: user?.photoURL || null,
+        provider: user?.providerData?.[0]?.providerId || null,
+        createdAt: user?.metadata?.creationTime || null,
+        lastSignIn: user?.metadata?.lastSignInTime || null,
+        tier: store.config?.account?.tier || 'free',
+        emailOptIn: store.config?.account?.emailOptIn || false,
+        encryptionProvider: store.config?.account?.encryptionProvider || null,
+        encryptionEmail: store.config?.account?.encryptionEmail || null,
+      },
+
+      // Settings (non-sensitive)
+      settings: {
+        enabled: store.config?.settings?.enabled,
+        theme: store.config?.settings?.theme,
+        protectedDomains: store.config?.settings?.protectedDomains || [],
+        excludedDomains: store.config?.settings?.excludedDomains || [],
+        defaultMode: store.config?.settings?.defaultMode,
+        decodeResponses: store.config?.settings?.decodeResponses,
+        showNotifications: store.config?.settings?.showNotifications,
+        cloudSync: store.config?.settings?.cloudSync,
+      },
+    };
+
+    // Download as JSON
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `promptblocker-data-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+
+    console.log('[Settings] ✅ Complete data export successful:', {
+      profiles: exportData.profiles.length,
+      activityLogs: exportData.activityLog.length,
+      totalSubstitutions: exportData.stats.totalSubstitutions,
+    });
+
+    // Show success message
+    const profileCount = exportData.profiles.length;
+    const logCount = exportData.activityLog.length;
+    alert(`✅ Data exported successfully!\n\n` +
+          `Profiles: ${profileCount}\n` +
+          `Activity logs: ${logCount}\n` +
+          `Stats: ${exportData.stats.totalSubstitutions} total substitutions\n\n` +
+          `File saved as: promptblocker-data-${new Date().toISOString().split('T')[0]}.json`);
+
+  } catch (error) {
+    console.error('[Settings] ❌ Failed to export data:', error);
+    alert('❌ Failed to export data. Please try again or contact support@promptblocker.com');
+  }
 }
 
 /**
@@ -287,7 +456,7 @@ function initThemePicker() {
   const themeSwatches = document.querySelectorAll('.theme-swatch, .theme-card');
 
   themeSwatches.forEach((swatch) => {
-    swatch.addEventListener('click', async () => {
+    eventManager.add(swatch as HTMLElement, 'click', async () => {
       const theme = swatch.getAttribute('data-theme') as ThemeName;
       if (theme) {
         await handleThemeChange(theme);
@@ -323,7 +492,7 @@ function initThemePicker() {
     };
 
     // Listen for background changes and reapply transparency
-    window.addEventListener('bgTransparencyUpdate', ((event: CustomEvent) => {
+    eventManager.add(window, 'bgTransparencyUpdate', ((event: CustomEvent) => {
       const transparency = event.detail;
       applyBackgroundTransparency(transparency);
     }) as EventListener);
