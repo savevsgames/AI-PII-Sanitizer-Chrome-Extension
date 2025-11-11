@@ -3,6 +3,7 @@
   "name": "PromptBlocker",
   "version": "0.1.0",
   "description": "Protect your privacy by replacing real PII with aliases when using AI chat services",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn1aW71jzmbAGMRVi6rD1pzJJ2aV6rhVqYmuTcTOHpO1iCTLnREDia8jheCPu663zeD5LuobXsG07WzNr9bBsl9kvTet+s2pKh6Iv01PrE1bnszgWqn+Bm8wRHTsT0c/t0lhrrb485EG0k+5oRkz05FV4kc1Lof6oWbrvNqTbDTgVaUU+I5B4vEw1y3r9mXf9P8D2h623QIasY06pKK9d9miQLSFIvexyKVyXLQ2zrSym4MzY1KNuR5tDj8MKxZTIVYhfCzTVPW/2T9N2qn9Yq9PduSuaEviLZKxblLMtFca6KTGVjF1vNXdDudMvmPAA+PhfZZcSIxXRNdVNKV8OxwIDAQAB",
   "permissions": [
     "storage",
     "unlimitedStorage",
