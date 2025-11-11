@@ -111,6 +111,8 @@ export class MessageRouter {
           message.payload.url
         );
 
+      // LEGACY: RELOAD_PROFILES doesn't work in service worker (can't decrypt)
+      // Kept for backward compatibility but not recommended
       case 'RELOAD_PROFILES':
         return this.aliasHandlers.handleReloadProfiles();
 
@@ -119,6 +121,9 @@ export class MessageRouter {
 
       case 'GET_PROFILES':
         return this.aliasHandlers.handleGetProfiles();
+
+      case 'SET_PROFILES':
+        return this.aliasHandlers.handleSetProfiles(message.payload);
 
       case 'ADD_ALIAS':
         return this.aliasHandlers.handleAddAlias(message.payload);
