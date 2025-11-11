@@ -1,6 +1,10 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
+const fs = require('fs');
+
+// Load environment variables
+require('dotenv').config();
 
 module.exports = {
   entry: {
@@ -36,7 +40,27 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: 'src/manifest.json', to: 'manifest.json' },
+        {
+          from: 'src/manifest.json',
+          to: 'manifest.json',
+          transform(content) {
+            // Parse the manifest
+            const manifest = JSON.parse(content.toString());
+
+            // Inject the public key from environment variable
+            // This ensures all testers get the same extension ID
+            if (process.env.EXTENSION_PUBLIC_KEY) {
+              manifest.key = process.env.EXTENSION_PUBLIC_KEY;
+              console.log('✓ Injected EXTENSION_PUBLIC_KEY into manifest.json');
+              console.log('✓ Extension ID will be: gpmmdongkfeimmejkbcnilmacgngnjgi');
+            } else {
+              console.warn('⚠️  EXTENSION_PUBLIC_KEY not found in .env');
+              console.warn('⚠️  Extension ID will be random (different per machine)');
+            }
+
+            return JSON.stringify(manifest, null, 2);
+          }
+        },
         { from: 'src/popup/popup-v2.html', to: 'popup-v2.html' },
         { from: 'src/popup/popup-v2.css', to: 'popup-v2.css' },
         { from: 'src/popup/styles', to: 'styles' }, // Copy modular CSS

@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "build": "webpack --mode production",
+    "build:release": "npm run build && node scripts/package-release.js",
     "dev": "webpack --mode development --watch",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "jest --testPathIgnorePatterns=e2e --testPathIgnorePatterns=integration",

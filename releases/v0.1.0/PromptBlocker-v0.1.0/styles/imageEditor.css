@@ -1,0 +1,294 @@
+/**
+ * Image Editor Modal Styles
+ * Full-screen modal with large canvas and bottom toolbar
+ */
+
+/* Full-screen Modal */
+.image-editor-modal-fullscreen {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: 10000;
+}
+
+.image-editor-modal-fullscreen[style*="display: flex"] {
+  display: flex;
+}
+
+/* Overlay Container */
+.image-editor-overlay {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Close Button (Top Right) */
+.image-editor-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  font-size: 2rem;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  z-index: 10001;
+}
+
+.image-editor-close-btn:hover {
+  background: rgba(220, 53, 69, 0.9);
+  border-color: rgba(220, 53, 69, 1);
+  transform: scale(1.1);
+}
+
+/* Canvas Container (Full Screen - Leave room for toolbar) */
+.image-editor-canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+#imageEditorCanvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  cursor: grab;
+}
+
+#imageEditorCanvas:active {
+  cursor: grabbing;
+}
+
+/* Floating Crop Overlay (Centered, 550:600 aspect ratio) */
+.crop-overlay-floating {
+  position: absolute;
+  width: 550px; /* Actual extension width */
+  height: 600px; /* Actual extension height */
+  max-width: 90vw;
+  max-height: calc(90vh - 120px); /* Leave room for toolbar */
+  pointer-events: none;
+  z-index: 1000;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Crop Border - Thick, Bright, VERY Visible */
+.crop-border-floating {
+  position: absolute;
+  inset: 0;
+  border: 4px dashed rgba(102, 126, 234, 1);
+  box-shadow:
+    0 0 0 9999px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(102, 126, 234, 0.8),
+    inset 0 0 30px rgba(102, 126, 234, 0.3);
+  background: transparent;
+}
+
+/* Crop Label */
+.crop-label-floating {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(102, 126, 234, 0.95);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Bottom Toolbar */
+.image-editor-toolbar {
+  background: rgba(26, 26, 46, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-shrink: 0;
+}
+
+/* Toolbar Sections */
+.toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toolbar-section-center {
+  flex: 1;
+  justify-content: center;
+  max-width: 600px;
+}
+
+.toolbar-section-right {
+  justify-content: flex-end;
+}
+
+/* Toolbar Buttons */
+.toolbar-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(102, 126, 234, 0.6);
+  transform: translateY(-1px);
+}
+
+.toolbar-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Button Variants */
+.toolbar-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: rgba(102, 126, 234, 0.5);
+  font-weight: 600;
+}
+
+.toolbar-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+}
+
+.toolbar-btn-secondary {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+.toolbar-btn-danger {
+  background: rgba(220, 53, 69, 0.2);
+  color: #ff6b6b;
+  border-color: rgba(220, 53, 69, 0.4);
+}
+
+.toolbar-btn-danger:hover:not(:disabled) {
+  background: rgba(220, 53, 69, 0.3);
+  border-color: rgba(220, 53, 69, 0.6);
+}
+
+/* Toolbar Info/Labels */
+.toolbar-info {
+  color: rgba(102, 126, 234, 1);
+  font-weight: 600;
+  font-size: 0.875rem;
+  min-width: 50px;
+  text-align: center;
+}
+
+.toolbar-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toolbar-value {
+  color: white;
+  font-weight: 600;
+}
+
+.toolbar-divider {
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0 0.5rem;
+}
+
+/* Toolbar Slider */
+.toolbar-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 150px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+  cursor: pointer;
+}
+
+.toolbar-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #667eea;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.toolbar-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.toolbar-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #667eea;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.toolbar-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 1200px) {
+  .image-editor-toolbar {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .toolbar-section-center {
+    order: 3;
+    width: 100%;
+    max-width: none;
+  }
+}

@@ -1,0 +1,339 @@
+/**
+ * Design Tokens - Pseudonize
+ * All color, spacing, and typography variables
+ */
+
+:root {
+  /* === COLORS === */
+
+  /* Brand Colors */
+  --color-primary: #667eea;
+  --color-primary-dark: #764ba2;
+  --color-gradient: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+
+  /* === THEME BACKGROUND GRADIENTS === */
+  /* Current active theme (updated dynamically by theme picker) */
+  --theme-bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 33%, #334155 66%, #475569 100%);
+  --theme-header-gradient: linear-gradient(135deg, rgba(15, 23, 42, 0.4) 0%, rgba(71, 85, 105, 0.4) 100%);
+
+  /* === 12 THEME PALETTE === */
+
+  /* LIGHT MODE THEMES (6) - Light pastel backgrounds + white cards + black text */
+
+  /* 1. Classic Light */
+  --theme-classic-light: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 33%, #e2e8f0 66%, #cbd5e1 100%);
+  --theme-classic-light-header: linear-gradient(135deg, rgba(248, 250, 252, 0.4) 0%, rgba(203, 213, 225, 0.4) 100%);
+
+  /* 2. Lavender */
+  --theme-lavender: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 33%, #e9d5ff 66%, #d8b4fe 100%);
+  --theme-lavender-header: linear-gradient(135deg, rgba(250, 245, 255, 0.4) 0%, rgba(216, 180, 254, 0.4) 100%);
+
+  /* 3. Sky */
+  --theme-sky: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 33%, #bae6fd 66%, #7dd3fc 100%);
+  --theme-sky-header: linear-gradient(135deg, rgba(240, 249, 255, 0.4) 0%, rgba(125, 211, 252, 0.4) 100%);
+
+  /* 4. Fire */
+  --theme-fire: linear-gradient(135deg, #fef2f2 0%, #fee2e2 33%, #fecaca 66%, #fca5a5 100%);
+  --theme-fire-header: linear-gradient(135deg, rgba(254, 242, 242, 0.4) 0%, rgba(252, 165, 165, 0.4) 100%);
+
+  /* 5. Leaf */
+  --theme-leaf: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 33%, #bbf7d0 66%, #86efac 100%);
+  --theme-leaf-header: linear-gradient(135deg, rgba(240, 253, 244, 0.4) 0%, rgba(134, 239, 172, 0.4) 100%);
+
+  /* 6. Sunlight */
+  --theme-sunlight: linear-gradient(135deg, #fffbeb 0%, #fef3c7 33%, #fde68a 66%, #fcd34d 100%);
+  --theme-sunlight-header: linear-gradient(135deg, rgba(255, 251, 235, 0.4) 0%, rgba(252, 211, 77, 0.4) 100%);
+
+  /* DARK MODE THEMES (6) - Dark backgrounds + dark cards + white text */
+
+  /* 1. Classic Dark */
+  --theme-classic-dark: linear-gradient(135deg, #000000 0%, #0a0a0a 33%, #1a1a1a 66%, #2a2a2a 100%);
+  --theme-classic-dark-header: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(42, 42, 42, 0.4) 100%);
+
+  /* 2. Midnight Purple */
+  --theme-midnight-purple: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 33%, #3e2a5f 66%, #4c3575 100%);
+  --theme-midnight-purple-header: linear-gradient(135deg, rgba(26, 10, 46, 0.4) 0%, rgba(76, 53, 117, 0.4) 100%);
+
+  /* 3. Deep Ocean */
+  --theme-deep-ocean: linear-gradient(135deg, #001a33 0%, #002b4d 33%, #003d66 66%, #004e7a 100%);
+  --theme-deep-ocean-header: linear-gradient(135deg, rgba(0, 26, 51, 0.4) 0%, rgba(0, 78, 122, 0.4) 100%);
+
+  /* 4. Embers */
+  --theme-embers: linear-gradient(135deg, #2d0a0a 0%, #4d1414 33%, #661a1a 66%, #7a2020 100%);
+  --theme-embers-header: linear-gradient(135deg, rgba(45, 10, 10, 0.4) 0%, rgba(122, 32, 32, 0.4) 100%);
+
+  /* 5. Forest */
+  --theme-forest: linear-gradient(135deg, #0a1f0a 0%, #143314 33%, #1a4d1a 66%, #206620 100%);
+  --theme-forest-header: linear-gradient(135deg, rgba(10, 31, 10, 0.4) 0%, rgba(32, 102, 32, 0.4) 100%);
+
+  /* 6. Sundown */
+  --theme-sundown: linear-gradient(135deg, #2d1f0a 0%, #4d330a 33%, #664d14 66%, #7a6620 100%);
+  --theme-sundown-header: linear-gradient(135deg, rgba(45, 31, 10, 0.4) 0%, rgba(122, 102, 32, 0.4) 100%);
+
+  /* Semantic Colors */
+  --color-success: #4caf50;
+  --color-success-light: rgba(76, 175, 80, 0.3);
+  --color-warning: #ff9800;
+  --color-warning-light: #fff4e6;
+  --color-danger: #ef4444;
+  --color-danger-dark: #dc2626;
+  --color-danger-light: rgba(239, 68, 68, 0.1);
+  --color-info: #2196f3;
+
+  /* Neutral Colors */
+  --color-text: #333;
+  --color-text-secondary: #666;
+  --color-text-muted: #999;
+  --color-text-light: #aaa;
+
+  /* Background Colors */
+  --color-bg: #f5f5f5;
+  --color-bg-white: #ffffff;
+  --color-bg-hover: #f9f9f9;
+  --color-bg-active: #f0f0f0;
+
+  /* Border Colors */
+  --color-border: #e0e0e0;
+  --color-border-light: #f0f0f0;
+  --color-border-dark: #d1d5db;
+
+  /* Status Colors */
+  --color-status-active: var(--color-success);
+  --color-status-inactive: #ccc;
+  --color-status-disabled: #e0e0e0;
+
+  /* === SPACING === */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+
+  /* === TYPOGRAPHY === */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+  /* Font Sizes */
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-base: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* === BORDER RADIUS === */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 50%;
+
+  /* === SHADOWS === */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --shadow-focus: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  --shadow-focus-danger: 0 0 0 3px var(--color-danger-light);
+
+  /* Button Shadows */
+  --shadow-button-hover: 0 4px 12px rgba(102, 126, 234, 0.3);
+  --shadow-button-danger: 0 4px 12px rgba(239, 68, 68, 0.3);
+
+  /* === TRANSITIONS === */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* === Z-INDEX === */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 500;
+  --z-modal: 1000;
+  --z-popover: 1100;
+  --z-tooltip: 1200;
+
+  /* === LAYOUT === */
+  --popup-width: 550px; /* Increased to fit navigation menu (was 500px) */
+  --popup-height: 600px;
+  --popup-width-minimal: 400px;
+  --popup-height-minimal: 80px;
+
+  --modal-width: 600px;
+  --modal-width-sm: 400px;
+  --modal-max-height: 90vh;
+
+  /* === ANIMATIONS === */
+  --animation-pulse: pulse 2s infinite;
+
+  /* ========== GLASSMORPHISM ========== */
+
+  /* Glass background colors (with alpha for blur effect) */
+  --glass-white: rgba(255, 255, 255, 0.7);
+  --glass-white-light: rgba(255, 255, 255, 0.5);
+  --glass-white-heavy: rgba(255, 255, 255, 0.85);
+  --glass-dark: rgba(26, 32, 44, 0.7);
+  --glass-dark-light: rgba(26, 32, 44, 0.5);
+  --glass-dark-heavy: rgba(26, 32, 44, 0.85);
+
+  /* Glass tints (subtle color overlays) */
+  --glass-primary: rgba(102, 126, 234, 0.1);
+  --glass-success: rgba(72, 187, 120, 0.1);
+  --glass-warning: rgba(237, 137, 54, 0.1);
+  --glass-danger: rgba(245, 101, 101, 0.1);
+
+  /* Blur levels */
+  --blur-light: blur(10px);
+  --blur-medium: blur(20px);
+  --blur-heavy: blur(40px);
+  --blur-extreme: blur(60px);
+
+  /* Glass borders */
+  --glass-border: 1px solid rgba(255, 255, 255, 0.18);
+  --glass-border-strong: 1px solid rgba(255, 255, 255, 0.3);
+
+  /* Glass shadows (softer, more diffuse) */
+  --glass-shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+  --glass-shadow-md: 0 8px 16px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --glass-shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --glass-shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
+
+  /* === DYNAMIC THEME-AWARE VARIABLES === */
+  /* These change based on theme mode (dark/light) */
+
+  /* Card backgrounds (default: light mode values - white cards) */
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-bg-medium: rgba(255, 255, 255, 0.7);
+  --card-bg-light: rgba(255, 255, 255, 0.5);
+
+  /* Text colors (default: light mode values - black text on white cards) */
+  --text-primary: rgba(0, 0, 0, 0.87);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-tertiary: rgba(0, 0, 0, 0.38);
+
+  /* Alias highlight colors (default: light mode - dark blue) */
+  --alias-highlight: #4338ca; /* Darker indigo for light themes */
+  --alias-glow: rgba(67, 56, 202, 0.3);
+
+  /* Neutral colors (same for both modes) */
+  --icon-neutral: rgba(100, 116, 139, 0.8);
+  --border-neutral: rgba(148, 163, 184, 0.3);
+
+  /* Gradient backgrounds (behind glass) */
+  --gradient-primary-glass: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+  --gradient-success-glass: linear-gradient(135deg, rgba(72, 187, 120, 0.9) 0%, rgba(56, 178, 172, 0.9) 100%);
+  --gradient-warm: linear-gradient(135deg, rgba(251, 146, 60, 0.9) 0%, rgba(244, 114, 182, 0.9) 100%);
+  --gradient-cool: linear-gradient(135deg, rgba(56, 189, 248, 0.9) 0%, rgba(99, 102, 241, 0.9) 100%);
+
+  /* Glass text colors (better contrast on glass) */
+  --text-on-glass-primary: rgba(26, 32, 44, 0.95);
+  --text-on-glass-secondary: rgba(26, 32, 44, 0.7);
+  --text-on-glass-tertiary: rgba(26, 32, 44, 0.5);
+
+  /* Glass transitions */
+  --glass-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode support (future) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Uncomment when implementing dark mode */
+    /* --color-text: #e0e0e0; */
+    /* --color-bg: #1e1e1e; */
+    /* --color-bg-white: #2d2d2d; */
+  }
+}
+
+/* Animation Keyframes */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+
+/* Glass utility classes */
+.glass {
+  background: var(--glass-white);
+  backdrop-filter: var(--blur-medium);
+  -webkit-backdrop-filter: var(--blur-medium);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow-md);
+  transition: var(--glass-transition);
+}
+
+.glass-light {
+  background: var(--glass-white-light);
+  backdrop-filter: var(--blur-light);
+  -webkit-backdrop-filter: var(--blur-light);
+}
+
+.glass-heavy {
+  background: var(--glass-white-heavy);
+  backdrop-filter: var(--blur-heavy);
+  -webkit-backdrop-filter: var(--blur-heavy);
+}
+
+.glass:hover {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: var(--glass-shadow-lg);
+}
+
+  transform: translateY(0);
+  box-shadow: var(--glass-shadow-sm);
+}
+
+.glass-interactive:active {
+  transform: translateY(0);
+  box-shadow: var(--glass-shadow-sm);
+}
+
+/* === DARK MODE THEME OVERRIDES === */
+/* When body has data-theme-mode="dark", use dark cards + white text */
+body[data-theme-mode="dark"] {
+  --card-bg: rgba(0, 0, 0, 0.7);
+  --card-bg-medium: rgba(0, 0, 0, 0.5);
+  --card-bg-light: rgba(0, 0, 0, 0.3);
+
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.75);
+  --text-tertiary: rgba(255, 255, 255, 0.55);
+
+  /* Alias colors for dark themes - bright and readable */
+  --alias-highlight: #a5b4fc; /* Light indigo for dark themes */
+  --alias-glow: rgba(165, 180, 252, 0.4);
+}
