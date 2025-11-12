@@ -2,7 +2,7 @@
 
 **Extension Name:** Prompt Blocker
 **Version:** 0.1.0
-**Developer:** Greg Barker / Save Vs Games
+**Developer:** Greg Barker / savevsgames
 **Website:** https://promptblocker.com
 
 ---
