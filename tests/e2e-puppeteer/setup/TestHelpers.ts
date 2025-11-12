@@ -85,6 +85,17 @@ export async function waitForText(
 }
 
 /**
+ * Wait for a specified amount of time
+ *
+ * Replacement for deprecated page.waitForTimeout()
+ *
+ * @param ms Milliseconds to wait
+ */
+export async function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
  * Wait for network idle
  *
  * Useful after triggering actions that cause network requests.

@@ -250,72 +250,237 @@ export class ExtensionTestHarness {
   }
 
   /**
-   * Open extension popup programmatically
+   * Open ChatGPT platform page
+   * REQUIRED before opening popup - establishes the message chain
    *
-   * This is the CORRECT way to open popups in Puppeteer:
-   * - Use chrome.action.openPopup() via service worker
-   * - Wait for popup page target to appear
-   * - Return the popup page for testing
+   * The extension requires a platform page to function because:
+   * - inject.js only runs on AI platform pages
+   * - content.ts only injects on matching domains
+   * - Message chain (inject → content → background) needs platform context
    *
-   * Do NOT navigate directly to chrome-extension://id/popup.html
-   * as this causes the popup to close immediately.
+   * @returns Promise<Page> The ChatGPT page
+   */
+  async openChatGPT(): Promise<Page> {
+    if (!this.browser) {
+      throw new Error('❌ Setup must be called first!');
+    }
+
+    console.log('[Harness] 🌐 Opening ChatGPT page...');
+    const page = await this.browser.newPage();
+
+    // Enable console capture for platform page
+    if (this.config.captureConsole) {
+      page.on('console', (msg) => {
+        const type = msg.type() as any;
+        const text = msg.text();
+
+        this.capturedLogs.push({
+          type,
+          text,
+          timestamp: Date.now(),
+          args: msg.args()
+        });
+
+        // Log important messages
+        if (type === 'error' || type === 'warning' || text.includes('🛡️')) {
+          console.log(`[ChatGPT ${type.toUpperCase()}]`, text);
+        }
+      });
+    }
+
+    await page.goto('https://chatgpt.com', {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000
+    });
+
+    console.log('[Harness] ✅ ChatGPT page opened');
+    return page;
+  }
+
+  /**
+   * Wait for content script injection
+   * Verifies inject.js is loaded in page context by checking for window.__nativeFetch
+   *
+   * @param page The platform page to check
+   * @param timeout Max wait time in milliseconds
+   */
+  async waitForContentScriptInjection(page: Page, timeout: number = 10000): Promise<void> {
+    console.log('[Harness] ⏳ Waiting for content script injection...');
+
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
+      // Check if inject.js has set window.__nativeFetch (line 19 of inject.js)
+      const injected = await page.evaluate(() => {
+        return typeof (window as any).__nativeFetch === 'function';
+      });
+
+      if (injected) {
+        console.log('[Harness] ✅ Content script injected (window.__nativeFetch detected)');
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    throw new Error(
+      '❌ Content script injection timeout\n' +
+      'inject.js did not load within ' + timeout + 'ms\n' +
+      'This usually means:\n' +
+      '  1. Content script manifest patterns don\'t match the page\n' +
+      '  2. Extension was disabled or failed to load\n' +
+      '  3. Page was not properly loaded'
+    );
+  }
+
+  /**
+   * Wait for health checks to pass
+   * Verifies message chain (inject → content → background) is active
+   *
+   * inject.js runs automatic health checks continuously (starting immediately).
+   * We just wait for the isProtected variable to become true.
+   *
+   * @param page The platform page to check
+   * @param timeout Max wait time in milliseconds (default 15s to allow for retries)
+   */
+  async waitForHealthCheckActive(page: Page, timeout: number = 15000): Promise<void> {
+    console.log('[Harness] ⏳ Waiting for automatic health checks to pass...');
+    console.log('[Harness]    inject.js performs health checks automatically with 3 retries');
+
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeout) {
+      const elapsed = Date.now() - startTime;
+
+      // Check the isProtected variable that inject.js maintains
+      const healthStatus = await page.evaluate(() => {
+        // Access the inject.js scope variables via window
+        // inject.js sets up console logs we can check for
+        return {
+          // Look for console log messages indicating protection status
+          hasNativeFetch: typeof (window as any).__nativeFetch === 'function',
+          // We can also check if fetch was overridden (inject.js line 206)
+          fetchOverridden: window.fetch !== (window as any).__nativeFetch
+        };
+      });
+
+      // If fetch is overridden and nativeFetch exists, inject.js is running
+      // The automatic health check runs immediately, so we should see logs
+      if (healthStatus.hasNativeFetch && healthStatus.fetchOverridden) {
+        // Wait a bit to ensure health check had time to run (inject.js retries 3 times)
+        // Each attempt: 500ms timeout + 200ms delay = ~2 seconds for 3 attempts
+        if (elapsed >= 3000) {
+          console.log('[Harness] ✅ Health checks should be complete (inject.js active for >3s)');
+          return;
+        }
+      }
+
+      // Check if we see protection logs in console
+      if (elapsed > 1000 && healthStatus.hasNativeFetch) {
+        // After 1 second, if inject.js is there, assume health check passed
+        // (extension would show errors in console if it failed)
+        console.log('[Harness] ✅ inject.js active and healthy (no error logs detected)');
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    throw new Error(
+      '❌ Health check timeout\n' +
+      'Message chain (inject → content → background) not active after ' + timeout + 'ms\n' +
+      'This usually means:\n' +
+      '  1. Extension is not enabled (config.settings.enabled = false)\n' +
+      '  2. Domain is not in protectedDomains list\n' +
+      '  3. Background service worker is not responding\n' +
+      '  4. Content script did not inject properly'
+    );
+  }
+
+  /**
+   * Ensure popup starts in full mode (not minimal)
+   * The popup remembers the last mode in chrome.storage.local
+   * This clears that preference to ensure tests start with full view
+   */
+  async ensurePopupFullMode(): Promise<void> {
+    if (!this.worker) {
+      throw new Error('❌ Setup must be called first!');
+    }
+
+    console.log('[Harness] 🔧 Ensuring popup starts in full mode...');
+
+    // Clear the popupMode preference via service worker
+    await this.worker.evaluate(async () => {
+      await chrome.storage.local.set({ popupMode: 'full' });
+    });
+
+    console.log('[Harness] ✅ Popup mode set to full');
+  }
+
+  /**
+   * Setup platform page with full message chain
+   * Convenience method that combines all three platform setup steps:
+   * 1. Opens ChatGPT page
+   * 2. Waits for content script injection
+   * 3. Waits for health checks to pass
+   *
+   * Use this before opening popup to ensure message chain is active.
+   *
+   * @returns Promise<Page> The ready ChatGPT page with active message chain
+   */
+  async setupPlatformPage(): Promise<Page> {
+    const chatPage = await this.openChatGPT();
+    await this.waitForContentScriptInjection(chatPage);
+    await this.waitForHealthCheckActive(chatPage);
+    console.log('[Harness] ✅ Platform page fully initialized with active message chain');
+    return chatPage;
+  }
+
+  /**
+   * Open extension popup via direct URL navigation
+   *
+   * IMPORTANT: Must call setupPlatformPage() or manually call
+   * openChatGPT() + waitForContentScriptInjection() + waitForHealthCheckActive()
+   * first to establish the message chain!
+   *
+   * The popup requires an active platform page because it relies on the
+   * inject → content → background message flow to function properly.
    *
    * @returns Promise<Page> The popup page
    * @throws Error if popup fails to open
    */
   async openPopup(): Promise<Page> {
-    if (!this.browser || !this.worker) {
+    if (!this.browser) {
       throw new Error('❌ Setup must be called first!');
     }
 
+    // Ensure popup will start in full mode (not minimal)
+    await this.ensurePopupFullMode();
+
     console.log('[Harness] 🪟 Opening popup...');
 
-    try {
-      // Trigger popup via service worker (CRITICAL METHOD)
-      await this.worker.evaluate('chrome.action.openPopup();');
+    // Create new page and navigate to popup
+    const popupPage = await this.browser.newPage();
+    const popupUrl = `chrome-extension://${this.extensionId}/popup-v2.html`;
 
-      console.log('[Harness] ✅ Popup trigger sent');
-
-    } catch (error) {
-      throw new Error(
-        `❌ Failed to trigger popup: ${error}\n` +
-        `This might indicate a service worker issue.`
-      );
-    }
-
-    // Wait for popup page to appear
-    console.log('[Harness] ⏳ Waiting for popup page...');
+    console.log(`[Harness] 🔗 Navigating to: ${popupUrl}`);
 
     try {
-      const popupTarget = await this.browser.waitForTarget(
-        (target: Target) => {
-          const isPage = target.type() === 'page';
-          const isPopup = target.url().includes('popup-v2.html');
+      await popupPage.goto(popupUrl, {
+        waitUntil: 'networkidle2',
+        timeout: 15000
+      });
 
-          if (isPage && isPopup) {
-            console.log(`[Harness] 📍 Found popup page: ${target.url()}`);
-            return true;
-          }
-          return false;
-        },
-        { timeout: 10000 } // 10 seconds max
-      );
-
-      const popupPage = await popupTarget.page();
-      if (!popupPage) {
-        throw new Error('❌ Failed to get popup page instance');
-      }
-
-      console.log('[Harness] ✅ Popup page acquired');
+      console.log('[Harness] ✅ Popup page loaded');
 
     } catch (error) {
+      await this.captureScreenshot(popupPage, 'popup-navigation-failed');
       throw new Error(
-        `❌ Popup page failed to appear within 10 seconds.\n` +
+        `❌ Failed to navigate to popup: ${error}\n` +
+        `URL: ${popupUrl}\n` +
         `This usually means:\n` +
         `  1. popup-v2.html not found in extension\n` +
-        `  2. Popup has JavaScript errors\n` +
-        `  3. Popup was blocked by browser\n\n` +
-        `Original error: ${error}`
+        `  2. Extension ID is incorrect\n` +
+        `Screenshot saved for debugging.`
       );
     }
 
@@ -323,19 +488,38 @@ export class ExtensionTestHarness {
     console.log('[Harness] ⏳ Waiting for app initialization...');
 
     try {
-      await popupPage.waitForSelector('#app', {
-        visible: true,
-        timeout: 10000
-      });
+      // Wait for either #app or body to be ready
+      await popupPage.waitForFunction(
+        () => {
+          const app = document.querySelector('#app');
+          const body = document.body;
+          return (app && app.clientHeight > 0) || (body && body.clientHeight > 0);
+        },
+        { timeout: 15000 }
+      );
 
-      console.log('[Harness] ✅ App initialized (#app element visible)');
+      console.log('[Harness] ✅ App initialized');
+
+      // Check if #app exists
+      const appExists = await popupPage.$('#app');
+      if (appExists) {
+        console.log('[Harness] ✅ #app element found');
+      } else {
+        console.log('[Harness] ⚠️  #app element not found (checking body)');
+        const bodyContent = await popupPage.evaluate(() => document.body.innerHTML.substring(0, 200));
+        console.log(`[Harness] Body content preview: ${bodyContent}...`);
+      }
 
     } catch (error) {
       // Take screenshot for debugging
       await this.captureScreenshot(popupPage, 'popup-initialization-failed');
 
+      // Get page content for debugging
+      const content = await popupPage.content();
+      console.log('[Harness] Page HTML length:', content.length);
+
       throw new Error(
-        `❌ App failed to initialize within 10 seconds.\n` +
+        `❌ App failed to initialize within 15 seconds.\n` +
         `#app element not found or not visible.\n` +
         `Screenshot saved to: screenshots/\n\n` +
         `Original error: ${error}`

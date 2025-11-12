@@ -94,6 +94,40 @@ await worker.evaluate(() => {
 
 ## 🏗️ Test Architecture
 
+### ⚠️ CRITICAL: Platform Page Requirement
+
+**PromptBlocker uses a three-context architecture that REQUIRES an AI platform page to function:**
+
+```
+Page Context (inject.js)
+    ↓ window.postMessage
+Content Script (content.ts) - Isolated World
+    ↓ chrome.runtime.sendMessage
+Background Service Worker (serviceWorker.ts)
+```
+
+**This means:**
+- ❌ **Popup CANNOT function in isolation** - It needs the full message chain active
+- ✅ **Tests MUST open an AI platform page FIRST** (ChatGPT, Claude, Gemini, etc.)
+- ✅ **Then wait for content script injection**
+- ✅ **Then verify health checks are passing**
+- ✅ **Only then can popup be opened and tested**
+
+**Message Flow:**
+1. `inject.js` (page context) intercepts fetch calls on AI platform
+2. Sends `window.postMessage({ type: 'SUBSTITUTE_REQUEST', ... })`
+3. `content.ts` receives and forwards via `chrome.runtime.sendMessage()`
+4. `MessageRouter` in background routes to `RequestProcessor`/`ResponseProcessor`
+5. Response flows back: background → content → inject → page
+
+**Why This Matters for E2E Tests:**
+- Every test needs a platform page as the foundation
+- Cannot test popup in isolation like a normal web page
+- Must verify the entire inject → content → background chain
+- Health check system must be active (monitors extension connection)
+
+---
+
 ### Three-Layer Testing Strategy
 
 ```
@@ -245,16 +279,25 @@ THEN:
 **Scenario:**
 ```
 GIVEN the extension is loaded
-WHEN popup is opened via chrome.action.openPopup()
+  AND a ChatGPT page is open (required for message chain)
+  AND content script has been injected
+  AND health checks are passing
+WHEN popup is opened via direct URL navigation
 THEN:
   ✓ Popup page loads within 5 seconds
   ✓ #app element is visible
   ✓ Tab navigation is rendered (Aliases, Stats, Features, Settings, Debug)
-  ✓ Header shows "🛡️ PromptBlocker.com"
+  ✓ Header shows "PromptBlocker"
   ✓ Status indicator shows "Active" or "Partial" or "Inactive"
   ✓ Empty state message shown (no profiles yet)
   ✓ "New Profile" button is visible
 ```
+
+**Prerequisites (Platform Page Required):**
+1. Open chat.openai.com
+2. Wait for content script injection
+3. Wait for health check to pass
+4. Then open popup
 
 **Elements to Verify:**
 - `#app` - Main container
@@ -839,30 +882,87 @@ export class ExtensionTestHarness {
   }
 
   /**
-   * Open extension popup programmatically
+   * Open platform page (ChatGPT, Claude, etc.)
+   * REQUIRED before opening popup - establishes message chain
+   */
+  async openChatGPT(): Promise<Page> {
+    if (!this.browser) {
+      throw new Error('Setup must be called first!');
+    }
+
+    console.log('[Harness] Opening ChatGPT page...');
+    const page = await this.browser.newPage();
+    await page.goto('https://chatgpt.com', { waitUntil: 'domcontentloaded' });
+
+    console.log('[Harness] ✅ ChatGPT page opened');
+    return page;
+  }
+
+  /**
+   * Wait for content script injection
+   * Verifies inject.js is loaded in page context
+   */
+  async waitForContentScriptInjection(page: Page, timeout: number = 10000): Promise<void> {
+    console.log('[Harness] Waiting for content script injection...');
+
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
+      // Check if inject.js has modified window object
+      const injected = await page.evaluate(() => {
+        // inject.js adds these markers to window
+        return !!(window as any).__AI_PII_INJECT_VERSION;
+      });
+
+      if (injected) {
+        console.log('[Harness] ✅ Content script injected');
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    throw new Error('Content script injection timeout');
+  }
+
+  /**
+   * Wait for health checks to pass
+   * Verifies message chain (inject → content → background) is active
+   */
+  async waitForHealthCheckActive(page: Page, timeout: number = 10000): Promise<void> {
+    console.log('[Harness] Waiting for health checks to pass...');
+
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
+      const isProtected = await page.evaluate(() => {
+        return (window as any).__AI_PII_PROTECTED === true;
+      });
+
+      if (isProtected) {
+        console.log('[Harness] ✅ Health checks passing - message chain active');
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    throw new Error('Health check timeout - message chain not active');
+  }
+
+  /**
+   * Open extension popup via direct URL navigation
+   * MUST call openChatGPT() and waitForHealthCheckActive() first!
    */
   async openPopup(): Promise<Page> {
-    if (!this.browser || !this.worker) {
+    if (!this.browser || !this.extensionId) {
       throw new Error('Setup must be called first!');
     }
 
     console.log('[Harness] Opening popup...');
 
-    // Trigger popup via service worker
-    await this.worker.evaluate('chrome.action.openPopup();');
-
-    // Wait for popup page to appear
-    const popupTarget = await this.browser.waitForTarget(
-      (target: Target) =>
-        target.type() === 'page' &&
-        target.url().includes('popup-v2.html'),
-      { timeout: 10000 }
-    );
-
-    const popupPage = await popupTarget.page();
-    if (!popupPage) {
-      throw new Error('Failed to get popup page');
-    }
+    // Navigate to popup URL directly
+    const popupPage = await this.browser.newPage();
+    const popupUrl = `chrome-extension://${this.extensionId}/popup-v2.html`;
+    await popupPage.goto(popupUrl, { waitUntil: 'networkidle2' });
 
     console.log('[Harness] ✅ Popup opened');
 

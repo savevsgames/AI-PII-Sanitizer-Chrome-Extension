@@ -33,7 +33,8 @@ export class PopupPage {
 
   private selectors = {
     // Main elements
-    app: '#app',
+    fullView: '#fullView',
+    minimalView: '#minimalView',
     header: '.header',
     statusIndicator: '#statusIndicator',
 
@@ -84,7 +85,8 @@ export class PopupPage {
    * Wait for popup to be fully loaded
    */
   async waitForLoad(): Promise<void> {
-    await this.page.waitForSelector(this.selectors.app, {
+    // Wait for either fullView or minimalView to be visible
+    await this.page.waitForSelector(`${this.selectors.fullView}, ${this.selectors.minimalView}`, {
       visible: true,
       timeout: 10000
     });

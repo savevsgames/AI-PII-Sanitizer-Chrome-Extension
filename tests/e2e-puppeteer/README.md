@@ -2,6 +2,36 @@
 
 Enterprise-grade end-to-end tests for PromptBlocker Chrome extension.
 
+## ⚠️ CRITICAL: Platform Page Requirement
+
+**PromptBlocker uses a three-context architecture that REQUIRES an AI platform page to function.**
+
+All tests MUST follow this pattern:
+```typescript
+// 1. Setup harness
+await harness.setup();
+
+// 2. Open platform page FIRST (establishes message chain)
+const chatPage = await harness.setupPlatformPage();
+
+// 3. NOW open popup (will have active message chain)
+const popupPage = await harness.openPopup();
+```
+
+**Why?** The extension relies on this message flow:
+```
+inject.js (page context)
+    ↓ window.postMessage
+content.ts (isolated world)
+    ↓ chrome.runtime.sendMessage
+background (service worker)
+```
+
+Without a platform page, there's no inject.js, no content script, and no message chain.
+The popup will fail to function properly.
+
+---
+
 ## Quick Start
 
 ```bash
