@@ -16,7 +16,8 @@
       "Bash(npm run test:integration:*)",
       "Bash(npx ts-node:*)",
       "Bash(firebase deploy:*)",
-      "Bash(npm run build:release:*)"
+      "Bash(npm run build:release:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

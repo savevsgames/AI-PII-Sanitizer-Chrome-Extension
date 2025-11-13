@@ -6,3 +6,5 @@
   - Present findings FIRST, then ask what approach to take
   - Never edit production code to "fix tests" without explicit approval
   - If unsure about root cause, say "I need to investigate further" instead of guessing
+- do not modify project code when writing tests
+- Always investigate the actual codebase implementation instead of trusting documentation
