@@ -40,9 +40,9 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env.test.local') });
 
 // Validate required environment variables
 const requiredEnvVars = [
-  'TEST_USER_EMAIL',
-  'TEST_USER_PASSWORD',
-  'TEST_USER_UID',
+  'INTEGRATION_TEST_USER_EMAIL',
+  'INTEGRATION_TEST_USER_PASSWORD',
+  'INTEGRATION_TEST_USER_UID',
   'FIREBASE_TEST_API_KEY',
   'FIREBASE_AUTH_DOMAIN',
   'FIREBASE_PROJECT_ID',
@@ -114,25 +114,25 @@ export async function signInTestUser(): Promise<User> {
   const testAuth = getTestAuth();
 
   console.log('[Integration Test] Signing in test user...');
-  console.log('[Integration Test] Email:', process.env.TEST_USER_EMAIL);
+  console.log('[Integration Test] Email:', process.env.INTEGRATION_TEST_USER_EMAIL);
 
   try {
     const userCredential = await signInWithEmailAndPassword(
       testAuth,
-      process.env.TEST_USER_EMAIL!,
-      process.env.TEST_USER_PASSWORD!
+      process.env.INTEGRATION_TEST_USER_EMAIL!,
+      process.env.INTEGRATION_TEST_USER_PASSWORD!
     );
 
     console.log('[Integration Test] ✅ Signed in as:', userCredential.user.email);
     console.log('[Integration Test] UID:', userCredential.user.uid);
 
     // Verify UID matches expected
-    if (userCredential.user.uid !== process.env.TEST_USER_UID) {
+    if (userCredential.user.uid !== process.env.INTEGRATION_TEST_USER_UID) {
       console.warn(
         '[Integration Test] ⚠️  UID mismatch!\n' +
-        `Expected: ${process.env.TEST_USER_UID}\n` +
+        `Expected: ${process.env.INTEGRATION_TEST_USER_UID}\n` +
         `Got: ${userCredential.user.uid}\n` +
-        'Please update TEST_USER_UID in .env.test.local'
+        'Please update INTEGRATION_TEST_USER_UID in .env.test.local'
       );
     }
 
@@ -146,13 +146,13 @@ export async function signInTestUser(): Promise<User> {
         '[Integration Test] User not found. Please create the test user:\n' +
         '1. Go to Firebase Console → Authentication → Users\n' +
         '2. Click "Add User"\n' +
-        `3. Email: ${process.env.TEST_USER_EMAIL}\n` +
-        `4. Password: ${process.env.TEST_USER_PASSWORD}\n`
+        `3. Email: ${process.env.INTEGRATION_TEST_USER_EMAIL}\n` +
+        `4. Password: ${process.env.INTEGRATION_TEST_USER_PASSWORD}\n`
       );
     } else if (error.code === 'auth/wrong-password') {
       console.error(
         '[Integration Test] Wrong password. Please verify:\n' +
-        '1. TEST_USER_PASSWORD in .env.test.local matches Firebase\n' +
+        '1. INTEGRATION_TEST_USER_PASSWORD in .env.test.local matches Firebase\n' +
         '2. Or reset password in Firebase Console'
       );
     } else if (error.code === 'auth/invalid-api-key') {
@@ -186,7 +186,7 @@ export async function signOutTestUser(): Promise<void> {
  */
 export async function cleanupTestData(): Promise<void> {
   const testDb = getTestFirestore();
-  const userId = process.env.TEST_USER_UID!;
+  const userId = process.env.INTEGRATION_TEST_USER_UID!;
 
   console.log('[Integration Test] Cleaning up test data for user:', userId);
 

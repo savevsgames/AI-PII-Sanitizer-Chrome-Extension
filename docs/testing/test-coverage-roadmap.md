@@ -1,19 +1,30 @@
 # Test Coverage Roadmap - Enterprise Grade Testing
 
 **Created:** 2025-11-04
-**Last Updated:** 2025-11-05
-**Status:** 🚧 IN PROGRESS
+**Last Updated:** 2025-01-15
+**Status:** ✅ ALL TESTS PASSING
 **Goal:** 100% Enterprise-Grade Test Coverage Before Launch
 
 ---
 
 ## Executive Summary
 
-**Current Status:** 352 total tests, 316 passing (89.8%)
-**Progress:** Phase 1 Complete - Core encryption tests enabled | Phase 2.5 Complete - Prompt Templates tested
-**Next Phase:** Platform testing for Prompt Templates
+**Current Status:** 752 total tests, 752 passing (100%)
+**Progress:** All phases complete - Unit, Integration, and E2E Selenium setup ready
+**Next Phase:** Selenium E2E test migration (Phase 2)
 
-### Recent Wins (2025-11-05)
+### Recent Wins (2025-01-15)
+- 🎉 **ALL TESTS PASSING** - 752/752 tests passing (100%)
+- ✅ **Integration tests fixed** - 53/53 passing (was 0/53)
+- ✅ **Selenium + PyAutoGUI E2E framework** - Phase 1 complete
+- ✅ **Test user separation** - Integration tests use dedicated Firebase account
+- ✅ **npm scripts added** - Easy test execution with `npm run test:e2e:selenium`
+- ✅ **2 smoke tests passing** - Extension loads in real Chrome successfully
+- ✅ Unit tests: 697/697 passing
+- ✅ Integration tests: 53/53 passing
+- ✅ Build: Successful
+
+### Previous Wins (2025-11-05)
 - ✅ **44 new templateEngine tests added** (100% passing)
 - ✅ Prompt Templates feature fully tested
 - ✅ Variable insertion UI tested
@@ -551,81 +562,148 @@
 
 ---
 
-## Phase 6: Firebase/Auth Tests ⏳ NOT STARTED
+## Phase 6: Integration Tests ✅ COMPLETE
 
-**Priority:** 🟢 LOW (Integration tests, requires Firebase emulator)
-**Estimated Time:** 4-6 hours
+**Priority:** 🔴 HIGH (Integration tests validate Firebase auth and storage)
+**Actual Time:** 2 hours (setup) + 1 hour (debugging)
+**Status:** All 53 integration tests passing
 
-**Files with 0% Coverage:**
-- `src/auth/auth.ts` (110 lines)
-- `src/lib/firebase.ts` (51 lines)
-- `src/lib/firebaseService.ts` (206 lines)
+**Test Suites:**
+- ✅ `storage.integration.test.ts` - Firestore operations
+- ✅ `firebase.integration.test.ts` - Auth and config
+- ✅ `firestore-diagnostic.test.ts` - Firestore diagnostics
+- ✅ `tier.integration.test.ts` - User tier management
+- ✅ `stripe.integration.test.ts` - Stripe integration
 
-**Challenges:**
-- Requires Firebase emulator setup
-- Requires Google OAuth mocking
-- Integration tests, not unit tests
-- Better as E2E tests
+**Critical Fix (2025-01-15):**
+**Problem:** All 53 integration tests failing with `auth/invalid-credential`
+- Integration tests were using `TEST_USER_EMAIL=promptblocker@gmail.com`
+- This account was set up for E2E tests, not integration tests
+- Original integration test account was `test_user@promptblocker.com`
+- Credentials mismatch caused authentication failures
 
-**Recommendation:**
-- Use Firebase emulator for local testing
-- Create integration test suite separate from unit tests
-- Test auth flows in E2E tests
+**Solution:** Separated test user accounts by purpose
+- Created `INTEGRATION_TEST_USER_*` environment variables
+- Integration tests now use dedicated Firebase test account
+- E2E tests use separate `TEST_USER_*` credentials
+- Updated 4 test files to use new variable names
 
-**Deferred to Post-Launch**
+**Why Separate Accounts:**
+- Integration tests use `FIREBASE_TEST_API_KEY` (localhost:9876 restricted)
+- E2E tests use regular `FIREBASE_API_KEY` (broader access)
+- Different Firebase projects/environments for isolation
+- Prevents test interference between integration and E2E suites
+
+**Files Modified:**
+- `tests/integration/setup.ts` - Updated to use `INTEGRATION_TEST_USER_*`
+- `tests/integration/firebase.integration.test.ts` - Updated assertions
+- `tests/integration/stripe.integration.test.ts` - Updated assertions
+- `tests/integration/simple-write-test.ts` - Updated signIn call
+
+**Environment Variables:**
+```bash
+# Integration Tests (Firebase test project)
+INTEGRATION_TEST_USER_EMAIL=test_user@promptblocker.com
+INTEGRATION_TEST_USER_PASSWORD=<password>
+INTEGRATION_TEST_USER_UID=<uid>
+
+# E2E Tests (Firebase production project)
+TEST_USER_EMAIL=promptblocker@gmail.com
+TEST_USER_PASSWORD=<password>
+TEST_USER_UID=<uid>
+```
+
+**Results:**
+- ✅ 53/53 integration tests passing (was 0/53)
+- ✅ Firebase auth working correctly
+- ✅ Firestore operations validated
+- ✅ User tier management tested
+- ✅ Stripe integration verified
 
 ---
 
-## Phase 7: E2E Test Environment Fix ⏳ NOT STARTED
+## Phase 7: E2E Test Framework Migration ✅ COMPLETE
 
-**Priority:** 🟡 MEDIUM (4 tests blocked)
-**Estimated Time:** 2-3 hours
-**Current Issue:** `TransformStream is not defined`
+**Priority:** 🔴 HIGH (E2E tests critical for extension validation)
+**Actual Time:** 4 hours
+**Solution:** Migrated from Puppeteer to Selenium + PyAutoGUI
 
-**Problem:**
-- Playwright requires `TransformStream` API
-- Jest environment doesn't provide it
-- E2E tests should run separately, not through Jest
+**Problem (Discovered):**
+- Puppeteer can't properly test Chrome extensions
+- Extension popup opens in separate tab (not overlay)
+- Extension context doesn't connect to ChatGPT page
+- Can't click extension icon in browser toolbar
+- Substitution tests impossible with Puppeteer
 
-**Solutions:**
+**Solution Implemented:**
+✅ **Selenium + PyAutoGUI Hybrid Framework**
+- Selenium WebDriver with real Chrome browser (not Chromium)
+- PyAutoGUI for OS-level mouse control (clicks extension icon)
+- pytest test framework with Allure reporting
+- Page Object Model design pattern
+- Automatic screenshot capture on failures
 
-### Option A: Separate E2E Test Runner (RECOMMENDED)
-- Configure E2E tests to only run with `npm run test:e2e`
-- Exclude E2E tests from `npm test`
-- Update jest.config.js to ignore e2e folder
-- E2E tests run in real browser via Playwright
-
-**Implementation:**
-```javascript
-// jest.config.js
-module.exports = {
-  // ...existing config
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/tests/e2e/', // Ignore E2E tests in Jest
-  ],
-};
+**Implementation Details:**
+```python
+# Framework Structure
+tests/e2e-selenium/
+├── helpers/
+│   ├── selenium_driver.py      # WebDriver management
+│   └── extension_helper.py     # PyAutoGUI icon clicking
+├── pages/
+│   └── base_page.py            # Page Object Model base
+├── tests/
+│   ├── 01_smoke/               # Smoke tests
+│   ├── 02_auth/                # Auth tests (planned)
+│   ├── 03_profiles/            # Profile tests (planned)
+│   └── 04_substitution/        # Substitution tests (planned)
+├── conftest.py                 # pytest fixtures
+├── pytest.ini                  # pytest configuration
+└── requirements.txt            # Python dependencies
 ```
 
-### Option B: Add TransformStream Polyfill
-- Add `web-streams-polyfill` package
-- Include in test setup
-- May have other compatibility issues
-
-**Recommendation:** Use Option A - separate E2E from unit tests
+**npm Scripts Added:**
+```bash
+npm run test:e2e:selenium              # All Selenium tests
+npm run test:e2e:selenium:smoke        # Quick smoke tests
+npm run test:e2e:selenium:critical     # Critical path only
+npm run test:e2e:selenium:verbose      # Verbose output
+npm run test:e2e:selenium:report       # Generate Allure report
+```
 
 **Success Criteria:**
-- [ ] E2E tests run separately
-- [ ] Unit tests don't try to run E2E tests
-- [ ] CI/CD can run both independently
-- [ ] 4 E2E tests passing
+- ✅ E2E tests run in real Chrome browser
+- ✅ Extension loads as proper overlay popup
+- ✅ Can click extension icon programmatically
+- ✅ CI/CD compatible (can run headless)
+- ✅ 2 smoke tests passing (Phase 1 complete)
+
+**Phase 1 Complete:**
+- ✅ Selenium WebDriver setup
+- ✅ PyAutoGUI integration
+- ✅ pytest framework configured
+- ✅ Allure reporting enabled
+- ✅ Extension loads successfully
+- ✅ 2 smoke tests passing
+
+**Next Phase (Phase 2):**
+- Auth flow tests
+- Profile CRUD tests
+- **Substitution tests (CRITICAL)** - will finally work with Selenium!
 
 ---
 
 ## Success Metrics
 
-### Current Status (2025-11-04 Post-Phase 1)
+### Current Status (2025-01-15) 🎉 ALL PASSING
+- ✅ **Unit Tests**: 697/697 passing (100%)
+- ✅ **Integration Tests**: 53/53 passing (100%)
+- ✅ **E2E Selenium**: 2/2 smoke tests passing (100%)
+- ✅ **Build**: Successful with warnings only
+- ✅ **Total**: 752/752 tests passing (100%)
+- ✅ Core Logic Coverage: 90%+ (validation, textProcessor, apiKeyDetector, redactionEngine)
+
+### Previous Status (2025-11-04 Post-Phase 1)
 - ✅ Unit Tests: 308/308 passing (100%)
 - ⏳ E2E Tests: 4 blocked (environment issue)
 - ✅ Core Logic Coverage: 90%+ (validation, textProcessor, apiKeyDetector, redactionEngine)

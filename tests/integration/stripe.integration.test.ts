@@ -36,7 +36,7 @@ describe('Stripe Integration with Firebase Auth', () => {
     test('test user is authenticated for Stripe operations', () => {
       expect(testUser).toBeDefined();
       expect(testUser.uid).toBeDefined();
-      expect(testUser.email).toBe(process.env.TEST_USER_EMAIL);
+      expect(testUser.email).toBe(process.env.INTEGRATION_TEST_USER_EMAIL);
 
       console.log('[Stripe Test] ✅ User authenticated:', testUser.email);
       console.log('[Stripe Test] UID for Stripe operations:', testUser.uid);

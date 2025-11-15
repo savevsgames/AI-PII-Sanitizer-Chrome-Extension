@@ -46,8 +46,8 @@ describe('Firebase Integration Tests (Real Firebase)', () => {
   describe('Firebase Authentication', () => {
     it('should have a valid authenticated user', () => {
       expect(testUser).toBeDefined();
-      expect(testUser.email).toBe(process.env.TEST_USER_EMAIL);
-      expect(testUser.uid).toBe(process.env.TEST_USER_UID);
+      expect(testUser.email).toBe(process.env.INTEGRATION_TEST_USER_EMAIL);
+      expect(testUser.uid).toBe(process.env.INTEGRATION_TEST_USER_UID);
 
       console.log('[Test] ✅ User authentication verified');
     });
