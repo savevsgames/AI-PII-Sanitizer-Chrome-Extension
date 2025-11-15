@@ -48,6 +48,10 @@ class ChromeDriverManager:
 
         # Load unpacked extension
         options.add_argument(f'--load-extension={extension_path}')
+
+        # Enable developer mode (required for unpacked extensions)
+        options.add_argument('--enable-features=ExtensionsToolbarMenu')
+
         print(f"[Driver] Loading extension from: {extension_path}")
 
         # ========================================
