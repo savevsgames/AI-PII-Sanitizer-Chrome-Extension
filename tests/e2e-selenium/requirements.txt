@@ -1,0 +1,22 @@
+# Selenium + PyAutoGUI E2E Testing Dependencies
+
+# Core Testing Framework
+selenium==4.27.1              # WebDriver for browser automation
+pytest==8.3.4                 # Test framework
+pytest-xdist==3.6.1          # Parallel test execution
+
+# UI Automation
+pyautogui==0.9.54            # OS-level mouse/keyboard control
+pillow==11.0.0               # Image processing for PyAutoGUI image recognition
+
+# Reporting
+allure-pytest==2.13.5        # Beautiful HTML reports
+pytest-html==4.1.1           # Simple HTML reports
+
+# Utilities
+python-dotenv==1.0.1         # Environment variable management
+webdriver-manager==4.0.2     # Automatic ChromeDriver management
+
+# Optional: For future enhancements
+# anthropic==0.40.0          # Claude Computer Use (future)
+# opencv-python==4.10.0.84   # Advanced image recognition (if needed)

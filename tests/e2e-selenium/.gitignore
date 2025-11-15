@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+
+# Test reports and artifacts
+reports/
+*.log
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Chrome profile data
+chrome_profile/
+
+# Screenshots (optional - comment out if you want to commit failure screenshots)
+screenshots/*.png
+!screenshots/.gitkeep
+
+# Allure
+.allure/
+allure-results/
+allure-report/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test data (if sensitive)
+# fixtures/*.json
