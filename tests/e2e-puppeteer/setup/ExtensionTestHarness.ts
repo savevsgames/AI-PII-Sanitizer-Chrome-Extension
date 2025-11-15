@@ -909,7 +909,8 @@ export class ExtensionTestHarness {
       console.log(`[Harness] ✅ Found profile card for "${profileName}"`);
 
       // Find delete button within this profile card
-      const deleteBtn = await targetProfileCard.$('.btn-delete');
+      // Selector: .icon-btn with data-action="delete"
+      const deleteBtn = await targetProfileCard.$('button[data-action="delete"]');
 
       if (!deleteBtn) {
         throw new Error('Delete button not found in profile card');
@@ -920,15 +921,15 @@ export class ExtensionTestHarness {
       console.log('[Harness] ✅ Clicked delete button');
 
       // Wait for confirmation modal
-      await popupPage.waitForSelector('.modal-delete', { visible: true, timeout: 3000 });
+      await popupPage.waitForSelector('#deleteModal', { visible: true, timeout: 3000 });
       console.log('[Harness] ✅ Delete confirmation modal appeared');
 
       // Confirm deletion
-      await popupPage.click('#confirmDelete');
+      await popupPage.click('#deleteConfirm');
       console.log('[Harness] ✅ Clicked confirm delete');
 
       // Wait for modal to close
-      await popupPage.waitForSelector('.modal-delete', { hidden: true, timeout: 3000 });
+      await popupPage.waitForSelector('#deleteModal', { hidden: true, timeout: 3000 });
       console.log('[Harness] ✅ Delete modal closed');
 
       // Verify profile was removed (wait for card to disappear)
@@ -973,7 +974,7 @@ export class ExtensionTestHarness {
       // Wait for sign-out button to appear (might be in a dropdown)
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Look for sign-out button (adjust selector based on your UI)
+      // Look for sign-out button in dropdown
       const signOutBtn = await popupPage.$('#signOutBtn');
 
       if (!signOutBtn) {
@@ -983,15 +984,20 @@ export class ExtensionTestHarness {
         );
       }
 
-      // Click sign out
+      // Click sign out button (opens confirmation modal)
       await signOutBtn.click();
       console.log('[Harness] ✅ Clicked sign-out button');
 
-      // Wait for user profile container to disappear
-      await popupPage.waitForSelector('#headerUserProfileContainer', {
-        hidden: true,
-        timeout: 5000
-      });
+      // Wait for confirmation modal
+      await popupPage.waitForSelector('#signOutModal', { visible: true, timeout: 3000 });
+      console.log('[Harness] ✅ Sign-out confirmation modal appeared');
+
+      // Confirm sign out
+      await popupPage.click('#signOutConfirm');
+      console.log('[Harness] ✅ Confirmed sign-out');
+
+      // Wait for modal to close
+      await popupPage.waitForSelector('#signOutModal', { hidden: true, timeout: 3000 });
 
       // Verify sign-in button is now visible
       await popupPage.waitForSelector('#headerSignInBtn', {
