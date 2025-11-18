@@ -71,14 +71,21 @@ docs-b2c-v1/
 │   ├── ENCRYPTION_SECURITY_AUDIT.md
 │   ├── ENCRYPTION_OVERVIEW.md
 │   ├── SECURITY_AUDIT.md
-│   └── CRITICAL_SECURITY_SUMMARY.md
+│   ├── CRITICAL_SECURITY_SUMMARY.md
+│   └── ESLINT_SECURITY_GUIDE.md          ← XSS prevention (NEW)
 │
-└── testing/                              ← Test suite (750 tests)
-    ├── TESTING.md                        ← Main testing docs
-    ├── MVP_TEST_SIGN_OFF.md
-    ├── INTEGRATION_TESTING_STRATEGY.md
-    ├── E2E_COMPREHENSIVE_TEST_PLAN.md
-    └── ... (11 testing docs)
+├── testing/                              ← Test suite (750 tests)
+│   ├── TESTING.md                        ← Main testing docs
+│   ├── MVP_TEST_SIGN_OFF.md
+│   ├── INTEGRATION_TESTING_STRATEGY.md
+│   ├── E2E_COMPREHENSIVE_TEST_PLAN.md
+│   └── ... (11 testing docs)
+│
+└── go-to-market/                         ← Marketing plans (NEW)
+    ├── README.md                          ← Marketing strategy index
+    ├── PHASE_0_1_SOLO_FOUNDER.md         ← Solo: 0→100 users
+    ├── PHASE_2_SMALL_TEAM.md             ← Team: 100→1K users
+    └── PHASE_3_FUNDED_SCALE.md           ← Scale: 1K→10K users
 ```
 
 ---
@@ -117,7 +124,7 @@ docs-b2c-v1/
 3. **Browse**: `features/specs/` - Individual feature specifications
 
 **Quick Summary**:
-- **FREE**: 1 profile, 5 templates, core protection, 5 platforms
+- **FREE**: 1 profile, 3 templates, core protection, 5 platforms
 - **PRO**: Unlimited profiles/templates, alias variations (13+), generator, vault, image editor, document analysis
 
 ---
@@ -138,6 +145,7 @@ docs-b2c-v1/
 1. **Read**: `security/ENCRYPTION_SECURITY_AUDIT.md` - Audit Score: 9.5/10
 2. **Read**: `security/ENCRYPTION_OVERVIEW.md` - How encryption works
 3. **Read**: `security/CRITICAL_SECURITY_SUMMARY.md` - Executive summary
+4. **Read**: `security/ESLINT_SECURITY_GUIDE.md` - XSS prevention guide (NEW)
 
 **Key Security Features**:
 - AES-256-GCM authenticated encryption
@@ -145,6 +153,20 @@ docs-b2c-v1/
 - Firebase UID-based key derivation
 - Perfect key separation (keys never stored locally)
 - Zero-knowledge architecture
+- ESLint rules preventing XSS vulnerabilities
+
+---
+
+### I Want to Market & Grow This
+1. **Read**: `go-to-market/README.md` - Marketing strategy overview (NEW)
+2. **Read**: `go-to-market/PHASE_0_1_SOLO_FOUNDER.md` - Start here (solo, 0-100 users)
+3. **Read**: `go-to-market/PHASE_2_SMALL_TEAM.md` - Small team (100-1K users)
+4. **Read**: `go-to-market/PHASE_3_FUNDED_SCALE.md` - Funded scale (1K-10K users)
+
+**Quick Summary**:
+- **Phase 0-1**: Solo founder, 6 hrs/week, $0-500 budget, validate document upload
+- **Phase 2**: Small team (2-5 people), $10K-30K/month, hit $400K ARR
+- **Phase 3**: Funded scale (20-30 people), $500K-1M/month, $5-10M ARR → exit
 
 ---
 
@@ -245,7 +267,7 @@ docs-b2c-v1/
 
 | Tier | Price | Features |
 |------|-------|----------|
-| **FREE** | $0/forever | 1 profile, 5 templates, core protection, 5 platforms |
+| **FREE** | $0/forever | 1 profile, 3 templates, core protection, 5 platforms |
 | **PRO** | $4.99/month OR $49/year (17% off) | Unlimited profiles/templates, alias variations, generator, vault, image editor |
 | **Teams** (Phase 1) | $8/seat/month (min 5 seats = $40/mo) | Shared aliases, team admin, multi-seat billing |
 | **Enterprise** (Phase 2+) | Custom pricing | SSO, API access, compliance features |

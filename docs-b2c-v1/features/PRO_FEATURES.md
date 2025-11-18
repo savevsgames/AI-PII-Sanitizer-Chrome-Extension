@@ -183,7 +183,7 @@ Auto-Filled:
 
 | Feature | FREE | PRO |
 |---------|------|-----|
-| Templates | 5 max | Unlimited |
+| Templates | 3 max | Unlimited |
 | Placeholders | All fields | All fields |
 | Import/Export | ❌ No | ✅ Yes (future) |
 | Shared Template Library | ❌ No | ✅ Yes (future) |
@@ -590,7 +590,7 @@ Define custom regex patterns to redact additional sensitive data beyond profiles
 | Benefit | FREE | PRO |
 |---------|------|-----|
 | **Profiles** | 1 profile | Unlimited |
-| **Templates** | 5 templates | Unlimited |
+| **Templates** | 3 templates | Unlimited |
 | **Alias Variations** | ❌ | ✅ 13+ variations |
 | **Quick Generator Templates** | 3 basic | 12 (all pools) |
 | **Bulk Generation** | ❌ | ✅ 2-10 at once |
