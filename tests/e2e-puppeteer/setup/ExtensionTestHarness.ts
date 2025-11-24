@@ -718,10 +718,304 @@ export class ExtensionTestHarness {
     }
 
     // Wait a moment for state to settle
-    await popupPage.waitForTimeout(500);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     console.log('[Harness] ✅ Profile created successfully!');
     console.log('[Harness] ═══════════════════════════════════════');
+  }
+
+  /**
+   * Sign in the test user with Google OAuth
+   *
+   * This is the enterprise-grade auth flow that:
+   * 1. Clicks sign-in button in popup
+   * 2. Waits for auth modal
+   * 3. Clicks Google sign-in button
+   * 4. Handles Google OAuth popup window
+   * 5. Fills email and password
+   * 6. Waits for auth completion
+   * 7. Verifies user is signed in
+   *
+   * Required environment variables:
+   * - TEST_USER_EMAIL
+   * - TEST_USER_PASSWORD
+   *
+   * @param popupPage The popup page
+   * @throws Error if auth fails or credentials are missing
+   */
+  async signInTestUser(popupPage: Page): Promise<void> {
+    console.log('[Harness] 🔐 Signing in test user...');
+
+    // Verify credentials are available
+    const testEmail = process.env.TEST_USER_EMAIL;
+    const testPassword = process.env.TEST_USER_PASSWORD;
+
+    if (!testEmail || !testPassword) {
+      throw new Error(
+        '❌ Missing TEST_USER_EMAIL or TEST_USER_PASSWORD in .env.test.local\n' +
+        'These are required for E2E authentication tests.'
+      );
+    }
+
+    console.log(`[Harness] 📧 Email: ${testEmail}`);
+
+    try {
+      // Step 1: Click sign-in button
+      await popupPage.waitForSelector('#headerSignInBtn', { visible: true, timeout: 5000 });
+      await popupPage.click('#headerSignInBtn');
+      console.log('[Harness] ✅ Clicked sign-in button');
+
+      // Step 2: Wait for auth modal to open
+      await popupPage.waitForSelector('#authModal', { visible: true, timeout: 5000 });
+      console.log('[Harness] ✅ Auth modal opened');
+
+      // Step 3: Click Google sign-in button
+      await popupPage.waitForSelector('#googleSignInBtn', { visible: true, timeout: 5000 });
+      await popupPage.click('#googleSignInBtn');
+      console.log('[Harness] ✅ Clicked Google sign-in button');
+
+      // Step 4: Wait for Google OAuth popup (new window)
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for popup to open
+
+      // Get all pages (the new Google OAuth popup should be the last one)
+      const pages = await this.browser!.pages();
+      const googleAuthPage = pages[pages.length - 1];
+
+      console.log(`[Harness] 🌐 Google OAuth popup detected: ${googleAuthPage.url()}`);
+
+      // Step 5: Fill email
+      try {
+        await googleAuthPage.waitForSelector('input[type="email"]', { timeout: 10000 });
+        await googleAuthPage.type('input[type="email"]', testEmail);
+        console.log('[Harness] ✅ Email entered');
+
+        // Click "Next" button
+        await googleAuthPage.click('#identifierNext');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('[Harness] ✅ Clicked "Next" after email');
+      } catch (error) {
+        await this.captureScreenshot(googleAuthPage, 'google-auth-email-failed');
+        throw new Error(
+          `❌ Failed to enter email in Google OAuth\n` +
+          `URL: ${googleAuthPage.url()}\n` +
+          `Screenshot saved.\n\n` +
+          `Original error: ${error}`
+        );
+      }
+
+      // Step 6: Fill password
+      try {
+        await googleAuthPage.waitForSelector('input[type="password"]', { timeout: 10000 });
+        await googleAuthPage.type('input[type="password"]', testPassword);
+        console.log('[Harness] ✅ Password entered');
+
+        // Click "Next" button
+        await googleAuthPage.click('#passwordNext');
+        console.log('[Harness] ✅ Clicked "Next" after password');
+      } catch (error) {
+        await this.captureScreenshot(googleAuthPage, 'google-auth-password-failed');
+        throw new Error(
+          `❌ Failed to enter password in Google OAuth\n` +
+          `URL: ${googleAuthPage.url()}\n` +
+          `Screenshot saved.\n\n` +
+          `Original error: ${error}`
+        );
+      }
+
+      // Step 7: Wait for OAuth to complete and popup to close
+      // The Google OAuth popup will close when auth completes
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Step 8: Verify user is signed in (back in popup page)
+      try {
+        await popupPage.waitForSelector('#headerUserProfileContainer', {
+          visible: true,
+          timeout: 10000
+        });
+        console.log('[Harness] ✅ User profile container visible - signed in!');
+      } catch (error) {
+        await this.captureScreenshot(popupPage, 'sign-in-verification-failed');
+        throw new Error(
+          `❌ Sign-in verification failed\n` +
+          `User profile container did not appear after auth.\n` +
+          `Screenshot saved.\n\n` +
+          `Original error: ${error}`
+        );
+      }
+
+      // Step 9: Verify auth modal closed
+      const authModalHidden = await popupPage.$eval(
+        '#authModal',
+        el => el.classList.contains('hidden')
+      );
+
+      if (!authModalHidden) {
+        console.log('[Harness] ⚠️  Auth modal still visible after sign-in');
+      }
+
+      console.log('[Harness] ✅ Test user signed in successfully!');
+      console.log('[Harness] ═══════════════════════════════════════');
+
+    } catch (error) {
+      console.error('[Harness] ❌ Sign-in failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a test profile by profile name
+   *
+   * Finds the profile card, clicks delete button, confirms deletion,
+   * and verifies the profile was removed.
+   *
+   * @param popupPage The popup page
+   * @param profileName The name of the profile to delete
+   * @throws Error if profile not found or deletion fails
+   */
+  async deleteTestProfile(
+    popupPage: Page,
+    profileName: string
+  ): Promise<void> {
+    console.log(`[Harness] 🗑️  Deleting profile: "${profileName}"`);
+
+    try {
+      // Find all profile cards
+      const profileCards = await popupPage.$$('.profile-card');
+
+      if (profileCards.length === 0) {
+        throw new Error('No profile cards found');
+      }
+
+      console.log(`[Harness] Found ${profileCards.length} profile card(s)`);
+
+      // Find the profile with matching name
+      let targetProfileCard = null;
+
+      for (const card of profileCards) {
+        const cardText = await card.evaluate(el => el.textContent || '');
+        if (cardText.includes(profileName)) {
+          targetProfileCard = card;
+          break;
+        }
+      }
+
+      if (!targetProfileCard) {
+        throw new Error(
+          `Profile "${profileName}" not found.\n` +
+          `Available profiles: Check screenshot.`
+        );
+      }
+
+      console.log(`[Harness] ✅ Found profile card for "${profileName}"`);
+
+      // Find delete button within this profile card
+      // Selector: .icon-btn with data-action="delete"
+      const deleteBtn = await targetProfileCard.$('button[data-action="delete"]');
+
+      if (!deleteBtn) {
+        throw new Error('Delete button not found in profile card');
+      }
+
+      // Click delete button
+      await deleteBtn.click();
+      console.log('[Harness] ✅ Clicked delete button');
+
+      // Wait for confirmation modal
+      await popupPage.waitForSelector('#deleteModal', { visible: true, timeout: 3000 });
+      console.log('[Harness] ✅ Delete confirmation modal appeared');
+
+      // Confirm deletion
+      await popupPage.click('#deleteConfirm');
+      console.log('[Harness] ✅ Clicked confirm delete');
+
+      // Wait for modal to close
+      await popupPage.waitForSelector('#deleteModal', { hidden: true, timeout: 3000 });
+      console.log('[Harness] ✅ Delete modal closed');
+
+      // Verify profile was removed (wait for card to disappear)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const remainingCards = await popupPage.$$('.profile-card');
+      console.log(`[Harness] Remaining profiles: ${remainingCards.length}`);
+
+      console.log('[Harness] ✅ Profile deleted successfully!');
+      console.log('[Harness] ═══════════════════════════════════════');
+
+    } catch (error) {
+      await this.captureScreenshot(popupPage, 'delete-profile-failed');
+      throw new Error(
+        `❌ Failed to delete profile "${profileName}"\n` +
+        `Screenshot saved.\n\n` +
+        `Original error: ${error}`
+      );
+    }
+  }
+
+  /**
+   * Sign out the test user
+   *
+   * Clicks user menu, clicks sign out, and verifies user is signed out.
+   *
+   * @param popupPage The popup page
+   * @throws Error if sign out fails
+   */
+  async signOutTestUser(popupPage: Page): Promise<void> {
+    console.log('[Harness] 🚪 Signing out test user...');
+
+    try {
+      // Click user profile container to open menu
+      await popupPage.waitForSelector('#headerUserProfileContainer', {
+        visible: true,
+        timeout: 5000
+      });
+      await popupPage.click('#headerUserProfileContainer');
+      console.log('[Harness] ✅ Clicked user profile container');
+
+      // Wait for sign-out button to appear (might be in a dropdown)
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Look for sign-out button in dropdown
+      const signOutBtn = await popupPage.$('#signOutBtn');
+
+      if (!signOutBtn) {
+        throw new Error(
+          'Sign-out button not found.\n' +
+          'Please verify the selector matches your UI.'
+        );
+      }
+
+      // Click sign out button (opens confirmation modal)
+      await signOutBtn.click();
+      console.log('[Harness] ✅ Clicked sign-out button');
+
+      // Wait for confirmation modal
+      await popupPage.waitForSelector('#signOutModal', { visible: true, timeout: 3000 });
+      console.log('[Harness] ✅ Sign-out confirmation modal appeared');
+
+      // Confirm sign out
+      await popupPage.click('#signOutConfirm');
+      console.log('[Harness] ✅ Confirmed sign-out');
+
+      // Wait for modal to close
+      await popupPage.waitForSelector('#signOutModal', { hidden: true, timeout: 3000 });
+
+      // Verify sign-in button is now visible
+      await popupPage.waitForSelector('#headerSignInBtn', {
+        visible: true,
+        timeout: 5000
+      });
+
+      console.log('[Harness] ✅ Test user signed out successfully!');
+      console.log('[Harness] ═══════════════════════════════════════');
+
+    } catch (error) {
+      await this.captureScreenshot(popupPage, 'sign-out-failed');
+      throw new Error(
+        `❌ Failed to sign out\n` +
+        `Screenshot saved.\n\n` +
+        `Original error: ${error}`
+      );
+    }
   }
 
   /**

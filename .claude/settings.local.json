@@ -17,7 +17,12 @@
       "Bash(npx ts-node:*)",
       "Bash(firebase deploy:*)",
       "Bash(npm run build:release:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(for:*)",
+      "Bash(do if ! find ../../docs-b2c-v1 -name $f)",
+      "Bash(then echo \"$f\")",
+      "Bash(fi)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

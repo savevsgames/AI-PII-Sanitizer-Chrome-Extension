@@ -33,8 +33,8 @@ async function simpleWriteTest() {
   console.log('4. Signing in...');
   const userCred = await signInWithEmailAndPassword(
     auth,
-    process.env.TEST_USER_EMAIL!,
-    process.env.TEST_USER_PASSWORD!
+    process.env.INTEGRATION_TEST_USER_EMAIL!,
+    process.env.INTEGRATION_TEST_USER_PASSWORD!
   );
   console.log('   ✓ Signed in as:', userCred.user.email);
   console.log('   ✓ UID:', userCred.user.uid);

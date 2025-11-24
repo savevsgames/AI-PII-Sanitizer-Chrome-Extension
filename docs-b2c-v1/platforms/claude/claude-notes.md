@@ -1,0 +1,1 @@
+- always ensure changes to inject script do not break existing connections for working platforms. Each platform has its own files. Context is COMPLEX and changes should follow our existing patterns for chatGPT, Claude and Gemini - our 3 currently tested platforms. More will be added as we work
